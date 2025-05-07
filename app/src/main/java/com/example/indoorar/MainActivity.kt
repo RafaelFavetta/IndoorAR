@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
             IndoorARTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
-                        name = "Wolves",
+                        name = "Anthony Edwards",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

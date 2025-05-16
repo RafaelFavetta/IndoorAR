@@ -71,4 +71,35 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.688" />
 
+    <ImageButton
+        android:id="@+id/btnGoogle"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:background="@drawable/botao_stroke"
+        android:contentDescription="Entrar com Google"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_google"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.646"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.804" />
+
+    <ImageButton
+        android:id="@+id/btnFacebook"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:background="@drawable/botao_stroke"
+        android:contentDescription="Entrar com Facebook"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_facebook"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.351"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.804" />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

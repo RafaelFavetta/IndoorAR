@@ -11,12 +11,21 @@
         android:layout_width="350dp"
         android:layout_height="wrap_content"
         android:background="@drawable/btn_arredondado"
+        android:text="Entrar com E-mail"
+        android:textColor="#FFF"
+        android:fontFamily="@font/inter"
+        android:textStyle="bold"
+        android:textSize="15sp"
+        android:textAllCaps="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.491"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.474" />
+        app:layout_constraintVertical_bias="0.474"
+        android:layout_marginTop="24dp"
+
+         />
 
     <Button
 
@@ -25,12 +34,21 @@
         android:layout_width="350dp"
         android:layout_height="wrap_content"
         android:background="@drawable/btn_arredondado"
+        android:text="Criar conta com E-mail"
+        android:textColor="#FFF"
+        android:fontFamily="@font/inter"
+        android:textAllCaps="false"
+        android:textStyle="bold"
+        android:textSize="15sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.491"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.568"
+        android:layout_marginTop="28dp"
+
+
 
 
         />
@@ -86,6 +104,32 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.804" />
 
+
+    <!-- botão abaixo da logo --><![CDATA[
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintVertical_bias="0.3" />
+
+
+
+
+
+
+    ]]>
+
+    <ImageButton
+        android:id="@+id/btnLogo"
+        android:layout_width="125dp"
+        android:layout_height="125dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="Logo do App"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_loc2"
+        app:layout_constraintBottom_toTopOf="@+id/btnLogin"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.72"
+        tools:layout_editor_absoluteX="143dp" />
+
     <ImageButton
         android:id="@+id/btnFacebook"
         android:layout_width="55dp"
@@ -100,6 +144,28 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.804" />
+
+
+
+
+    <TextView
+        android:id="@+id/termsLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center"
+        android:padding="16dp"
+        android:text=" Ao criar uma conta, você aceita os Termos e Condições e a Política de Privacidade. "
+        android:textAlignment="center"
+        android:textColor="#3F60CD"
+        android:textSize="12sp"
+        android:fontFamily="@font/inter"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

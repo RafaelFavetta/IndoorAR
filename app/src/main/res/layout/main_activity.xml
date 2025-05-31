@@ -126,9 +126,10 @@
         android:scaleType="centerInside"
         android:src="@drawable/ic_loc2"
         app:layout_constraintBottom_toTopOf="@+id/btnLogin"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.72"
-        tools:layout_editor_absoluteX="143dp" />
+        app:layout_constraintVertical_bias="0.72" />
 
     <ImageButton
         android:id="@+id/btnFacebook"

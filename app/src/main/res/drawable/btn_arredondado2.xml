@@ -5,3 +5,4 @@
 
     <!-- Borda arredondada -->
     <corners android:radius="22dp"/> <!-- Ajuste o valor para controlar o raio dos cantos -->
+</shape>

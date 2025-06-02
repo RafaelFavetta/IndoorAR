@@ -4,8 +4,8 @@
     <solid android:color="#3F60CD"/> <!-- Altere para a cor desejada -->
 
     <!-- Borda arredondada -->
-    <corners android:radius="22dp"/> <!-- Ajuste o valor para controlar o raio dos cantos -->
+    <corners android:radius="30dp"/> <!-- Ajuste o valor para controlar o raio dos cantos -->
 
     <!-- Borda (opcional) -->
-    <stroke android:color="#FFFFFF" android:width="1dp"/> <!-- Cor e espessura da borda -->
+    <stroke android:color="#FFFFFF" android:width="1.5dp"/> <!-- Cor e espessura da borda -->
 </shape>

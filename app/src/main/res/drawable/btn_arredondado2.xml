@@ -3,6 +3,11 @@
     <!-- Cor de fundo -->
     <solid android:color="#FFFFFF"/> <!-- Altere para a cor desejada -->
 
+    <stroke android:color="#903F60CD" android:width="2dp"/>
+
     <!-- Borda arredondada -->
     <corners android:radius="22dp"/> <!-- Ajuste o valor para controlar o raio dos cantos -->
 </shape>
+
+
+

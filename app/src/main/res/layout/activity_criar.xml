@@ -6,7 +6,239 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FDFDFD"
-    tools:context="com.example.indoorar.activity_criar">
+    tools:context="com.example.indoorar.activity_criar.xml">
+
+    <TextView
+        android:id="@+id/user"
+        android:layout_width="372dp"
+        android:layout_height="46dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:fontFamily="@font/staatliches"
+        android:gravity="center"
+        android:text="Usuário Comum"
+        android:textAlignment="center"
+        android:textColor="#3F60CD"
+        android:textSize="38sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.444"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.052" />
+
+    <TextView
+        android:id="@+id/insertinfo2"
+        android:layout_width="372dp"
+        android:layout_height="45dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:fontFamily="@font/inter"
+        android:gravity="center"
+        android:text="Insira suas informações"
+        android:textAlignment="center"
+        android:textColor="#3F60CD"
+        android:textSize="24sp"
+        android:textStyle=""
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.555"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.119" />
+
+
+
+
+
+
+
+    <Button
+        android:id="@+id/btnLogin3"
+        android:layout_width="350dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:drawableStart="@drawable/telephone"
+        android:drawablePadding="12dp"
+        android:paddingStart="22dp"
+        android:background="@drawable/btn_arredondado2"
+        android:fontFamily="@font/inter"
+        android:gravity="center_vertical|start"
+        android:text="Telefone"
+        android:textAllCaps="false"
+        android:textColor="#3F60CD"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.491"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnLogin2" />
+
+    <Button
+        android:id="@+id/btnLogin"
+        android:layout_width="350dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="168dp"
+        android:background="@drawable/btn_arredondado2"
+        android:drawableStart="@drawable/user2"
+        android:paddingStart="22dp"
+        android:drawablePadding="12dp"
+        android:fontFamily="@font/inter"
+        android:gravity="center_vertical|start"
+        android:text="Nome"
+        android:textAllCaps="false"
+        android:textColor="#3F60CD"
+        android:textSize="22sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.491"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/btnLogin2"
+        android:layout_width="350dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:background="@drawable/btn_arredondado2"
+        android:drawableStart="@drawable/email"
+        android:drawablePadding="12dp"
+        android:paddingStart="22dp"
+        android:fontFamily="@font/inter"
+        android:gravity="center_vertical|start"
+        android:text="Email"
+        android:textAllCaps="false"
+        android:textColor="#3F60CD"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.491"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnLogin"
+    />
+
+    <Button
+        android:id="@+id/btnLogin4"
+        android:layout_width="350dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:drawableStart="@drawable/password"
+        android:background="@drawable/btn_arredondado2"
+        android:drawablePadding="12dp"
+        android:paddingStart="22dp"
+        android:fontFamily="@font/inter"
+        android:gravity="center_vertical|start"
+        android:text="Senha"
+        android:textAllCaps="false"
+        android:textColor="#3F60CD"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.491"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnLogin3"
+        app:layout_constraintVertical_bias="0.0"
+        app:layout_constraintVertical_chainStyle="spread" />
+
+
+    <Button
+        android:id="@+id/btnLogin5"
+        android:layout_width="360dp"
+        android:layout_height="55dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/btn_arredondado"
+        android:fontFamily="@font/staatliches"
+        android:letterSpacing="0.1"
+        android:text="cadastrar conta"
+        android:textAllCaps="true"
+        android:textColor="#FDFDFD"
+        android:textSize="25sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.491"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.608"
+
+        />
+
+
+
+    <TextView
+        android:id="@+id/cadastro"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:text="Cadastre-se com"
+        android:textColor="#828385"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.703" />
+
+    <View
+        android:id="@+id/linhaSimples7"
+        android:layout_width="85dp"
+        android:layout_height="1dp"
+        android:background="#828385"
+        android:layout_marginEnd="50dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.159"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.697" />
+
+    <View
+        android:id="@+id/linhaSimples8"
+        android:layout_width="85dp"
+        android:layout_height="1dp"
+        android:layout_marginStart="50dp"
+        android:background="#828385"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.836"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.697" />
+    <ImageButton
+        android:id="@+id/btnFacebook"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:layout_marginStart="140dp"
+        android:background="center"
+        android:contentDescription="Entrar com Facebook"
+        android:padding="3dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_facebook"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.791" />
+
+    <ImageButton
+        android:id="@+id/btnGoogle"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:background="center"
+        android:layout_marginEnd="140dp"
+        android:contentDescription="Entrar com Facebook"
+        android:padding="3dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_google"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.791" />
+
 
     <TextView
         android:id="@+id/termsLabel5"
@@ -28,157 +260,7 @@
         app:layout_constraintVertical_bias="1.0" />
 
 
-    <Button
-        android:id="@+id/btnLogin5"
-        android:layout_width="350dp"
-        android:layout_height="55dp"
-        android:layout_marginTop="24dp"
-        android:background="@drawable/btn_arredondado"
-        android:fontFamily="@font/staatliches"
-        android:text="cadastrar conta"
-        android:textAllCaps="true"
-        android:textColor="#FDFDFD"
-        android:textSize="25sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.647"
 
-        />
 
-    <Button
-        android:id="@+id/btnLogin3"
-        android:layout_width="350dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:background="@drawable/btn_arredondado2"
-        android:fontFamily="@font/inter"
-        android:text="Nome"
-        android:textAllCaps="false"
-        android:textColor="#3F60CD"
-        android:textSize="20sp"
-        android:textStyle=""
-        android:gravity="center_vertical|start"
-        android:paddingStart="60dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.235"
-
-        />
-
-    <Button
-        android:id="@+id/btnLogin6"
-        android:layout_width="350dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:background="@drawable/btn_arredondado2"
-        android:fontFamily="@font/inter"
-        android:text="Email"
-        android:textAllCaps="false"
-        android:textColor="#3F60CD"
-        android:textSize="20sp"
-        android:textStyle=""
-        android:gravity="center_vertical|start"
-        android:paddingStart="60dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.336"
-
-        />
-
-    <Button
-        android:id="@+id/btnLogin7"
-        android:layout_width="350dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:background="@drawable/btn_arredondado2"
-        android:fontFamily="@font/inter"
-        android:text="Telefone"
-        android:textAllCaps="false"
-        android:textColor="#3F60CD"
-        android:textSize="20sp"
-        android:textStyle=""
-        android:gravity="center_vertical|start"
-        android:paddingStart="60dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.44"
-
-        />
-
-    <Button
-        android:id="@+id/btnLogin8"
-        android:layout_width="350dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:background="@drawable/btn_arredondado2"
-        android:fontFamily="@font/inter"
-        android:text="Senha"
-        android:textAllCaps="false"
-        android:textColor="#3F60CD"
-        android:textSize="20sp"
-        android:textStyle=""
-        android:gravity="center_vertical|start"
-        android:paddingStart="60dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.537"
-
-        />
-
-    <TextView
-        android:id="@+id/termsLabel3"
-        android:layout_width="372dp"
-        android:layout_height="46dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
-        android:fontFamily="@font/staatliches"
-        android:gravity="center"
-        android:text="Usuário Comum"
-        android:textAlignment="center"
-        android:textColor="#3F60CD"
-        android:textSize="38sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.444"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.052" />
-
-    <TextView
-        android:id="@+id/insertinfo"
-        android:layout_width="372dp"
-        android:layout_height="46dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
-        android:fontFamily="@font/inter"
-        android:gravity="center"
-        android:text="Insira suas informações"
-        android:textAlignment="center"
-        android:textColor="#3F60CD"
-        android:textSize="24sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.555"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.119" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

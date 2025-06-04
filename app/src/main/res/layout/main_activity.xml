@@ -7,136 +7,131 @@
     android:layout_height="match_parent"
     >
 
+
     <Button
-        android:id="@+id/btnLogin"
-        android:layout_width="350dp"
-        android:layout_height="wrap_content"
-        android:background="@drawable/btn_arredondado"
-        android:text="Entrar com E-mail"
-        android:textColor="#FFF"
-        android:fontFamily="@font/inter"
-        android:textStyle="bold"
-        android:textSize="15sp"
-        android:textAllCaps="false"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.474"
+        android:id="@+id/btnLogin7"
+        android:layout_width="360dp"
+        android:layout_height="55dp"
         android:layout_marginTop="24dp"
-
-         />
-
-    <Button
-
-        android:labelFor="@id/btnLogin2"
-        android:id="@+id/btnLogin2"
-        android:layout_width="350dp"
-        android:layout_height="wrap_content"
         android:background="@drawable/btn_arredondado"
-        android:text="Criar conta com E-mail"
-        android:textColor="#FFF"
-        android:fontFamily="@font/inter"
-        android:textAllCaps="false"
-        android:textStyle="bold"
-        android:textSize="15sp"
+        android:fontFamily="@font/staatliches"
+        android:letterSpacing=""
+        android:text="cadastrar conta"
+        android:textAllCaps="true"
+        android:textColor="#FDFDFD"
+        android:textSize="25sp"
+        android:textStyle=""
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.491"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.568"
-        android:layout_marginTop="28dp"
-
-
-
+        app:layout_constraintVertical_bias="0.608"
 
         />
 
-    <View
-        android:id="@+id/linhaSimples2"
-        android:layout_width="150dp"
-        android:layout_height="2dp"
-        android:background="@android:color/darker_gray"
+    <Button
+        android:id="@+id/btnLogin8"
+        android:layout_width="360dp"
+        android:layout_height="55dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/btn_arredondado"
+        android:fontFamily="@font/staatliches"
+        android:letterSpacing=""
+        android:text="Entrar com usuário"
+        android:textAllCaps="true"
+        android:textColor="#FDFDFD"
+        android:textSize="25sp"
+        android:textStyle=""
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.881"
+        app:layout_constraintHorizontal_bias="0.49"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.684" />
+        app:layout_constraintVertical_bias="0.498"
 
-    <View
-        android:id="@+id/linhaSimples"
-        android:layout_width="150dp"
-        android:layout_height="2dp"
-        android:background="@android:color/darker_gray"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.114"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.684" />
+        />
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/cadastro"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="ou"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:text="Cadastre-se com"
+        android:textColor="#828385"
+        android:textSize="18sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.688" />
+        app:layout_constraintVertical_bias="0.703" />
+
+    <View
+        android:id="@+id/linhaSimples7"
+        android:layout_width="85dp"
+        android:layout_height="1dp"
+        android:background="#828385"
+        android:layout_marginEnd="50dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.159"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.697" />
+
+    <View
+        android:id="@+id/linhaSimples8"
+        android:layout_width="85dp"
+        android:layout_height="1dp"
+        android:layout_marginStart="50dp"
+        android:background="#828385"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.836"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.697" />
+    <ImageButton
+        android:id="@+id/btnFacebook"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:layout_marginStart="140dp"
+        android:background="center"
+        android:contentDescription="Entrar com Facebook"
+        android:padding="3dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_facebook"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.791" />
 
     <ImageButton
         android:id="@+id/btnGoogle"
         android:layout_width="55dp"
         android:layout_height="55dp"
-        android:background="@drawable/botao_stroke"
-        android:contentDescription="Entrar com Google"
+        android:background="center"
+        android:layout_marginEnd="140dp"
+        android:contentDescription="Entrar com Facebook"
+        android:padding="3dp"
         android:scaleType="centerInside"
         android:src="@drawable/ic_google"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.646"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.804" />
+        app:layout_constraintVertical_bias="0.791" />
 
 
 
 
-    <ImageButton
-        android:id="@+id/btnLogo"
-        android:layout_width="125dp"
-        android:layout_height="125dp"
-        android:background="@android:color/transparent"
-        android:contentDescription="Logo do App"
-        android:scaleType="centerInside"
-        android:src="@drawable/ic_loc2"
-        app:layout_constraintBottom_toTopOf="@+id/btnLogin"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.682" />
 
 
-    <ImageButton
-        android:id="@+id/btnFacebook"
-        android:layout_width="55dp"
-        android:layout_height="55dp"
-        android:background="center"
-        android:contentDescription="Entrar com Facebook"
-        android:scaleType="centerInside"
-        android:src="@drawable/ic_facebook"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.227"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.834" />
 
     <TextView
         android:id="@+id/termsLabel"

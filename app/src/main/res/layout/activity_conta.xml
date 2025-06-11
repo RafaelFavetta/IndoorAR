@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#3F60CD"
-    tools:context=".TipoDeContaActivity">
+    >
 
 
     <Button
@@ -83,7 +83,7 @@
         android:gravity="start"
         android:padding="20dp"
         android:text="•Mapas internos atualizados\n•Sugestões de rotas acessíveis\n•Download e uso offline de mapas"
-        android:textAlignment="start"
+        android:textAlignment="textStart"
         android:textColor="#FFFFFF"
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -104,7 +104,7 @@
         android:gravity="start"
         android:padding="28dp"
         android:text="Use o app para se localizar em ambientes fechados como shoppings, aeroportos e outros locais."
-        android:textAlignment="start"
+        android:textAlignment="textStart"
         android:textColor="#FFFFFF"
         android:textSize="14sp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -143,7 +143,7 @@
         android:gravity="start"
         android:padding="20dp"
         android:text="•Mapeamento de estabelecimentos\n•Criação e validação de rotas acessíveis\n•Sinalização de pontos importantes e obstáculos"
-        android:textAlignment="start"
+        android:textAlignment="textStart"
         android:textColor="#FFFFFF"
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -209,7 +209,7 @@
         android:gravity="start"
         android:padding="28dp"
         android:text="Ajude a construir mapas internos e rotas acessíveis, colaborando com informações."
-        android:textAlignment="start"
+        android:textAlignment="textStart"
         android:textColor="#FFFFFF"
         android:textSize="14sp"
         app:layout_constraintBottom_toBottomOf="parent"

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "910636237768",
+    "project_id": "indoorar-94cca",
+    "storage_bucket": "indoorar-94cca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:910636237768:android:04694717ab990812c3f6fd",
+        "android_client_info": {
+          "package_name": "com.example.indoorar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDteiXfQm3GOXS1D6m6PX6Ri-N5SJ3qrqc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

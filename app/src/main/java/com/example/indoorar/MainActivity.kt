@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
             IndoorARTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
-                        name = "Anthony Edwards",
+                        name = "IndoorAR",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
-        text = "vsfd $name!",
+        text = "hello $name!",
         modifier = modifier
     )
 }

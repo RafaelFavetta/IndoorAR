@@ -5,7 +5,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.seuapp.innovationar.R
+
 
 class activity_criar : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

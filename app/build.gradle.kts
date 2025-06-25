@@ -1,6 +1,6 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android") version "2.0.0"
+    id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
@@ -9,13 +9,14 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.seuapp.innovationar"
+        applicationId = "com.example.indoorar"
         minSdk = 29
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
         multiDexEnabled = true
     }
+
 
     buildTypes {
         release {
@@ -43,14 +44,25 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.11.0")
-    implementation("androidx.activity:activity-ktx:1.8.2")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("androidx.activity:activity-compose:1.8.2")
-    implementation("androidx.compose.ui:ui:1.6.0")
-    implementation("androidx.compose.material3:material3:1.2.0")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.6.0")
-    testImplementation("junit:junit:4.13.2")
+    val coreKtxVersion = "1.12.0"
+    val appCompatVersion = "1.6.1"
+    val materialVersion = "1.12.0"
+    val activityKtxVersion = "1.8.2"
+    val constraintLayoutVersion = "2.1.4"
+    val activityComposeVersion = "1.8.2"
+    val composeVersion = "1.6.0"
+    val material3Version = "1.2.0"
+    val junitVersion = "4.13.2"
+
+    implementation("androidx.core:core-ktx:$coreKtxVersion")
+    implementation("androidx.appcompat:appcompat:$appCompatVersion")
+    implementation("com.google.android.material:material:$materialVersion")
+    implementation("androidx.activity:activity-ktx:$activityKtxVersion")
+    implementation("androidx.constraintlayout:constraintlayout:$constraintLayoutVersion")
+    implementation("androidx.activity:activity-compose:$activityComposeVersion")
+    implementation("androidx.compose.ui:ui:$composeVersion")
+    implementation("androidx.compose.material3:material3:$material3Version")
+    implementation("androidx.compose.ui:ui-tooling-preview:$composeVersion")
+
+    testImplementation("junit:junit:$junitVersion")
 }

@@ -17,9 +17,20 @@ android {
         multiDexEnabled = true
     }
 
+    flavorDimensions += "default"
+
+    productFlavors {
+        create("dev") {
+            dimension = "default"
+            resourceConfigurations.addAll(listOf("en", "xxhdpi"))
+        }
+        create("full") {
+            dimension = "default"
+        }
+    }
 
     buildTypes {
-        release {
+        getByName("release") {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

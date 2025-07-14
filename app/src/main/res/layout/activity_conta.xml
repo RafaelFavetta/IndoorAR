@@ -39,7 +39,7 @@
         android:layout_marginEnd="11dp"
         android:fontFamily="@font/staatliches"
         android:gravity="center"
-        android:text="Usuário comum "
+        android:text="Usuário comum"
         android:textAlignment="center"
         android:textColor="#FFFFFF"
         android:textSize="30sp"

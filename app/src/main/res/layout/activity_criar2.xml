@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FDFDFD"
-    tools:context="com.example.indoorar.activity_criar2.xml">
+    tools:context="com.example.indoorar.ActivityCriar2">
 
     <TextView
         android:id="@+id/user"

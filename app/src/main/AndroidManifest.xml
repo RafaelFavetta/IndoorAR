@@ -13,18 +13,17 @@
         android:theme="@style/Theme.IndoorAR"
         tools:targetApi="31">
         <activity
-            android:name="com.example.indoorar.activity_criar2"
+            android:name="com.example.indoorar.ActivityCriar2"
             android:exported="false" />
         <activity
-            android:name="com.example.indoorar.activity_criar"
+            android:name="com.example.indoorar.ActivityCriar"
             android:exported="false" />
         <activity
-            android:name="com.example.indoorar.activity_conta"
+            android:name="com.example.indoorar.ActivityConta"
             android:exported="false" />
         <activity
             android:name="com.example.indoorar.MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.IndoorAR">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

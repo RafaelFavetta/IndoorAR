@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.gms.google-services") // 🧩 Firebase plugin aqui!
 }
 
 android {
@@ -55,25 +56,28 @@ android {
 }
 
 dependencies {
-    val coreKtxVersion = "1.12.0"
-    val appCompatVersion = "1.6.1"
-    val materialVersion = "1.12.0"
-    val activityKtxVersion = "1.8.2"
-    val constraintLayoutVersion = "2.1.4"
-    val activityComposeVersion = "1.8.2"
-    val composeVersion = "1.6.0"
-    val material3Version = "1.2.0"
-    val junitVersion = "4.13.2"
+    // Android
+    implementation("androidx.core:core-ktx:1.16.0")
+    implementation("androidx.appcompat:appcompat:1.7.1")
+    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.activity:activity-ktx:1.10.1")
+    implementation("androidx.constraintlayout:constraintlayout:2.2.1")
 
-    implementation("androidx.core:core-ktx:$coreKtxVersion")
-    implementation("androidx.appcompat:appcompat:$appCompatVersion")
-    implementation("com.google.android.material:material:$materialVersion")
-    implementation("androidx.activity:activity-ktx:$activityKtxVersion")
-    implementation("androidx.constraintlayout:constraintlayout:$constraintLayoutVersion")
-    implementation("androidx.activity:activity-compose:$activityComposeVersion")
-    implementation("androidx.compose.ui:ui:$composeVersion")
-    implementation("androidx.compose.material3:material3:$material3Version")
-    implementation("androidx.compose.ui:ui-tooling-preview:$composeVersion")
+    // Jetpack Compose (caso use no futuro)
+    implementation("androidx.activity:activity-compose:1.10.1")
+    implementation("androidx.compose.ui:ui:1.8.3")
+    implementation("androidx.compose.material3:material3:1.3.2")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.8.3")
 
-    testImplementation("junit:junit:$junitVersion")
+    // Firebase Auth
+    implementation("com.google.firebase:firebase-auth-ktx:23.2.1")
+
+    // Firebase BOM (controla versões centralizadas)
+    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+
+    // Se quiser adicionar Firestore depois:
+    // implementation("com.google.firebase:firebase-firestore-ktx")
+
+    // Testes
+    testImplementation("junit:junit:4.13.2")
 }

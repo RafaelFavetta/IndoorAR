@@ -14,20 +14,23 @@ class ActivityConta : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_conta)
 
+        // Ajusta o padding para respeitar as barras do sistema (status, nav bar)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.constraintLayout)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
-        val btnLogin4 = findViewById<Button>(R.id.btnLogin4)
-        btnLogin4.setOnClickListener {
+        // Botão para ir para Cadastro Maker (ActivityCriar2)
+        val btnMaker = findViewById<Button>(R.id.btnLogin4)
+        btnMaker.setOnClickListener {
             val intent = Intent(this, ActivityCriar2::class.java)
             startActivity(intent)
         }
 
-        val btnLogin3 = findViewById<Button>(R.id.btnLogin3)
-        btnLogin3.setOnClickListener {
+        // Botão para ir para Cadastro Comum (ActivityCriar)
+        val btnComum = findViewById<Button>(R.id.btnLogin3)
+        btnComum.setOnClickListener {
             val intent = Intent(this, ActivityCriar::class.java)
             startActivity(intent)
         }

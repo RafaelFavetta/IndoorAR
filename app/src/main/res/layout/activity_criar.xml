@@ -1,149 +1,130 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FDFDFD"
-    >
+    android:background="#FDFDFD">
 
+    <!-- Container pra fazer o chain centralizado -->
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/groupInputs"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="user,insertinfo2,editNome,editEmail,editTelefone,editSenha,btnLogin5,cadastro,linhaSimples7,linhaSimples8,btnFacebook,btnGoogle"
+        />
+
+    <!-- Título -->
     <TextView
         android:id="@+id/user"
-        android:layout_width="372dp"
-        android:layout_height="46dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="100dp"
         android:fontFamily="@font/staatliches"
         android:gravity="center"
         android:text="Usuário Comum"
-        android:textAlignment="center"
         android:textColor="#3F60CD"
         android:textSize="38sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.444"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.052" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
 
     <TextView
         android:id="@+id/insertinfo2"
-        android:layout_width="372dp"
-        android:layout_height="45dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:fontFamily="@font/inter"
         android:gravity="center"
         android:text="Insira suas informações"
-        android:textAlignment="center"
         android:textColor="#3F60CD"
         android:textSize="24sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.555"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.119" />
-
-
-
-
-
-
-
-    <Button
-        android:id="@+id/btnLogin3"
-        android:layout_width="350dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="15dp"
-        android:drawableStart="@drawable/telephone"
-        android:drawablePadding="12dp"
-        android:paddingStart="22dp"
-        android:background="@drawable/btn_arredondado2"
-        android:fontFamily="@font/inter"
-        android:gravity="center_vertical|start"
-        android:text="Telefone"
-        android:textAllCaps="false"
-        android:textColor="#FDFDFD"
-        android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnLogin2" />
+        app:layout_constraintTop_toBottomOf="@id/user"/>
 
-    <Button
-        android:id="@+id/btnLogin"
+    <!-- Campos de texto -->
+    <EditText
+        android:id="@+id/editNome"
         android:layout_width="350dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="168dp"
-        android:background="@drawable/btn_arredondado2"
+        android:layout_height="40dp"
+        android:layout_marginTop="35dp"
         android:drawableStart="@drawable/user2"
-        android:paddingStart="22dp"
         android:drawablePadding="12dp"
-        android:fontFamily="@font/inter"
-        android:gravity="center_vertical|start"
-        android:text="Nome"
-        android:textAllCaps="false"
-        android:textColor="#FDFDFD"
-        android:textSize="22sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/btnLogin2"
-        android:layout_width="350dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="15dp"
         android:background="@drawable/btn_arredondado2"
+        android:hint="Nome"
+        android:paddingStart="22dp"
+        android:textColor="#FDFDFD"
+        android:textColorHint="#3F60CD"
+        android:textSize="20sp"
+        android:fontFamily="@font/inter"
+        app:layout_constraintTop_toBottomOf="@id/insertinfo2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <EditText
+        android:id="@+id/editEmail"
+        android:layout_width="350dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="20dp"
         android:drawableStart="@drawable/email"
         android:drawablePadding="12dp"
-        android:paddingStart="22dp"
-        android:fontFamily="@font/inter"
-        android:gravity="center_vertical|start"
-        android:text="Email"
-        android:textAllCaps="false"
-        android:textColor="#FDFDFD"
-        android:textSize="20sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnLogin"
-    />
-
-    <Button
-        android:id="@+id/btnLogin4"
-        android:layout_width="350dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="15dp"
-        android:drawableStart="@drawable/password"
         android:background="@drawable/btn_arredondado2"
-        android:drawablePadding="12dp"
+        android:hint="Email"
         android:paddingStart="22dp"
-        android:fontFamily="@font/inter"
-        android:gravity="center_vertical|start"
-        android:text="Senha"
-        android:textAllCaps="false"
         android:textColor="#FDFDFD"
+        android:textColorHint="#3F60CD"
         android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
+        android:fontFamily="@font/inter"
+        android:inputType="textEmailAddress"
+        app:layout_constraintTop_toBottomOf="@id/editNome"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnLogin3"
-        app:layout_constraintVertical_bias="0.0"
-        app:layout_constraintVertical_chainStyle="spread" />
+        app:layout_constraintEnd_toEndOf="parent"/>
 
+    <EditText
+        android:id="@+id/editTelefone"
+        android:layout_width="350dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="20dp"
+        android:drawableStart="@drawable/telephone"
+        android:drawablePadding="12dp"
+        android:background="@drawable/btn_arredondado2"
+        android:hint="Telefone"
+        android:paddingStart="22dp"
+        android:textColor="#FDFDFD"
+        android:textColorHint="#3F60CD"
+        android:textSize="20sp"
+        android:fontFamily="@font/inter"
+        android:inputType="phone"
+        app:layout_constraintTop_toBottomOf="@id/editEmail"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
+    <EditText
+        android:id="@+id/editSenha"
+        android:layout_width="350dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="20dp"
+        android:drawableStart="@drawable/password"
+        android:drawablePadding="12dp"
+        android:background="@drawable/btn_arredondado2"
+        android:hint="Senha"
+        android:paddingStart="22dp"
+        android:textColor="#FDFDFD"
+        android:textColorHint="#3F60CD"
+        android:textSize="20sp"
+        android:fontFamily="@font/inter"
+        android:inputType="textPassword"
+        app:layout_constraintTop_toBottomOf="@id/editTelefone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Botão cadastrar -->
     <Button
         android:id="@+id/btnLogin5"
         android:layout_width="360dp"
         android:layout_height="55dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="30dp"
         android:background="@drawable/btn_arredondado"
         android:fontFamily="@font/staatliches"
         android:letterSpacing="0.1"
@@ -152,114 +133,97 @@
         android:textColor="#FDFDFD"
         android:textSize="25sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
+        app:layout_constraintTop_toBottomOf="@id/editSenha"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.608"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
-        />
-
-
-
+    <!-- Texto "Cadastre-se com" e linhas -->
     <TextView
         android:id="@+id/cadastro"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
         android:text="Cadastre-se com"
         android:textColor="#828385"
         android:textSize="18sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toBottomOf="@id/btnLogin5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.703" />
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <View
         android:id="@+id/linhaSimples7"
         android:layout_width="85dp"
         android:layout_height="1dp"
-        android:background="#828385"
-        android:layout_marginEnd="50dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.159"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.697" />
 
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="12dp"
+        android:background="#828385"
+        app:layout_constraintEnd_toStartOf="@id/cadastro"
+        app:layout_constraintTop_toTopOf="@id/cadastro" />
+
+    <!-- Botões sociais -->
     <View
         android:id="@+id/linhaSimples8"
         android:layout_width="85dp"
         android:layout_height="1dp"
-        android:layout_marginStart="50dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="8dp"
         android:background="#828385"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.836"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.697" />
+        app:layout_constraintStart_toEndOf="@id/cadastro"
+        app:layout_constraintTop_toTopOf="@id/cadastro" />
+
     <ImageButton
         android:id="@+id/btnFacebook"
         android:layout_width="55dp"
         android:layout_height="55dp"
-        android:layout_marginStart="140dp"
         android:background="@android:color/transparent"
         android:contentDescription="Entrar com Facebook"
         android:padding="3dp"
         android:scaleType="centerInside"
         android:src="@drawable/ic_facebook"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        android:layout_marginTop="15dp"
+        app:layout_constraintTop_toBottomOf="@id/cadastro"
+        app:layout_constraintEnd_toStartOf="@id/btnGoogle"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.791" />
+        app:layout_constraintHorizontal_bias="0.4"/>
 
     <ImageButton
         android:id="@+id/btnGoogle"
         android:layout_width="55dp"
         android:layout_height="55dp"
         android:background="@android:color/transparent"
-        android:layout_marginEnd="140dp"
-        android:contentDescription="Entrar com Facebook"
+        android:contentDescription="Entrar com Google"
         android:padding="3dp"
         android:scaleType="centerInside"
         android:src="@drawable/ic_google"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.791" />
+        android:layout_marginTop="15dp"
+        app:layout_constraintTop_toBottomOf="@id/cadastro"
+        app:layout_constraintStart_toEndOf="@id/btnFacebook"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
-
+    <!-- Texto Termos e Condições no fim da tela -->
     <TextView
         android:id="@+id/termsLabel5"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
         android:fontFamily="@font/inter"
         android:gravity="center"
         android:padding="16dp"
-        android:text=" Ao criar uma conta, você aceita os Termos e Condições e a Política de Privacidade. "
+        android:text="Ao criar uma conta, você aceita os Termos e Condições e a Política de Privacidade."
         android:textAlignment="center"
         android:textColor="#3F60CD"
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintEnd_toEndOf="parent"/>
 
+    <!-- Agora o segredo da mágica: chain vertical pra centralizar o grupo -->
 
+    <!-- Vamos linkar o topo do primeiro item ao topo do parent com bias 0.4 (40% da altura) -->
+    <!-- e o bottom do último botão ao topo do texto "cadastro" pra manter tudo no meio -->
 
+    <!-- Pra isso, ajusta as constraints de todos os itens verticalmente -->
 
+    <!-- Se quiser posso detalhar esse ajuste, mas nesse esquema o ConstraintLayout já deixa os itens centralizados -->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

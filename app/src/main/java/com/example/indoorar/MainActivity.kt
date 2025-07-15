@@ -10,26 +10,16 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_activity)
 
-        val btnCadastrar = findViewById<Button>(R.id.btnLogin7)
+        val btnCadastrar = findViewById<Button>(R.id.btnLogin7)  // Vai pra ActivityConta
+        val btnLogin = findViewById<Button>(R.id.btnLogin8)     // Vai pra tela de login
+
         btnCadastrar.setOnClickListener {
             val intent = Intent(this, ActivityConta::class.java)
             startActivity(intent)
         }
 
-        val btnContaComum = findViewById<Button>(R.id.btnLogin7)
-        val btnContaMaker = findViewById<Button>(R.id.btnLogin8)
-
-        btnContaComum.setOnClickListener {
-            val intent = Intent(this, ActivityCriar::class.java)
-            startActivity(intent)
-            }
-
-            btnContaMaker.setOnClickListener {
-                val intent = Intent(this, ActivityCriar2::class.java)
-                startActivity(intent)
-            }
-
-
+        btnLogin.setOnClickListener {
+            // Tela de login ainda vai criar
+        }
     }
 }
-

@@ -15,5 +15,21 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, ActivityConta::class.java)
             startActivity(intent)
         }
+
+        val btnContaComum = findViewById<Button>(R.id.btnLogin7)
+        val btnContaMaker = findViewById<Button>(R.id.btnLogin8)
+
+        btnContaComum.setOnClickListener {
+            val intent = Intent(this, ActivityCriar::class.java)
+            startActivity(intent)
+            }
+
+            btnContaMaker.setOnClickListener {
+                val intent = Intent(this, ActivityCriar2::class.java)
+                startActivity(intent)
+            }
+
+
     }
 }
+

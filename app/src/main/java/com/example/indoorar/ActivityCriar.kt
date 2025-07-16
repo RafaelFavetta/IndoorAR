@@ -7,6 +7,7 @@ import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
@@ -20,7 +21,6 @@ class ActivityCriar : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_criar)
 
-        // Firebase
         auth = Firebase.auth
         db = FirebaseFirestore.getInstance()
 
@@ -88,7 +88,15 @@ class ActivityCriar : AppCompatActivity() {
                         }
 
                 } else {
-                    snackbar("Erro ao criar conta: ${task.exception?.message}")
+                    val exception = task.exception
+                    val mensagem = when ((exception as? FirebaseAuthException)?.errorCode) {
+                        "ERROR_EMAIL_ALREADY_IN_USE" -> "Esse e-mail já está em uso"
+                        "ERROR_INVALID_EMAIL" -> "E-mail inválido"
+                        "ERROR_WEAK_PASSWORD" -> "Senha fraca, escolha uma mais forte"
+                        "ERROR_NETWORK_REQUEST_FAILED" -> "Sem conexão com a internet"
+                        else -> "Erro: ${exception?.message}"
+                    }
+                    snackbar(mensagem)
                 }
             }
     }

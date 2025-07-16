@@ -87,7 +87,16 @@ class ActivityCriar2 : AppCompatActivity() {
                         }
 
                 } else {
-                    snackbar("Erro ao criar conta: ${task.exception?.message}")
+                    val msgErro = when (val exception = task.exception?.message) {
+                        null -> "Erro desconhecido"
+                        else -> when {
+                            exception.contains("email address is already in use", true) -> "E-mail já está cadastrado"
+                            exception.contains("invalid email", true) -> "E-mail inválido"
+                            exception.contains("password", true) -> "Senha fraca ou inválida"
+                            else -> "Erro ao criar conta: $exception"
+                        }
+                    }
+                    snackbar(msgErro)
                 }
             }
     }

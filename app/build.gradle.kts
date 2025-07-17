@@ -78,6 +78,7 @@ dependencies {
     // Firebase Auth e Firestore
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("androidx.activity:activity:1.10.1")
 
     // Testes
     testImplementation("junit:junit:4.13.2")

@@ -12,34 +12,34 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.IndoorAR"
         tools:targetApi="31">
-
-        <!-- SplashActivity é o launcher -->
+        <activity
+            android:name=".Home"
+            android:exported="false" />
+        <activity
+            android:name=".ui.theme.Home"
+            android:exported="false" /> <!-- SplashActivity é o launcher -->
         <activity
             android:name=".SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.IndoorAR" />
-
         <activity
             android:name=".ActivityCriar2"
             android:exported="false" />
-
         <activity
             android:name=".ActivityCriar"
             android:exported="false" />
-
         <activity
             android:name=".ActivityConta"
             android:exported="false" />
-
     </application>
 
 </manifest>

@@ -1,0 +1,8 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#ffffff" />
+        </shape>
+    </item>
+    <!-- Adicione 4 imagens vetoriais de canto azul aqui se quiser deixar como no modelo -->
+</layer-list>

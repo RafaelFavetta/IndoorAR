@@ -220,13 +220,5 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Agora o segredo da mágica: chain vertical pra centralizar o grupo -->
-
-    <!-- Vamos linkar o topo do primeiro item ao topo do parent com bias 0.4 (40% da altura) -->
-    <!-- e o bottom do último botão ao topo do texto "cadastro" pra manter tudo no meio -->
-
-    <!-- Pra isso, ajusta as constraints de todos os itens verticalmente -->
-
-    <!-- Se quiser posso detalhar esse ajuste, mas nesse esquema o ConstraintLayout já deixa os itens centralizados -->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

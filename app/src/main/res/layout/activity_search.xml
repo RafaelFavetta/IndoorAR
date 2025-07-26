@@ -10,24 +10,55 @@
 
 
     <EditText
-        android:id="@+id/btnLogin3"
+        android:id="@+id/searchInput"
         android:layout_width="360dp"
         android:layout_height="41dp"
         android:background="@drawable/btn_arredondado3"
-        android:textSize="20sp"
         android:drawableStart="@drawable/search2"
-        android:drawablePadding="100dp"
+        android:drawablePadding="12dp"
+        android:hint="Pesquisar local..."
+        android:inputType="text"
         android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#90ffffff"
+        android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.05"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintVertical_bias="0.06" />
 
-        />
+    <View
+        android:id="@+id/linhaSimples"
+        android:layout_width="260dp"
+        android:layout_height="1dp"
+        android:background="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.101"
+        app:layout_constraintHorizontal_bias="0.48"/>
 
 
+
+    <TextView
+        android:layout_width="200dp"
+        android:layout_height="40dp"
+        android:text="Recentes"
+        android:gravity="center_vertical"
+        android:textStyle="bold"
+        android:textSize="25sp"
+        android:letterSpacing="0.04"
+        android:fontFamily="@font/staatliches"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.15"
+        app:layout_constraintHorizontal_bias="0.2" />
 
 
 

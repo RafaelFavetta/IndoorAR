@@ -8,7 +8,34 @@
     tools:context=".Home">
 
 
+    <ImageButton
+        android:id="@+id/btn4"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:background="@drawable/circle"
+        android:src="@drawable/user3"
+        android:padding="12dp"
+        android:scaleType="centerInside"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0.15"
+        app:layout_constraintVertical_bias="0.06" />
 
+
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:background="@drawable/owl"
+       app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0.92"
+        app:layout_constraintVertical_bias="0.06"
+
+        />
 
 
 
@@ -80,6 +107,23 @@
         app:layout_constraintVertical_bias="0.85" />
 
 
+    <TextView
+        android:layout_width="80dp"
+        android:layout_height="40dp"
+        android:fontFamily="@font/staatliches"
+        android:gravity="center"
+        android:letterSpacing="0"
+        android:text="Pesquisa"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#99000000"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.93" />
+
     <ImageButton
         android:id="@+id/btn2"
         android:layout_width="60dp"
@@ -92,8 +136,24 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.50"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintVertical_bias="0.85" />
+
+    <TextView
+        android:layout_width="80dp"
+        android:layout_height="40dp"
+        android:fontFamily="@font/staatliches"
+        android:gravity="center"
+        android:text="Download"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#99000000"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.18"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.93" />
 
 
 
@@ -111,6 +171,22 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintHorizontal_bias="0.80"
         app:layout_constraintVertical_bias="0.85" />
+
+    <TextView
+        android:layout_width="80dp"
+        android:layout_height="40dp"
+        android:fontFamily="@font/staatliches"
+        android:gravity="center"
+        android:text="Teste"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#99000000"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.82"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.93" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

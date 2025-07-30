@@ -11,11 +11,15 @@ import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
+import com.redmadrobot.inputmask.MaskedTextChangedListener
+import androidx.core.graphics.toColorInt
 
 class ActivityCriar : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
+    private lateinit var telefoneField: EditText
+    private var telefoneBruto: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,14 +30,29 @@ class ActivityCriar : AppCompatActivity() {
 
         val nomeField = findViewById<EditText>(R.id.editNome)
         val emailField = findViewById<EditText>(R.id.editEmail)
-        val telefoneField = findViewById<EditText>(R.id.editTelefone)
+        telefoneField = findViewById(R.id.editTelefone)
         val senhaField = findViewById<EditText>(R.id.editSenha)
         val btnCadastrar = findViewById<Button>(R.id.btnLogin5)
+
+        // Aplica a máscara no telefone
+        MaskedTextChangedListener.installOn(
+            editText = telefoneField,
+            primaryFormat = "+55 ([00]) [00000]-[0000]",
+            valueListener = object : MaskedTextChangedListener.ValueListener {
+                override fun onTextChanged(
+                    maskFilled: Boolean,
+                    extractedValue: String,
+                    formattedValue: String
+                ) {
+                    telefoneBruto = extractedValue
+                }
+            }
+        )
 
         btnCadastrar.setOnClickListener {
             val nome = nomeField.text.toString().trim()
             val email = emailField.text.toString().trim()
-            val telefone = telefoneField.text.toString().trim()
+            val telefone = telefoneBruto
             val senha = senhaField.text.toString().trim()
 
             if (!validarCampos(nome, email, telefone, senha)) return@setOnClickListener
@@ -51,8 +70,8 @@ class ActivityCriar : AppCompatActivity() {
                 snackbar("Digite um email válido")
                 false
             }
-            telefone.isEmpty() -> {
-                snackbar("Informe o telefone")
+            telefone.isEmpty() || telefone.length < 11 -> {
+                snackbar("Informe um telefone válido com DDD")
                 false
             }
             senha.length < 6 -> {
@@ -104,7 +123,7 @@ class ActivityCriar : AppCompatActivity() {
     private fun snackbar(msg: String) {
         Snackbar.make(findViewById(R.id.main), msg, Snackbar.LENGTH_SHORT).apply {
             setTextColor(Color.WHITE)
-            setBackgroundTint(Color.parseColor("#3F60CD"))
+            setBackgroundTint("#3F60CD".toColorInt())
         }.show()
     }
 }

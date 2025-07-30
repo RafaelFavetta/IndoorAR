@@ -54,13 +54,22 @@ android {
     }
 }
 
+repositories {
+    google()
+    mavenCentral()
+    maven { url = uri("https://jitpack.io") }
+}
+
 dependencies {
     // Android
     implementation("androidx.core:core-ktx:1.16.0")
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
+
+    // Máscaras de editText
+    implementation("com.redmadrobot:input-mask-android:6.1.0")
+
 
     // Jetpack Compose
     implementation("androidx.activity:activity-compose:1.10.1")
@@ -69,7 +78,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview:1.8.3")
 
     // Firebase BOM — controla versões
-    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+    implementation(platform("com.google.firebase:firebase-bom:32.7.3"))
 
     // Firebase Core
     implementation("com.google.firebase:firebase-analytics-ktx")
@@ -77,7 +86,7 @@ dependencies {
     // Firebase Auth e Firestore
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
-    implementation("androidx.activity:activity:1.8.0")
+    implementation("androidx.activity:activity-ktx:1.10.1")
 
     // Testes
     testImplementation("junit:junit:4.13.2")

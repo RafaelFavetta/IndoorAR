@@ -54,12 +54,6 @@ android {
     }
 }
 
-repositories {
-    google()
-    mavenCentral()
-    maven { url = uri("https://jitpack.io") }
-}
-
 dependencies {
     // Android
     implementation("androidx.core:core-ktx:1.16.0")

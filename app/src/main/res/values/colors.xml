@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F60CD</color> <!-- Cor principal -->
+    <color name="colorPrimary">#FFFFFF</color> <!-- Cor principal -->
     <color name="colorPrimaryDark">#2C458B</color> <!-- Cor secundária para a parte mais escura -->
     <color name="colorOnPrimary">#FDFDFD</color> <!-- Branco principal -->
 </resources>

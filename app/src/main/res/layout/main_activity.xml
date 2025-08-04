@@ -22,12 +22,13 @@
         />
 
     <Button
+
         android:id="@+id/btnLogin7"
         android:layout_width="360dp"
         android:layout_height="55dp"
         android:layout_marginTop="24dp"
-        android:background="@drawable/btn_arredondado"
         android:fontFamily="@font/staatliches"
+        android:background="@drawable/btn_arredondado"
         android:text="Cadastrar conta"
         android:textAllCaps="true"
         android:textColor="#FDFDFD"
@@ -47,9 +48,10 @@
         android:layout_width="360dp"
         android:layout_height="55dp"
         android:layout_marginTop="24dp"
+        android:backgroundTint="#3F60CD"
         android:background="@drawable/btn_arredondado"
         android:fontFamily="@font/staatliches"
-        android:text="Entrar com usuário"
+        android:text="Cadastro de Usuário"
         android:textAllCaps="true"
         android:textColor="#FDFDFD"
         android:textSize="25sp"

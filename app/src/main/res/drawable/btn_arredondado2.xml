@@ -3,10 +3,10 @@
     <!-- Cor de fundo -->
     <solid android:color="#FFFFFF"/> <!-- Altere para a cor desejada -->
 
-    <stroke android:color="#3F60CD" android:width="2dp"/>
+    <stroke android:color="#3F60CD" android:width="2.5dp"/>
 
     <!-- Borda arredondada -->
-    <corners android:radius="22dp"/> <!-- Ajuste o valor para controlar o raio dos cantos -->
+    <corners android:radius="30dp"/> <!-- Ajuste o valor para controlar o raio dos cantos -->
 </shape>
 
 

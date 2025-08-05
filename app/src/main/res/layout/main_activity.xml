@@ -21,52 +21,49 @@
 
         />
 
-    <Button
 
-        android:id="@+id/btnLogin7"
+    <Button
+        android:id="@+id/btnCadastro"
         android:layout_width="360dp"
-        android:layout_height="55dp"
-        android:layout_marginTop="24dp"
-        android:fontFamily="@font/staatliches"
+        android:layout_height="60dp"
         android:background="@drawable/btn_arredondado"
-        android:text="Cadastrar conta"
-        android:textAllCaps="true"
-        android:textColor="#FDFDFD"
-        android:textSize="25sp"
-        android:textStyle=""
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.608"
-
-        />
-
-    <Button
-        android:id="@+id/btnLogin8"
-        android:layout_width="360dp"
-        android:layout_height="55dp"
-        android:layout_marginTop="24dp"
         android:backgroundTint="#3F60CD"
-        android:background="@drawable/btn_arredondado"
         android:fontFamily="@font/staatliches"
-        android:text="Cadastro de Usuário"
+        android:text="Cadastro  de  Usuário"
         android:textAllCaps="true"
         android:textColor="#FDFDFD"
-        android:textSize="25sp"
+        android:textSize="28sp"
         android:textStyle=""
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.49"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.498"
+        app:layout_constraintVertical_bias="0.565"
 
         />
+
+    <Button
+        android:id="@+id/btnLogin"
+        android:layout_width="360dp"
+        android:layout_height="60dp"
+        android:background="@drawable/btn_arredondado2"
+        android:contentDescription="btn para login comum"
+        android:fontFamily="@font/staatliches"
+        android:text="Entrar  como  Usuário"
+        android:textAllCaps="true"
+        android:textColor="#3F60CD"
+        android:textSize="27sp"
+        android:textStyle="normal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.67" />
 
     <TextView
-        android:id="@+id/cadastro"
+        android:id="@+id/lbcadastro"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
@@ -76,72 +73,67 @@
         android:textSize="18sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintHorizontal_bias="0.502"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.703" />
+        app:layout_constraintVertical_bias="0.738" />
 
     <View
-        android:id="@+id/linhaSimples7"
+        android:id="@+id/linhaSimples"
         android:layout_width="85dp"
         android:layout_height="1dp"
+        android:layout_marginStart="45dp"
         android:background="#828385"
-        android:layout_marginEnd="50dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.159"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.697" />
-
-    <View
-        android:id="@+id/linhaSimples8"
-        android:layout_width="85dp"
-        android:layout_height="1dp"
-        android:layout_marginStart="50dp"
-        android:background="#828385"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.836"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.697" />
-    <ImageButton
-        android:id="@+id/btnFacebook"
-        android:layout_width="55dp"
-        android:layout_height="55dp"
-        android:layout_marginStart="140dp"
-        android:background="@android:color/transparent"
-        android:contentDescription="Entrar com Facebook"
-        android:padding="3dp"
-        android:scaleType="centerInside"
-        android:src="@drawable/ic_facebook"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.791" />
+        app:layout_constraintVertical_bias="0.732" />
+
+    <View
+        android:id="@+id/linhaSimples2"
+        android:layout_width="85dp"
+        android:layout_height="1dp"
+        android:layout_marginEnd="45dp"
+        android:background="#828385"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.732" />
+
+    <ImageButton
+        android:id="@+id/btnFacebook"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+
+        android:background="@android:color/transparent"
+        android:contentDescription="Entrar com Facebook"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_facebook"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0.6"
+        app:layout_constraintVertical_bias="0.82" />
 
     <ImageButton
         android:id="@+id/btnGoogle"
         android:layout_width="55dp"
         android:layout_height="55dp"
         android:background="@android:color/transparent"
-        android:layout_marginEnd="140dp"
         android:contentDescription="Entrar com Google"
-        android:padding="3dp"
         android:scaleType="centerInside"
         android:src="@drawable/ic_google"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.791" />
-
-
-
+        app:layout_constraintHorizontal_bias="0.4"
+        app:layout_constraintVertical_bias="0.82" />
 
 
 

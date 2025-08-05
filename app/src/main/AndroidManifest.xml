@@ -16,7 +16,7 @@
             android:name=".search"
             android:exported="false" />
         <activity
-            android:name=".Home"
+            android:name=".ActivityHome"
             android:exported="false" />
         <activity
             android:name=".ui.theme.Home"

@@ -31,7 +31,7 @@ class ActivityCriar2 : AppCompatActivity() {
         val emailField = findViewById<EditText>(R.id.editEmail)
         telefoneField = findViewById(R.id.editTelefone)
         val senhaField = findViewById<EditText>(R.id.editSenha)
-        val btnCadastrar = findViewById<Button>(R.id.btnLogin5)
+        val btnCadastrar = findViewById<Button>(R.id.btnCadastro)
 
         // Máscara para telefone no estilo brasileiro
         MaskedTextChangedListener.installOn(

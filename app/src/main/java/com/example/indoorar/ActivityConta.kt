@@ -22,14 +22,14 @@ class ActivityConta : AppCompatActivity() {
         }
 
         // Botão para ir para Cadastro Maker (ActivityCriar2)
-        val btnMaker = findViewById<Button>(R.id.btnLogin4)
+        val btnMaker = findViewById<Button>(R.id.btnMaker)
         btnMaker.setOnClickListener {
             val intent = Intent(this, ActivityCriar2::class.java)
             startActivity(intent)
         }
 
         // Botão para ir para Cadastro Comum (ActivityCriar)
-        val btnComum = findViewById<Button>(R.id.btnLogin3)
+        val btnComum = findViewById<Button>(R.id.btnComum)
         btnComum.setOnClickListener {
             val intent = Intent(this, ActivityCriar::class.java)
             startActivity(intent)

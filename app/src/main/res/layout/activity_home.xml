@@ -1,197 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ActivityHome">
+    android:background="#fdfdfd">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:background="#3C5AFF"
+            android:padding="16dp">
+
+            <ImageView
+                android:id="@+id/imgIcon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_loc2" />
+
+            <ImageView
+                android:id="@+id/imgAvatar"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentEnd="true"
+                android:src="@drawable/user2"
+                android:background="@drawable/bg_input_rounded"
+                android:padding="4dp" />
+        </RelativeLayout>
+
+        <!-- Campo de busca -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            app:cardElevation="2dp"
+            app:cardCornerRadius="30dp">
+
+            <EditText
+                android:id="@+id/inputDestino"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:hint="Escolher destino"
+                android:paddingHorizontal="20dp"
+                android:background="@android:color/transparent"
+                android:inputType="text" />
+        </androidx.cardview.widget.CardView>
 
 
-    <ImageButton
-        android:id="@+id/btn4"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:background="@drawable/circle"
-        android:contentDescription="user"
-        android:src="@drawable/user3"
-        android:padding="12dp"
-        android:scaleType="centerInside"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.15"
-        app:layout_constraintVertical_bias="0.06" />
+        <!-- Botões -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="16dp"
+            android:gravity="center_horizontal">
 
+            <Button
+                android:id="@+id/btnScanQR"
+                style="@style/PrimaryButton"
+                android:text="Escanear QR Code"
+                android:layout_marginTop="16dp" />
 
-    <ImageView
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:background="@drawable/owl"
-        android:contentDescription="owl"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.92"
-        app:layout_constraintVertical_bias="0.06"
+            <Button
+                android:id="@+id/btnFavoritos"
+                style="@style/PrimaryButton"
+                android:text="Favoritos"
+                android:layout_marginTop="8dp" />
 
-        />
-
-
-
-    <TextView
-        android:id="@+id/apcamera"
-        android:layout_width="372dp"
-        android:layout_height="46dp"
-        android:fontFamily="@font/staatliches"
-        android:gravity="center"
-        android:text="APONTE SUA CÂMERA "
-        android:textColor="#3F60CD"
-        android:textSize="38sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintVertical_bias="0.2"
-        />
-
-    <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="180dp"
-        android:layout_height="180dp"
-        android:contentDescription="qrcode"
-        android:src="@drawable/qrcode"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.42" />
-
-    <Button
-        android:id="@+id/btnScanQR"
-        android:layout_width="284dp"
-        android:layout_height="57dp"
-        android:background="@drawable/btn_arredondado"
-        android:fontFamily="@font/staatliches"
-        android:letterSpacing="0.15"
-        android:text="ESCANEAR  NOVO  QR CODE"
-        android:textAlignment="center"
-        android:textAllCaps="true"
-        android:textColor="#FDFDFD"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.65" />
-
-
-    <ImageButton
-        android:id="@+id/btn1"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:background="@drawable/circle"
-        android:contentDescription="download"
-        android:src="@drawable/download"
-        android:padding="12dp"
-        android:scaleType="centerInside"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.20"
-        app:layout_constraintVertical_bias="0.85" />
-
-
-    <TextView
-        android:layout_width="80dp"
-        android:layout_height="40dp"
-        android:fontFamily="@font/staatliches"
-        android:gravity="center"
-        android:letterSpacing="0"
-        android:text="Pesquisa"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="#99000000"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.93" />
-
-    <ImageButton
-        android:id="@+id/btn2"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:background="@drawable/circle"
-        android:contentDescription="search"
-        android:src="@drawable/search"
-        android:padding="14dp"
-        android:scaleType="centerInside"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintVertical_bias="0.85" />
-
-    <TextView
-        android:layout_width="80dp"
-        android:layout_height="40dp"
-        android:fontFamily="@font/staatliches"
-        android:gravity="center"
-        android:text="Download"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="#99000000"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.18"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.93" />
-
-
-
-    <ImageButton
-        android:id="@+id/btn3"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:background="@drawable/circle"
-        android:contentDescription="config"
-        android:src="@drawable/settings"
-        android:padding="12dp"
-        android:scaleType="centerInside"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.80"
-        app:layout_constraintVertical_bias="0.85" />
-
-    <TextView
-        android:layout_width="80dp"
-        android:layout_height="40dp"
-        android:fontFamily="@font/staatliches"
-        android:gravity="center"
-        android:text="Teste"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="#99000000"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.82"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.93" />
-
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+            <Button
+                android:id="@+id/btnHistorico"
+                style="@style/PrimaryButton"
+                android:text="Histórico"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

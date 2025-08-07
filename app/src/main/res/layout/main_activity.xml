@@ -25,7 +25,7 @@
 
     <Button
         android:id="@+id/btnCadastro"
-        android:layout_width="360dp"
+        android:layout_width="320dp"
         android:layout_height="60dp"
         android:background="@drawable/btn_arredondado"
         android:backgroundTint="#3F60CD"
@@ -47,7 +47,7 @@
 
     <Button
         android:id="@+id/btnLogin"
-        android:layout_width="360dp"
+        android:layout_width="320dp"
         android:layout_height="60dp"
         android:background="@drawable/btn_arredondado2"
         android:contentDescription="btn para login comum"

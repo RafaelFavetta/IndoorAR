@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ActivityLogin">
+
+    <TextView
+        android:id="@+id/txtview1"
+        android:layout_width="300dp"
+        android:layout_height="110dp"
+        android:fontFamily="@font/staatliches"
+        android:letterSpacing="0.05"
+        android:text="Bem-vindo
+        de volta!"
+        android:textColor="#3F60CD"
+        android:textSize="45sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0.25"
+        app:layout_constraintVertical_bias="0.180" />
+
+    <EditText
+        android:id="@+id/editEmail"
+        android:layout_width="350dp"
+        android:layout_height="50dp"
+        android:autofillHints="name"
+        android:background="@drawable/btn_arredondado3"
+        android:drawableStart="@drawable/email"
+        android:drawablePadding="12dp"
+        android:fontFamily="@font/inter"
+        android:hint="E-mail"
+        android:inputType="textEmailAddress"
+        android:minHeight="48dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:textColor="#121212"
+        android:textColorHint="#80121212"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:elevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintVertical_bias="0.500"
+        />
+
+    <EditText
+        android:id="@+id/editSenha"
+        android:layout_width="350dp"
+        android:layout_height="50dp"
+        android:autofillHints="name"
+        android:background="@drawable/btn_arredondado3"
+        android:drawableStart="@drawable/password"
+        android:drawablePadding="12dp"
+        android:fontFamily="@font/inter"
+        android:hint="Senha"
+        android:inputType="numberPassword"
+        android:minHeight="48dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:textColor="#121212"
+        android:textColorHint="#80121212"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:elevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintVertical_bias="0.585
+
+
+
+
+"
+        />
+</androidx.constraintlayout.widget.ConstraintLayout>

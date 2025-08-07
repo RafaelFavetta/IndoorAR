@@ -103,7 +103,7 @@
         app:layout_constraintVertical_bias="0.3" />
 
     <Button
-        android:id="@+id/btnLogin"
+        android:id="@+id/btnComum"
         android:layout_width="340dp"
         android:layout_height="48dp"
         android:background="@drawable/btn_arredondado4"
@@ -244,7 +244,7 @@
         app:layout_constraintVertical_bias="0.76" />
 
     <Button
-        android:id="@+id/btnLogin2"
+        android:id="@+id/btnMaker"
         android:layout_width="340dp"
         android:layout_height="48dp"
         android:background="@drawable/btn_arredondado4"

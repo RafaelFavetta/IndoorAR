@@ -21,14 +21,13 @@
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.486"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintVertical_bias="0.082" />
-
+        app:layout_constraintVertical_bias="0.08" />
 
     <TextView
-        android:id="@+id/txtview2"
+        android:id="@+id/tiponormal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/staatliches"
@@ -41,7 +40,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.3"
+        app:layout_constraintHorizontal_bias="0.35"
         app:layout_constraintVertical_bias="0.2" />
 
     <ImageView
@@ -53,11 +52,11 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.06"
+        app:layout_constraintHorizontal_bias="0.08"
         app:layout_constraintVertical_bias="0.2" />
 
     <View
-        android:id="@+id/linhaSimples"
+        android:id="@+id/linhaSimples1"
         android:layout_width="170dp"
         android:layout_height="1.5dp"
         android:layout_marginStart="45dp"
@@ -66,8 +65,222 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.15"
+        app:layout_constraintHorizontal_bias="0.21"
         app:layout_constraintVertical_bias="0.24" />
+
+    <TextView
+        android:id="@+id/texto1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/inter"
+        android:letterSpacing="0.05"
+        android:text="Para uso comum do aplicativo, com funções como:"
+        android:textColor="#FDFDFD"
+        android:textSize="13sp"
+        android:textStyle="normal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0.45"
+        app:layout_constraintVertical_bias="0.26" />
+
+    <TextView
+        android:id="@+id/texto2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/inter"
+        android:letterSpacing="0.05"
+        android:text="•Mapas e pontos turísticos atualizados\n•Sugestões de rotas acessíveis\n•Download e uso offline de mapas"
+        android:textColor="#FDFDFD"
+        android:textSize="13sp"
+        android:textStyle="normal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0.22"
+        app:layout_constraintVertical_bias="0.3" />
+
+    <Button
+        android:id="@+id/btnLogin"
+        android:layout_width="340dp"
+        android:layout_height="42dp"
+        android:background="@drawable/btn_arredondado4"
+        android:contentDescription="btn para login comum"
+        android:fontFamily="@font/staatliches"
+        android:text="Quero esse!"
+        android:textAllCaps="true"
+        android:textColor="#3F60CD"
+        android:textSize="25sp"
+        android:textStyle="normal"
+        android:elevation="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.4" />
+
+
+    <TextView
+        android:id="@+id/lbcadastro"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:text="ou"
+        android:textColor="#fdfdfd"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.502"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.525" />
+
+    <View
+        android:id="@+id/linhaSimples"
+        android:layout_width="125dp"
+        android:layout_height="1dp"
+        android:layout_marginStart="45dp"
+        android:background="#fdfdfd"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.525" />
+
+    <View
+        android:id="@+id/linhaSimples2"
+        android:layout_width="125dp"
+        android:layout_height="1dp"
+        android:layout_marginEnd="45dp"
+        android:background="#fdfdfd"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.525" />
+
+
+
+    <TextView
+        android:id="@+id/tipomaker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/staatliches"
+        android:letterSpacing="0.05"
+        android:text="Usuário Maker"
+        android:textColor="#FDFDFD"
+        android:textSize="27sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0.35"
+        app:layout_constraintVertical_bias="0.65" />
+
+    <ImageView
+        android:id="@+id/imageView2"
+        android:layout_width="35dp"
+        android:layout_height="40dp"
+        android:src="@drawable/local"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0.08"
+        app:layout_constraintVertical_bias="0.652" />
+
+    <View
+        android:id="@+id/linhaSimples5"
+        android:layout_width="170dp"
+        android:layout_height="1.5dp"
+        android:layout_marginStart="45dp"
+        android:background="#FDFDFD"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0.21"
+        app:layout_constraintVertical_bias="0.67" />
+
+    <TextView
+        android:id="@+id/texto3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/inter"
+        android:letterSpacing="0.05"
+        android:text="Construa mapas internos e rotas acessíveis como:"
+        android:textColor="#FDFDFD"
+        android:textSize="13sp"
+        android:textStyle="normal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0.45"
+        app:layout_constraintVertical_bias="0.7" />
+
+    <TextView
+        android:id="@+id/texto4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/inter"
+        android:letterSpacing="0.05"
+        android:text="•Mapeamento de locaís\n•Criação de mapas e rotas acessíveis\n•Sinalização de pontos e obstáculos"
+        android:textColor="#FDFDFD"
+        android:textSize="13sp"
+        android:textStyle="normal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0.22"
+        app:layout_constraintVertical_bias="0.76" />
+
+    <Button
+        android:id="@+id/btnLogin2"
+        android:layout_width="340dp"
+        android:layout_height="42dp"
+        android:background="@drawable/btn_arredondado4"
+        android:contentDescription="btn para login comum"
+        android:fontFamily="@font/staatliches"
+        android:text="Quero esse!"
+        android:textAllCaps="true"
+        android:textColor="#3F60CD"
+        android:textSize="25sp"
+        android:textStyle="normal"
+        android:elevation="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.86" />
+
+    <TextView
+        android:id="@+id/termsLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center"
+        android:padding="16dp"
+        android:text="Ao criar uma conta, você aceita os Termos e Condições e a Política de Privacidade."
+        android:textAlignment="center"
+        android:textColor="#99fdfdfd"
+        android:textSize="12sp"
+        android:fontFamily="@font/inter"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
 
 
 

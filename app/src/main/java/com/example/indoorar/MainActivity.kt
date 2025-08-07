@@ -10,8 +10,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_activity)
 
-        val btnCadastrar = findViewById<Button>(R.id.btnLogin7)  // Vai pra ActivityConta
-        val btnLogin = findViewById<Button>(R.id.btnLogin8)     // Vai pra tela de login
+        val btnCadastrar = findViewById<Button>(R.id.btnCadastro)  // Vai pra ActivityConta
+        val btnLogin = findViewById<Button>(R.id.btnLogin)     // Vai pra tela de login
 
         btnCadastrar.setOnClickListener {
             val intent = Intent(this, ActivityConta::class.java)

@@ -159,22 +159,21 @@
         android:layout_height="50dp"
         android:background="@drawable/btn_arredondado"
         android:backgroundTint="#3F60CD"
+        android:elevation="5dp"
         android:fontFamily="@font/staatliches"
-        android:text="Cadastrar  Conta"
         android:letterSpacing="0.1"
+        android:text="Cadastrar  Conta"
         android:textAllCaps="true"
         android:textColor="#FDFDFD"
         android:textSize="25sp"
         android:textStyle=""
-        android:elevation="5dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.665"
 
-        />
+        app:layout_constraintVertical_bias="0.665" />
 
 
     <TextView

@@ -1,5 +1,6 @@
 package com.example.indoorar
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.widget.Button
@@ -32,7 +33,7 @@ class ActivityCriar : AppCompatActivity() {
         val emailField = findViewById<EditText>(R.id.editEmail)
         telefoneField = findViewById(R.id.editTelefone)
         val senhaField = findViewById<EditText>(R.id.editSenha)
-        val btnCadastrar = findViewById<Button>(R.id.btnLogin5)
+        val btnCadastrar = findViewById<Button>(R.id.btnCadastro)
 
         // Aplica a máscara no telefone
         MaskedTextChangedListener.installOn(
@@ -100,7 +101,10 @@ class ActivityCriar : AppCompatActivity() {
                         .set(dadosUsuario)
                         .addOnSuccessListener {
                             snackbar("Conta criada com sucesso!")
-                            finish()
+                            // Redireciona para ActivityHome, limpa backstack
+                            val intent = Intent(this, ActivityHome::class.java)
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            startActivity(intent)
                         }
                         .addOnFailureListener {
                             snackbar("Erro ao salvar dados: ${it.message}")

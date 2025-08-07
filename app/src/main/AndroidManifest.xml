@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+
 
     <application
         android:allowBackup="true"
@@ -16,11 +20,10 @@
             android:name=".search"
             android:exported="false" />
         <activity
-            android:name=".Home"
+            android:name=".ActivityHome"
             android:exported="false" />
-        <activity
-            android:name=".ui.theme.Home"
-            android:exported="false" /> <!-- SplashActivity é o launcher -->
+
+        <!-- SplashActivity é o launcher -->
         <activity
             android:name=".SplashActivity"
             android:exported="true">
@@ -43,6 +46,19 @@
         <activity
             android:name=".ActivityConta"
             android:exported="false" />
+        <activity
+            android:name="com.journeyapps.barcodescanner.CaptureActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            tools:replace="android:screenOrientation,android:theme" />
+        <!-- ele não acha bom a câmera poder ser apenas retrato, ignore esse aviso -->
+
+        <activity
+            android:name=".ActivityMap"
+            android:exported="false" />
+
+
+
     </application>
 
 </manifest>

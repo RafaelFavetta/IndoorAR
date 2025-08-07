@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Home">
+    tools:context=".ActivityHome">
 
 
     <ImageButton
@@ -73,7 +73,7 @@
         app:layout_constraintVertical_bias="0.42" />
 
     <Button
-        android:id="@+id/btnLogin4"
+        android:id="@+id/btnScanQR"
         android:layout_width="284dp"
         android:layout_height="57dp"
         android:background="@drawable/btn_arredondado"

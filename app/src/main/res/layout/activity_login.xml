@@ -9,21 +9,20 @@
 
     <TextView
         android:id="@+id/txtview1"
-        android:layout_width="300dp"
-        android:layout_height="110dp"
+        android:layout_width="360dp"
+        android:layout_height="60dp"
         android:fontFamily="@font/staatliches"
         android:letterSpacing="0.05"
-        android:text="Bem-vindo
-        de volta!"
+        android:text="Bem-vindo de volta!"
         android:textColor="#3F60CD"
         android:textSize="45sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.25"
-        app:layout_constraintVertical_bias="0.180" />
+        app:layout_constraintVertical_bias="0.268" />
 
     <EditText
         android:id="@+id/editEmail"
@@ -33,6 +32,7 @@
         android:background="@drawable/btn_arredondado3"
         android:drawableStart="@drawable/email"
         android:drawablePadding="12dp"
+        android:elevation="4dp"
         android:fontFamily="@font/inter"
         android:hint="E-mail"
         android:inputType="textEmailAddress"
@@ -43,14 +43,12 @@
         android:textColorHint="#80121212"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:elevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintVertical_bias="0.500"
-        />
+        app:layout_constraintVertical_bias="0.500" />
 
     <EditText
         android:id="@+id/editSenha"
@@ -60,6 +58,7 @@
         android:background="@drawable/btn_arredondado3"
         android:drawableStart="@drawable/password"
         android:drawablePadding="12dp"
+        android:elevation="4dp"
         android:fontFamily="@font/inter"
         android:hint="Senha"
         android:inputType="numberPassword"
@@ -70,17 +69,38 @@
         android:textColorHint="#80121212"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:elevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintVertical_bias="0.585
 
 
 
 
-"
+" />
+
+    <Button
+        android:id="@+id/btnCadastro"
+        android:layout_width="270dp"
+        android:layout_height="50dp"
+        android:background="@drawable/btn_arredondado"
+        android:backgroundTint="#3F60CD"
+        android:elevation="5dp"
+        android:fontFamily="@font/staatliches"
+        android:letterSpacing="0.1"
+        android:text="Entrar"
+        android:textAllCaps="true"
+        android:textColor="#FDFDFD"
+        android:textSize="25sp"
+        android:textStyle=""
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.700"
+
         />
 </androidx.constraintlayout.widget.ConstraintLayout>

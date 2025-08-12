@@ -7,19 +7,24 @@
     android:layout_height="match_parent"
     >
 
-
-    <ImageView
-        android:layout_width="150dp"
-        android:layout_height="150dp"
-        android:background="@drawable/owl"
+    <TextView
+        android:id="@+id/txtview1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/staatliches"
+        android:letterSpacing="0.05"
+        android:text="Seu guia.\ndentro de qualquer local."
+        android:gravity="center_vertical"
+        android:textColor="#3F60CD"
+        android:textSize="32sp"
+        android:textStyle="bold|italic"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.25"
+        app:layout_constraintVertical_bias=".1" />
 
-        />
 
 
     <Button

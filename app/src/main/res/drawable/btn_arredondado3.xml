@@ -6,5 +6,5 @@
     <stroke android:color="#3F60CD" android:width="2.47dp"/>
 
     <!-- Borda arredondada -->
-    <corners android:radius="7dp"/> <!-- Ajuste o valor para controlar o raio dos cantos -->
+    <corners android:radius="20dp"/> <!-- Ajuste o valor para controlar o raio dos cantos -->
 </shape>

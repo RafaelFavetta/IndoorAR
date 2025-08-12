@@ -22,33 +22,31 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.268" />
+        app:layout_constraintVertical_bias=".1" />
 
-    <EditText
-        android:id="@+id/editEmail"
-        android:layout_width="350dp"
+    <Button
+        android:id="@+id/btnCadastro"
+        android:layout_width="270dp"
         android:layout_height="50dp"
-        android:autofillHints="name"
-        android:background="@drawable/btn_arredondado3"
-        android:drawableStart="@drawable/email"
-        android:drawablePadding="12dp"
-        android:elevation="4dp"
-        android:fontFamily="@font/inter"
-        android:hint="E-mail"
-        android:inputType="textEmailAddress"
-        android:minHeight="48dp"
-        android:paddingStart="20dp"
-        android:paddingEnd="20dp"
-        android:textColor="#121212"
-        android:textColorHint="#80121212"
-        android:textSize="18sp"
-        android:textStyle="bold"
+        android:background="@drawable/btn_arredondado"
+        android:backgroundTint="#3F60CD"
+        android:elevation="5dp"
+        android:fontFamily="@font/staatliches"
+        android:letterSpacing="0.1"
+        android:text="Entrar"
+        android:textAllCaps="true"
+        android:textColor="#FDFDFD"
+        android:textSize="25sp"
+        android:textStyle=""
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.500" />
+        app:layout_constraintVertical_bias="0.7"
+
+
+        />
 
     <EditText
         android:id="@+id/editSenha"
@@ -74,33 +72,126 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.585
+        app:layout_constraintVertical_bias="0.565" />
 
-
-
-
-" />
-
-    <Button
-        android:id="@+id/btnCadastro"
-        android:layout_width="270dp"
+    <EditText
+        android:id="@+id/editEmail"
+        android:layout_width="350dp"
         android:layout_height="50dp"
-        android:background="@drawable/btn_arredondado"
-        android:backgroundTint="#3F60CD"
-        android:elevation="5dp"
-        android:fontFamily="@font/staatliches"
-        android:letterSpacing="0.1"
-        android:text="Entrar"
-        android:textAllCaps="true"
-        android:textColor="#FDFDFD"
-        android:textSize="25sp"
-        android:textStyle=""
+        android:autofillHints="name"
+        android:background="@drawable/btn_arredondado3"
+        android:drawableStart="@drawable/email"
+        android:drawablePadding="12dp"
+        android:elevation="4dp"
+        android:fontFamily="@font/inter"
+        android:hint="E-mail"
+        android:inputType="textEmailAddress"
+        android:minHeight="48dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:textColor="#121212"
+        android:textColorHint="#80121212"
+        android:textSize="18sp"
+        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.700"
+        app:layout_constraintVertical_bias="0.48" />
 
-        />
+    <TextView
+        android:id="@+id/lembrar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Esqueceu sua senha?"
+        android:textColor="#3F60CD"
+        android:letterSpacing="0.02"
+        android:textSize="12sp"
+        android:textStyle="normal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.845"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.62" />
+
+    <TextView
+        android:id="@+id/lbcadastro"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:text="Faça login com"
+        android:textColor="#828385"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.502"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.82" />
+
+    <View
+        android:id="@+id/linhaSimples"
+        android:layout_width="85dp"
+        android:layout_height="1dp"
+        android:layout_marginStart="45dp"
+        android:background="#828385"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.816" />
+
+    <View
+        android:id="@+id/linhaSimples2"
+        android:layout_width="85dp"
+        android:layout_height="1dp"
+        android:layout_marginEnd="45dp"
+        android:background="#828385"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.816" />
+
+    <ImageButton
+        android:id="@+id/btnFacebook"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="Entrar com Facebook"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_facebook"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0.6"
+        app:layout_constraintVertical_bias="0.92" />
+
+    <ImageButton
+        android:id="@+id/btnGoogle"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="Entrar com Google"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_google"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0.4"
+        app:layout_constraintVertical_bias="0.92" />
+
+
+
+
+
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,6 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.IndoorAR" parent="android:Theme.Light.NoTitleBar">
-        <!-- Nenhuma cor automática será aplicada -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Tema base do app -->
+    <style name="Theme.IndoorAR" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#3F60CD</item>
+        <item name="colorPrimaryVariant">#3F60CD</item>
+        <item name="colorOnPrimary">#FDFDFD</item>
+        <item name="android:statusBarColor">#3F60CD</item>
     </style>
+
+    <style name="Theme.IndoorAR.Splash" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/colorOnPrimary</item>
+    </style>
+
 </resources>

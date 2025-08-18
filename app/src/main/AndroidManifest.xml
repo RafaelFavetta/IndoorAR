@@ -19,27 +19,23 @@
         android:theme="@style/Theme.IndoorAR"
         tools:targetApi="31">
         <activity
+            android:name=".ActivityHome"
+            android:exported="false" />
+        <activity
             android:name=".ActivityLogin"
             android:exported="false" />
         <activity
             android:name=".search"
             android:exported="false" />
-        <!-- <activity
-            android:name=".ActivityHome"
-            android:exported="false" /> -->
-        <activity
-            android:name=".SplashActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.IndoorAR" />
+            android:theme="@style/Theme.IndoorAR">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".ActivityCriar2"
             android:exported="false" />
@@ -51,7 +47,6 @@
             android:exported="false" />
         <activity
             android:name="com.journeyapps.barcodescanner.CaptureActivity"
-            android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.NoActionBar"
             tools:replace="android:screenOrientation,android:theme" /> <!-- ele não acha bom a câmera poder ser apenas retrato, ignore esse aviso -->
         <activity

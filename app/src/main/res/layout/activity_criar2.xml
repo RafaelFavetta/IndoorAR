@@ -10,7 +10,7 @@
 
 
     <TextView
-        android:id="@+id/txtview1"
+        android:id="@+id/txtUsuarioMaker"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/staatliches"
@@ -27,7 +27,7 @@
         app:layout_constraintVertical_bias="0.082" />
 
     <TextView
-        android:id="@+id/txtview2"
+        android:id="@+id/txtInsiraInfos"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/inter"
@@ -177,7 +177,7 @@
 
 
     <TextView
-        android:id="@+id/lbcadastro"
+        android:id="@+id/txtOpcoesCadastro"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
@@ -256,7 +256,7 @@
 
 
     <TextView
-        android:id="@+id/termsLabel"
+        android:id="@+id/txtTermos"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"

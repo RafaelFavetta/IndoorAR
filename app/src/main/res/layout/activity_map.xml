@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="#FDFDFD">
 
-    <fragment
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/arFragment"
         android:name="com.google.ar.sceneform.ux.ArFragment"
         android:layout_width="match_parent"

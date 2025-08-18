@@ -8,7 +8,7 @@
     >
 
     <TextView
-        android:id="@+id/txtview1"
+        android:id="@+id/txtSlogan"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/staatliches"
@@ -81,7 +81,7 @@
         app:layout_constraintVertical_bias="0.67" />
 
     <TextView
-        android:id="@+id/lbcadastro"
+        android:id="@+id/txtOpcoesEntrada"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
@@ -156,7 +156,7 @@
 
 
     <TextView
-        android:id="@+id/termsLabel"
+        android:id="@+id/txtTermos"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"

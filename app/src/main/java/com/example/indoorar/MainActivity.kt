@@ -19,7 +19,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnLogin.setOnClickListener {
-            // Tela de login ainda vai criar
+            val intent = Intent(this, ActivityLogin::class.java)
+            startActivity(intent)
         }
     }
 }

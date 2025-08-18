@@ -24,9 +24,9 @@
         <activity
             android:name=".search"
             android:exported="false" />
-        <activity
+        <!-- <activity
             android:name=".ActivityHome"
-            android:exported="false" /> <!-- SplashActivity é o launcher -->
+            android:exported="false" /> -->
         <activity
             android:name=".SplashActivity"
             android:exported="true">

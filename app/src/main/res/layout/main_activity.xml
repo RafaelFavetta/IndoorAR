@@ -3,8 +3,10 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#FDFDFD"
     >
 
     <TextView
@@ -69,7 +71,7 @@
         android:fontFamily="@font/staatliches"
         android:text="Entrar com usuário existente"
         android:textAllCaps="true"
-        android:textColor="#3F60CD"
+        android:textColor="#FDFDFD"
         android:textSize="27sp"
         android:textStyle="normal"
         android:elevation="5dp"

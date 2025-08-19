@@ -48,7 +48,7 @@
         <activity
             android:name="com.journeyapps.barcodescanner.CaptureActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar"
-            tools:replace="android:screenOrientation,android:theme" /> <!-- ele não acha bom a câmera poder ser apenas retrato, ignore esse aviso -->
+            tools:ignore="HardcodedOrientation,HardcodedTheme" />
         <activity
             android:name=".ActivityMap"
             android:exported="false" />

@@ -1,15 +1,22 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Tema base do app -->
-    <style name="Theme.IndoorAR" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.IndoorAR" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="colorPrimary">#3F60CD</item>
         <item name="colorPrimaryVariant">#3F60CD</item>
         <item name="colorOnPrimary">#FDFDFD</item>
         <item name="android:statusBarColor">#3F60CD</item>
+        <item name="android:windowBackground">#FDFDFD</item>
+
+        <!-- Splash screen API 31+ -->
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/colorOnPrimary</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@drawable/logo</item>
+        <item name="android:windowSplashScreenIconBackgroundColor" tools:targetApi="31">@color/colorOnPrimary</item>
     </style>
 
-    <style name="Theme.IndoorAR.Splash" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="android:windowBackground">@color/colorOnPrimary</item>
+    <!-- Splash para versões antigas -->
+    <style name="Theme.IndoorAR.Splash" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="android:windowBackground">@color/colorPrimary</item>
     </style>
 
 </resources>

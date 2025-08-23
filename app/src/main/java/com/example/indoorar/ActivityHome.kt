@@ -18,8 +18,8 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.auth.FirebaseAuth
 import com.google.zxing.*
 import com.google.zxing.common.HybridBinarizer
+import androidx.core.net.toUri
 
-@OptIn(androidx.camera.core.ExperimentalGetImage::class)
 class ActivityHome : AppCompatActivity() {
 
     private lateinit var previewView: PreviewView
@@ -52,7 +52,7 @@ class ActivityHome : AppCompatActivity() {
             lastScanned?.let { value ->
                 // Se for URL, abre; senão, mostra Toast
                 if (value.startsWith("http://") || value.startsWith("https://")) {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(value)))
+                    startActivity(Intent(Intent.ACTION_VIEW, value.toUri()))
                 } else {
                     Toast.makeText(this, "QR Lido: $value", Toast.LENGTH_LONG).show()
                 }
@@ -77,6 +77,7 @@ class ActivityHome : AppCompatActivity() {
         }
     }
 
+    @androidx.annotation.OptIn(ExperimentalGetImage::class)
     private fun startCamera() {
         if (cameraBound) return
 
@@ -85,7 +86,7 @@ class ActivityHome : AppCompatActivity() {
             val cameraProvider = cameraProviderFuture.get()
 
             val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
+                it.surfaceProvider = previewView.surfaceProvider
             }
 
             val imageAnalysis = ImageAnalysis.Builder()

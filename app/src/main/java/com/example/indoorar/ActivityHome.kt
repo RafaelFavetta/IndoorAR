@@ -19,6 +19,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.zxing.*
 import com.google.zxing.common.HybridBinarizer
 
+@OptIn(androidx.camera.core.ExperimentalGetImage::class)
 class ActivityHome : AppCompatActivity() {
 
     private lateinit var previewView: PreviewView

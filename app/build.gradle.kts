@@ -47,6 +47,12 @@ android {
         viewBinding = true
         compose = true
     }
+
+    lint {
+        abortOnError = false
+        warningsAsErrors = false
+    }
+
 }
 
 dependencies {

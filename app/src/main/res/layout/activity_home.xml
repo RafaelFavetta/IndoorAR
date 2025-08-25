@@ -16,6 +16,8 @@
 
         <TextView
             android:id="@+id/txtWelcome"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="Bem-vindo, Usuário!"
             android:textColor="@android:color/white"
             android:textSize="20sp"
@@ -30,12 +32,14 @@
         android:gravity="center"
         android:layout_marginTop="80dp">
 
+        <!-- Preview da câmera -->
         <androidx.camera.view.PreviewView
             android:id="@+id/previewView"
             android:layout_width="300dp"
             android:layout_height="300dp"
             android:background="#CCCCCC" />
 
+        <!-- Botão de resultado -->
         <Button
             android:id="@+id/btnResult"
             android:layout_width="wrap_content"

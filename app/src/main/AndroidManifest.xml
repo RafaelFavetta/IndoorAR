@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
     <!-- Permissão de câmera -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
 
-
-    <!-- Dizendo que câmera é opcional -->
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" /> <!-- Dizendo que câmera é opcional -->
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
@@ -21,51 +20,45 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.IndoorAR">
-
+        <activity
+            android:name=".ActivityHome2"
+            android:exported="false" />
         <activity
             android:name=".ActivityHome"
             android:exported="false" />
-
         <activity
             android:name=".ActivityLogin"
             android:exported="false" />
-
         <activity
             android:name=".search"
             android:exported="false" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.IndoorAR.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".ActivityCriar2"
             android:exported="false" />
-
         <activity
             android:name=".ActivityCriar"
             android:exported="false" />
-
         <activity
             android:name=".ActivityConta"
             android:exported="false" />
-
         <activity
             android:name="com.journeyapps.barcodescanner.CaptureActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar"
-            tools:replace="android:theme"
-            tools:ignore="HardcodedOrientation" />
-
+            tools:ignore="HardcodedOrientation"
+            tools:replace="android:theme" />
         <activity
             android:name=".ActivityMap"
             android:exported="false" />
-
     </application>
 
 </manifest>

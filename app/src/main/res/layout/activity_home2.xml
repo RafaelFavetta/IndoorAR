@@ -21,9 +21,15 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="1.0" />
 
+
     <View
-
-
+        android:id="@+id/camera_view"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_gravity="center"
+        android:background="#3F60CD"
+        tools:layout_editor_absoluteX="80dp"
+        tools:layout_editor_absoluteY="173dp" />
 
     <Button
         android:id="@+id/btnCadastro"
@@ -38,7 +44,7 @@
         android:textColor="#FDFDFD"
         android:textSize="25sp"
         android:textStyle=""
-        android:elevation="5dp"
+        android:elevation="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -47,19 +53,6 @@
         app:layout_constraintVertical_bias="0.665"
 
         />
-
-    <View
-        android:id="@+id/retanguloView"
-        android:layout_width="420dp"
-        android:layout_height="100dp"
-        android:layout_gravity="center"
-        android:background="@drawable/retangulo_arredondado"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
 
     <View
         android:id="@+id/linhaSimples"

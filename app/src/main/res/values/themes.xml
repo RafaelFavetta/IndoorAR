@@ -8,6 +8,7 @@
         <item name="android:statusBarColor">#3F60CD</item>
         <item name="android:windowBackground">#FDFDFD</item>
 
+
         <!-- Splash screen API 31+ -->
         <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/colorOnPrimary</item>
         <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@drawable/logo</item>

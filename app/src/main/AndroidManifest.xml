@@ -21,6 +21,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.IndoorAR">
         <activity
+            android:name=".ActivityPerfil"
+            android:exported="false" />
+        <activity
             android:name=".ActivityHome2"
             android:exported="false" />
         <activity

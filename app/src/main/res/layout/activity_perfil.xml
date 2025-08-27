@@ -61,75 +61,62 @@
         app:layout_constraintVertical_bias="0.31" />
 
 
-    <View
-        android:id="@+id/linhaSimples"
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnComum"
         android:layout_width="340dp"
-        android:layout_height="1dp"
-        android:background="#90fdfdfd"
+        android:layout_height="48dp"
+        android:background="@drawable/btn_arredondado3_ripple"
+        android:backgroundTint="@null"
+        android:elevation="100dp"
+        android:fontFamily="@font/staatliches"
+        android:text="Quero esse!"
+        android:textAllCaps="true"
+        android:textColor="#3F60CD"
+        android:textSize="25sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintHorizontal_bias="0.492"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.373" />
+        app:layout_constraintVertical_bias="0.423" />
 
-
-    <TextView
-        android:id="@+id/txtButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:clickable="true"
-        android:focusable="true"
-        android:padding="10dp"
-        android:text="Conta"
-        android:textColor="#FDFDFD"
-        android:textSize="18sp"
-        android:layout_marginStart="45dp"
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnComum"
+        android:layout_width="340dp"
+        android:layout_height="48dp"
+        android:background="@drawable/btn_arredondado3_ripple"
+        android:backgroundTint="@null"
+        android:elevation="100dp"
+        android:fontFamily="@font/staatliches"
+        android:text="Quero esse!"
+        android:textAllCaps="true"
+        android:textColor="#3F60CD"
+        android:textSize="25sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.492"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0"
-        app:layout_constraintVertical_bias="0.45"/>
+        app:layout_constraintVertical_bias="0.614" />
 
-
-    <TextView
-        android:id="@+id/txtButton2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:clickable="true"
-        android:focusable="true"
-        android:padding="10dp"
-        android:text="Configurações"
-        android:textColor="#FDFDFD"
-        android:textSize="18sp"
-        android:layout_marginStart="45dp"
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnComum"
+        android:layout_width="340dp"
+        android:layout_height="48dp"
+        android:background="@drawable/btn_arredondado3_ripple"
+        android:backgroundTint="@null"
+        android:elevation="100dp"
+        android:fontFamily="@font/staatliches"
+        android:text="Quero esse!"
+        android:textAllCaps="true"
+        android:textColor="#3F60CD"
+        android:textSize="25sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.492"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0"
-        app:layout_constraintVertical_bias="0.52"/>
-
-
-    <TextView
-        android:id="@+id/txtButton3"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:clickable="true"
-        android:focusable="true"
-        android:padding="10dp"
-        android:text="Notificações"
-        android:textColor="#FDFDFD"
-        android:textSize="18sp"
-        android:gravity="start"
-        android:layout_marginStart="45dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0"
-        app:layout_constraintVertical_bias="0.59"/>
+        app:layout_constraintVertical_bias="0.513" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

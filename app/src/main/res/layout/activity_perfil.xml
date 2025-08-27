@@ -124,7 +124,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/inter"
-        android:letterSpacing="0.05"
+        android:letterSpacing="0"
         android:text="Preferências"
         android:textColor="#FDFDFD"
         android:textSize="20sp"
@@ -137,7 +137,7 @@
         app:layout_constraintVertical_bias="0.669" />
 
     <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnComum2"
+        android:id="@+id/btnComum4"
         android:layout_width="340dp"
         android:layout_height="48dp"
         android:background="@drawable/btn_arredondado3_ripple"
@@ -156,7 +156,7 @@
         app:layout_constraintVertical_bias="0.85" />
 
     <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnComum"
+        android:id="@+id/btnComum5"
         android:layout_width="340dp"
         android:layout_height="48dp"
         android:background="@drawable/btn_arredondado3_ripple"
@@ -175,7 +175,7 @@
         app:layout_constraintVertical_bias="0.764" />
 
     <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnComum3"
+        android:id="@+id/btnComum6"
         android:layout_width="340dp"
         android:layout_height="48dp"
         android:background="@drawable/btn_arredondado3_ripple"

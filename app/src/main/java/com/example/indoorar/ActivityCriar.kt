@@ -102,7 +102,7 @@ class ActivityCriar : AppCompatActivity() {
                         .addOnSuccessListener {
                             snackbar("Conta criada com sucesso!")
                             // Redireciona para ActivityHome, limpa backstack
-                            val intent = Intent(this, ActivityHome::class.java)
+                            val intent = Intent(this, ActivityScanQR::class.java)
                             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                             startActivity(intent)
                         }

@@ -37,7 +37,7 @@ class ActivityLogin : AppCompatActivity() {
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         // Abre a ActivityHome independente da conta
-                        startActivity(Intent(this, ActivityHome::class.java))
+                        startActivity(Intent(this, ActivityScanQR::class.java))
                         finish()
                     } else {
                         snackbar("Erro no login: ${task.exception?.message}")

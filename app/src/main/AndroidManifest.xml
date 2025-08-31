@@ -24,10 +24,10 @@
             android:name=".ActivityPerfil"
             android:exported="false" />
         <activity
-            android:name=".ActivityHome2"
+            android:name=".ActivityHome"
             android:exported="false" />
         <activity
-            android:name=".ActivityHome"
+            android:name=".ActivityScanQR"
             android:exported="false" />
         <activity
             android:name=".ActivityLogin"

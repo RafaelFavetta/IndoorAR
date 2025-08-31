@@ -1,140 +1,20 @@
 package com.example.indoorar
 
-import android.Manifest
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.*
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
-import androidx.core.content.ContextCompat
-import com.google.common.util.concurrent.ListenableFuture
-import com.google.firebase.auth.FirebaseAuth
-import com.google.zxing.*
-import com.google.zxing.common.HybridBinarizer
-import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 class ActivityHome : AppCompatActivity() {
-
-    private lateinit var previewView: PreviewView
-    private lateinit var btnResult: Button
-    private lateinit var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>
-    private var lastScanned: String? = null
-    private var cameraBound = false
-
-    private val requestPermission = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) startCamera()
-        else Toast.makeText(this, "Permissão de câmera é necessária.", Toast.LENGTH_LONG).show()
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContentView(R.layout.activity_home)
-
-        val txtWelcome = findViewById<TextView>(R.id.txtWelcome)
-        previewView = findViewById(R.id.previewView)
-        btnResult = findViewById(R.id.btnResult)
-
-        // Nome do usuário (se não tiver displayName, mostra “Usuário”)
-        val user = FirebaseAuth.getInstance().currentUser
-        txtWelcome.text = "Bem-vindo, ${user?.displayName ?: "Usuário"}"
-
-        btnResult.isEnabled = false
-        btnResult.setOnClickListener {
-            lastScanned?.let { value ->
-                // Se for URL, abre; senão, mostra Toast
-                if (value.startsWith("http://") || value.startsWith("https://")) {
-                    startActivity(Intent(Intent.ACTION_VIEW, value.toUri()))
-                } else {
-                    Toast.makeText(this, "QR Lido: $value", Toast.LENGTH_LONG).show()
-                }
-            }
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
         }
-
-        ensureCameraPermissionAndStart()
-    }
-
-    private fun ensureCameraPermissionAndStart() {
-        when {
-            ContextCompat.checkSelfPermission(
-                this, Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED -> startCamera()
-
-            shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
-                Toast.makeText(this, "Precisamos da câmera para ler o QR.", Toast.LENGTH_SHORT).show()
-                requestPermission.launch(Manifest.permission.CAMERA)
-            }
-
-            else -> requestPermission.launch(Manifest.permission.CAMERA)
-        }
-    }
-
-    @androidx.annotation.OptIn(ExperimentalGetImage::class)
-    private fun startCamera() {
-        if (cameraBound) return
-
-        cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-        cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
-
-            val preview = Preview.Builder().build().also {
-                it.surfaceProvider = previewView.surfaceProvider
-            }
-
-            val imageAnalysis = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-
-            val reader = MultiFormatReader().apply {
-                setHints(mapOf(
-                    DecodeHintType.POSSIBLE_FORMATS to arrayListOf(BarcodeFormat.QR_CODE),
-                    DecodeHintType.TRY_HARDER to true
-                ))
-            }
-
-            imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(this)) { imageProxy ->
-                val mediaImage = imageProxy.image
-                if (mediaImage != null) {
-                    val crop = imageProxy.cropRect
-                    val source = ImageUtils.getLuminanceSourceFromImage(mediaImage, crop)
-                    val bitmap = BinaryBitmap(HybridBinarizer(source))
-                    try {
-                        val result = reader.decode(bitmap)
-                        if (result.text != lastScanned) {
-                            lastScanned = result.text
-                            btnResult.isEnabled = true
-                            btnResult.text = "Abrir: ${result.text.take(24)}" +
-                                    if (result.text.length > 24) "..." else ""
-                        }
-                    } catch (_: NotFoundException) {
-                        // nada encontrado no frame
-                    } catch (_: Exception) {
-                        // qualquer outra exceção do ZXing
-                    } finally {
-                        reader.reset() // evita estado sujo entre frames
-                        imageProxy.close()
-                    }
-                } else {
-                    imageProxy.close()
-                }
-            }
-
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-            try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis)
-                cameraBound = true
-            } catch (e: Exception) {
-                Toast.makeText(this, "Erro iniciando câmera: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-        }, ContextCompat.getMainExecutor(this))
     }
 }

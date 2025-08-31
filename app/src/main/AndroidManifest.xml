@@ -21,6 +21,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.IndoorAR">
         <activity
+            android:name=".ActivityForgotPassword"
+            android:exported="false" />
+        <activity
             android:name=".ActivityPerfil"
             android:exported="false" />
         <activity

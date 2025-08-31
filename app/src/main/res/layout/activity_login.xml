@@ -131,6 +131,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Esqueceu sua senha?"
+        android:clickable="true"
+        android:focusable="true"
         android:textColor="#3F60CD"
         android:letterSpacing="0.02"
         android:textSize="12sp"

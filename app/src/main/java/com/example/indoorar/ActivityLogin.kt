@@ -11,6 +11,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import androidx.core.graphics.toColorInt
+import android.widget.TextView
+
 
 class ActivityLogin : AppCompatActivity() {
 
@@ -27,7 +29,15 @@ class ActivityLogin : AppCompatActivity() {
         val editEmail = findViewById<EditText>(R.id.editEmail)
         val editSenha = findViewById<EditText>(R.id.editSenha)
         btnEntrar = findViewById(R.id.btnEntrar)
-        progressBar = findViewById(R.id.progressBar) // adicione no XML
+        progressBar = findViewById(R.id.progressBar)
+
+        val txtEsqueciSenha = findViewById<TextView>(R.id.txtEsqueciSenha)
+        txtEsqueciSenha.setOnClickListener {
+            val intent = Intent(this, ActivityForgotPassword::class.java)
+            startActivity(intent)
+        }
+
+
 
         btnEntrar.setOnClickListener {
             val email = editEmail.text.toString().trim()
@@ -63,4 +73,6 @@ class ActivityLogin : AppCompatActivity() {
             setBackgroundTint("#3F60CD".toColorInt())
         }.show()
     }
+
+
 }

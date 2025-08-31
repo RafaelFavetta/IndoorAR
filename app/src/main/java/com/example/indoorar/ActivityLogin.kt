@@ -3,8 +3,10 @@ package com.example.indoorar
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
@@ -13,6 +15,8 @@ import androidx.core.graphics.toColorInt
 class ActivityLogin : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
+    private lateinit var btnEntrar: Button
+    private lateinit var progressBar: ProgressBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,7 +26,8 @@ class ActivityLogin : AppCompatActivity() {
 
         val editEmail = findViewById<EditText>(R.id.editEmail)
         val editSenha = findViewById<EditText>(R.id.editSenha)
-        val btnEntrar = findViewById<Button>(R.id.btnEntrar)
+        btnEntrar = findViewById(R.id.btnEntrar)
+        progressBar = findViewById(R.id.progressBar) // adicione no XML
 
         btnEntrar.setOnClickListener {
             val email = editEmail.text.toString().trim()
@@ -33,11 +38,17 @@ class ActivityLogin : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            // trava botão e mostra loading
+            btnEntrar.isEnabled = false
+            progressBar.visibility = View.VISIBLE
+
             auth.signInWithEmailAndPassword(email, senha)
                 .addOnCompleteListener { task ->
+                    btnEntrar.isEnabled = true
+                    progressBar.visibility = View.GONE
+
                     if (task.isSuccessful) {
-                        // Abre a ActivityHome independente da conta
-                        startActivity(Intent(this, ActivityScanQR::class.java))
+                        startActivity(Intent(this, ActivityHome::class.java))
                         finish()
                     } else {
                         snackbar("Erro no login: ${task.exception?.message}")

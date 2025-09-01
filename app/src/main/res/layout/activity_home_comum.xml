@@ -124,7 +124,7 @@
                                     android:background="@drawable/background_oval_2">
 
                                     <ImageView
-                                        android:id="@+id/imageView4"
+                                        android:id="@+id/btnFavoritos"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         app:layout_constraintBottom_toBottomOf="parent"
@@ -135,7 +135,7 @@
                                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                                 <TextView
-                                    android:id="@+id/textView5"
+                                    android:id="@+id/txtFavoritos"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:fontFamily="@font/inter"
@@ -167,7 +167,7 @@
                                     android:background="@drawable/background_oval_2">
 
                                     <ImageView
-                                        android:id="@+id/imageView3"
+                                        android:id="@+id/btnEscanear"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         app:layout_constraintBottom_toBottomOf="parent"
@@ -178,7 +178,7 @@
                                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                                 <TextView
-                                    android:id="@+id/textView6"
+                                    android:id="@+id/txtEscanear"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:fontFamily="@font/inter"
@@ -210,7 +210,7 @@
                                     android:background="@drawable/background_oval_2">
 
                                     <ImageView
-                                        android:id="@+id/imageView8"
+                                        android:id="@+id/btnHistorico"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         app:layout_constraintBottom_toBottomOf="parent"
@@ -221,7 +221,7 @@
                                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                                 <TextView
-                                    android:id="@+id/textView4"
+                                    android:id="@+id/txtHistorico"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:fontFamily="@font/inter"
@@ -252,28 +252,9 @@
                             android:orientation="horizontal">
 
                             <androidx.recyclerview.widget.RecyclerView
-                                android:layout_width="match_parent"
+                                android:layout_width="0dp"
                                 android:layout_height="match_parent"
                                 android:layout_weight="1" />
-
-                            <TextView
-                                android:id="@+id/textView9"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="Trend"
-                                android:textStyle="bold"
-                                android:layout_marginStart="32dp"
-                                android:textSize="20sp"/>
-
-                            <TextView
-                                android:id="@+id/textView10"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="View All"
-                                android:textAlignment="viewEnd"
-                                android:layout_marginEnd="32dp"/>
                         </LinearLayout>
                     </LinearLayout>
 

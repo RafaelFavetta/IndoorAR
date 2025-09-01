@@ -168,7 +168,7 @@
         android:padding="16dp"
         android:text="Ao criar uma conta, você aceita os Termos e Condições e a Política de Privacidade."
         android:textAlignment="center"
-        android:textColor="#3F60CD"
+        android:textColor="#32357A"
         android:textSize="12sp"
         android:fontFamily="@font/inter"
         app:layout_constraintBottom_toBottomOf="parent"

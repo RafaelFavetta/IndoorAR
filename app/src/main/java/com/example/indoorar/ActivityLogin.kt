@@ -70,7 +70,7 @@ class ActivityLogin : AppCompatActivity() {
     private fun snackbar(msg: String) {
         Snackbar.make(findViewById(R.id.main), msg, Snackbar.LENGTH_SHORT).apply {
             setTextColor(Color.WHITE)
-            setBackgroundTint("#3F60CD".toColorInt())
+            setBackgroundTint("#32357A".toColorInt())
         }.show()
     }
 

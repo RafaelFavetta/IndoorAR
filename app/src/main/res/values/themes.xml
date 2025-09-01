@@ -2,10 +2,10 @@
 
     <!-- Tema base do app -->
     <style name="Theme.IndoorAR" parent="Theme.MaterialComponents.Light.NoActionBar">
-        <item name="colorPrimary">#3F60CD</item>
-        <item name="colorPrimaryVariant">#3F60CD</item>
+        <item name="colorPrimary">#32357A</item>
+        <item name="colorPrimaryVariant">#32357A</item>
         <item name="colorOnPrimary">#FDFDFD</item>
-        <item name="android:statusBarColor">#3F60CD</item>
+        <item name="android:statusBarColor">#32357A</item>
         <item name="android:windowBackground">#FDFDFD</item>
 
 

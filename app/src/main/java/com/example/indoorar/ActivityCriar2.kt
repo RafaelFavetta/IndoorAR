@@ -96,7 +96,7 @@ class ActivityCriar2 : AppCompatActivity() {
                         .set(dadosUsuario)
                         .addOnSuccessListener {
                             snackbar("Conta criada com sucesso!")
-                            val intent = Intent(this, ActivityScanQR::class.java)
+                            val intent = Intent(this, ActivityHomeMaker::class.java)
                             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                             startActivity(intent)
                         }

@@ -85,7 +85,7 @@
         android:elevation="4dp"
         android:fontFamily="@font/inter"
         android:hint="Senha"
-        android:inputType="numberPassword"
+        android:inputType="textPassword"
         android:minHeight="48dp"
         android:paddingStart="20dp"
         android:paddingEnd="20dp"

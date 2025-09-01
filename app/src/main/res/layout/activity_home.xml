@@ -30,41 +30,17 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent">
 
-                        <TextView
-                            android:id="@+id/textView"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="18dp"
-                            android:layout_marginEnd="144dp"
-                            android:fontFamily="@font/inter"
-                            android:text="Hi, Alex"
-                            android:textColor="#fdfdfd"
-                            android:textSize="20sp"
-                            android:textStyle="bold"
-                            app:layout_constraintBottom_toBottomOf="@+id/imageView5"
-                            app:layout_constraintEnd_toStartOf="@+id/imageView6"
-                            app:layout_constraintStart_toEndOf="@+id/imageView5"
-                            app:layout_constraintTop_toTopOf="@+id/imageView5" />
-
                         <ImageView
-                            android:id="@+id/imageView5"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="32dp"
-                            android:layout_marginTop="32dp"
+                            android:id="@+id/logo"
+                            android:layout_width="36dp"
+                            android:layout_height="46dp"
+                            android:layout_marginStart="28dp"
+                            android:layout_marginTop="40dp"
+                            android:contentDescription="logo"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent"
-                            app:srcCompat="@drawable/user_1" />
+                            app:srcCompat="@drawable/logo" />
 
-                        <ImageView
-                            android:id="@+id/imageView6"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="32dp"
-                            app:layout_constraintBottom_toBottomOf="@+id/imageView5"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintTop_toTopOf="@+id/imageView5"
-                            app:srcCompat="@drawable/notification" />
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
                     <TextView
@@ -73,7 +49,7 @@
                         android:layout_height="wrap_content"
                         android:text="TextView"
                         android:textColor="#fdfdfd"
-                        tools:text="Find your favorites \nhere"
+                        tools:text="Bem-vindo ao Wander,\no seu guia."
                         android:textStyle="bold"
                         android:textSize="28sp"
                         android:fontFamily="@font/inter"
@@ -146,7 +122,7 @@
                                     android:background="@drawable/background_oval_2">
 
                                     <ImageView
-                                        android:id="@+id/imageView3"
+                                        android:id="@+id/imageView4"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         app:layout_constraintBottom_toBottomOf="parent"
@@ -157,7 +133,7 @@
                                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                                 <TextView
-                                    android:id="@+id/textView4"
+                                    android:id="@+id/textView5"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:fontFamily="@font/inter"
@@ -196,15 +172,15 @@
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintStart_toStartOf="parent"
                                         app:layout_constraintTop_toTopOf="parent"
-                                        app:srcCompat="@drawable/favorites" />
+                                        app:srcCompat="@drawable/qrcode" />
                                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                                 <TextView
-                                    android:id="@+id/textView4"
+                                    android:id="@+id/textView6"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:fontFamily="@font/inter"
-                                    android:text="Favoritos"
+                                    android:text="Escanear"
                                     android:textAlignment="center"
 
                                     android:textStyle="bold" />
@@ -232,7 +208,7 @@
                                     android:background="@drawable/background_oval_2">
 
                                     <ImageView
-                                        android:id="@+id/imageView3"
+                                        android:id="@+id/imageView8"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         app:layout_constraintBottom_toBottomOf="parent"

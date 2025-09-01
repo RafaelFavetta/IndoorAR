@@ -1,60 +1,163 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/homeRoot"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#fdfdfd">
 
-    <!-- Top bar com nome do usuário -->
-    <LinearLayout
-        android:orientation="vertical"
-        android:background="#32357A"
-        android:padding="16dp"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/txtWelcome"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Bem-vindo, Usuário!"
-            android:textColor="@android:color/white"
-            android:textSize="20sp"
-            android:textStyle="bold"/>
-    </LinearLayout>
+            android:orientation="vertical">
 
-    <!-- Conteúdo central -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:layout_marginTop="80dp">
+            <!-- Topo azul com curvatura -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:background="#32357A">
 
-        <!-- Preview da câmera -->
-        <androidx.camera.view.PreviewView
-            android:id="@+id/previewView"
-            android:layout_width="300dp"
-            android:layout_height="300dp"
-            android:background="#CCCCCC" />
+                <ImageView
+                    android:id="@+id/logo"
+                    android:layout_width="36dp"
+                    android:layout_height="46dp"
+                    android:layout_marginStart="28dp"
+                    android:layout_marginTop="28dp"
+                    android:contentDescription="logo"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/logo_branca" />
 
-        <!-- Botão de resultado -->
-        <Button
-            android:id="@+id/btnResult"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:enabled="false"
-            android:text="Abrir resultado" />
-    </LinearLayout>
+                <TextView
+                    android:id="@+id/txtInstruction"
+                    android:layout_marginStart="70dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="84dp"
+                    android:fontFamily="@font/inter"
+                    android:text="Aponte a câmera e escaneie"
+                    android:textColor="#fdfdfd"
+                    android:textSize="20dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="1.0"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Bottom Navigation -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNav"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        app:menu="@menu/bottom_nav_menu" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+            <!-- Preview da câmera quadrado e centralizado -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="220dp"
+                android:layout_height="220dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="6dp"
+                android:layout_gravity="center"
+                android:layout_marginTop="-60dp"
+                android:layout_marginBottom="16dp">
+
+                <androidx.camera.view.PreviewView
+                    android:id="@+id/previewView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#fdfdfd">
+
+                    <ImageView
+                        android:id="@+id/imageViewArc"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop" />
+                </androidx.camera.view.PreviewView>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Botão clean centralizado -->
+            <Button
+                android:id="@+id/btnResult"
+                android:layout_width="198dp"
+                android:layout_height="60dp"
+                android:layout_gravity="center"
+                android:layout_marginBottom="24dp"
+                android:backgroundTint="#32357A"
+                android:elevation="4dp"
+                android:enabled="false"
+                android:fontFamily="@font/inter"
+                android:text="Iniciar navegação"
+                android:textColor="#fdfdfd"
+                android:textSize="16sp" />
+
+            <!-- Cards estilo home em grid responsivo -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:weightSum="2.5">
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="120dp"
+                    android:layout_margin="8dp"
+                    android:layout_weight="1"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="6dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:contentDescription="Meus Mapas"
+                            android:src="@drawable/meus_mapas" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="Meus Mapas"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="120dp"
+                    android:layout_margin="8dp"
+                    android:layout_weight="1"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="6dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:contentDescription="Estatísticas"
+                            android:src="@drawable/estatisticas" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="Estatísticas"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

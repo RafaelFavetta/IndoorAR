@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="@font/staatliches"
         android:letterSpacing="0.05"
-        android:text="Seu guia.\ndentro de qualquer local."
+        android:text="Wander, Seu guia.\ndentro de qualquer local."
         android:gravity="center_vertical"
         android:textColor="#3F60CD"
         android:textSize="32sp"
@@ -35,10 +35,10 @@
         android:background="@drawable/logo"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.395"
+        app:layout_constraintHorizontal_bias="0.76"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.095" />
+        app:layout_constraintVertical_bias="0.094" />
 
     <Button
         android:id="@+id/btnCadastro"

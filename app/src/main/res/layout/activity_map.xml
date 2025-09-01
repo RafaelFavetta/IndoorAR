@@ -23,7 +23,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Carregando mapa..."
-        android:textColor="#3F60CD"
+        android:textColor="#32357A"
         android:textSize="24sp"
         android:textStyle="bold"
         android:gravity="center"

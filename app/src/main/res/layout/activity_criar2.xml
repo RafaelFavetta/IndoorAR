@@ -16,7 +16,7 @@
         android:fontFamily="@font/staatliches"
         android:letterSpacing="0.05"
         android:text="USUÁRIO MAKER"
-        android:textColor="#3F60CD"
+        android:textColor="#32357A"
         android:textSize="50sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -33,7 +33,7 @@
         android:fontFamily="@font/inter"
         android:letterSpacing="0"
         android:text="Insira suas informações"
-        android:textColor="#3F60CD"
+        android:textColor="#32357A"
         android:textSize="25sp"
         android:textStyle="normal"
         android:gravity="center"
@@ -158,7 +158,7 @@
         android:layout_width="270dp"
         android:layout_height="50dp"
         android:background="@drawable/btn_arredondado"
-        android:backgroundTint="#3F60CD"
+        android:backgroundTint="#32357A"
         android:elevation="5dp"
         android:fontFamily="@font/staatliches"
         android:letterSpacing="0.1"
@@ -172,7 +172,6 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-
         app:layout_constraintVertical_bias="0.665" />
 
     <ProgressBar
@@ -275,7 +274,7 @@
         android:padding="16dp"
         android:text="Ao criar uma conta, você aceita os Termos e Condições e a Política de Privacidade."
         android:textAlignment="center"
-        android:textColor="#3F60CD"
+        android:textColor="#32357A"
         android:textSize="12sp"
         android:fontFamily="@font/inter"
         app:layout_constraintBottom_toBottomOf="parent"

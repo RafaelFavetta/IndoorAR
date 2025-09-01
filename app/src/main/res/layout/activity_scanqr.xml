@@ -9,7 +9,7 @@
     <!-- Top bar com nome do usuário -->
     <LinearLayout
         android:orientation="vertical"
-        android:background="#3F60CD"
+        android:background="#32357A"
         android:padding="16dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">

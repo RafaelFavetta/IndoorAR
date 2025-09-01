@@ -58,7 +58,7 @@ class ActivityLogin : AppCompatActivity() {
                     progressBar.visibility = View.GONE
 
                     if (task.isSuccessful) {
-                        startActivity(Intent(this, ActivityHome::class.java))
+                        startActivity(Intent(this, ActivityHomeComum::class.java))
                         finish()
                     } else {
                         snackbar("Erro no login: ${task.exception?.message}")

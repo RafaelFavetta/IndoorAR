@@ -9,36 +9,36 @@
     android:background="#FDFDFD"
     >
 
+
     <TextView
         android:id="@+id/txtSlogan"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/staatliches"
-        android:letterSpacing="0.05"
-        android:text="Wander, Seu guia.\ndentro de qualquer local."
         android:gravity="center_vertical"
+        android:letterSpacing="0.05"
+        android:text="Wander, o seu guia.\nem qualquer local."
         android:textColor="#32357A"
         android:textSize="32sp"
         android:textStyle="bold|italic"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias=".1" />
-
+        app:layout_constraintVertical_bias="0.098" />
 
     <ImageView
         android:id="@+id/logo"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:background="@drawable/logo"
+        android:layout_width="77dp"
+        android:layout_height="90dp"
+        android:background="@drawable/logo_azul"
+        android:contentDescription="logo"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.76"
+        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.094" />
+        app:layout_constraintVertical_bias="0.286" />
 
     <Button
         android:id="@+id/btnCadastro"

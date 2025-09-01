@@ -45,7 +45,7 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintHorizontal_bias="1.0"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    app:layout_constraintTop_toTopOf="parent"  android:layout_width=""/>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -69,6 +69,7 @@
                         android:id="@+id/imageViewArc"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                        android:contentDescription="camera"
                         android:scaleType="centerCrop" />
                 </androidx.camera.view.PreviewView>
             </androidx.cardview.widget.CardView>

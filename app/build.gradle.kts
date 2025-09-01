@@ -98,6 +98,7 @@ dependencies {
     implementation("androidx.activity:activity:1.8.0")
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("androidx.cardview:cardview:1.0.0")
+    implementation("androidx.recyclerview:recyclerview:1.3.0")
 
     testImplementation("junit:junit:4.13.2")
 }

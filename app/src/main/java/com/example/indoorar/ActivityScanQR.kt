@@ -38,13 +38,8 @@ class ActivityScanQR : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_scanqr)
 
-        val txtWelcome = findViewById<TextView>(R.id.txtWelcome)
         previewView = findViewById(R.id.previewView)
         btnResult = findViewById(R.id.btnResult)
-
-        // Nome do usuário (se não tiver displayName, mostra “Usuário”)
-        val user = FirebaseAuth.getInstance().currentUser
-        txtWelcome.text = "Bem-vindo, ${user?.displayName ?: "Usuário"}"
 
         btnResult.isEnabled = false
         btnResult.setOnClickListener {

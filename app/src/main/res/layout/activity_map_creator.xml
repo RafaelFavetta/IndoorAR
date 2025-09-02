@@ -112,16 +112,16 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintStart_toEndOf="@+id/sidebar"
-        app:layout_constraintEnd_toStartOf="@+id/popout"
+        app:layout_constraintEnd_toStartOf="@+id/popup"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         android:background="#fdfdfd"/>
 
-    <!-- Popout direita -->
+    <!-- Pop-up direita -->
     <LinearLayout
-        android:id="@+id/popout"
+        android:id="@+id/popup"
         android:orientation="vertical"
-        android:layout_width="200dp"
+        android:layout_width="100dp"
         android:layout_height="0dp"
         android:background="#32357A"
         app:layout_constraintEnd_toEndOf="parent"
@@ -142,12 +142,12 @@
         <EditText
             android:id="@+id/editNome"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:background="@drawable/edittext_rounded"
-            android:padding="8dp"
-            android:hint="Digite o nome"
+            android:layout_height="48dp"
+            android:autofillHints=""
+            android:background="@android:color/transparent"
             android:textColor="#fdfdfd"
-            android:textColorHint="#b0b0b0"
+            android:hint="_______"
+            android:padding="4dp"
             android:inputType="text"/>
 
         <!-- Descrição -->
@@ -163,12 +163,11 @@
         <EditText
             android:id="@+id/editDescricao"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:background="@drawable/edittext_rounded"
-            android:padding="8dp"
-            android:hint="Digite a descrição"
+            android:layout_height="48dp"
+            android:hint="_______"
+            android:background="@android:color/transparent"
             android:textColor="#fdfdfd"
-            android:textColorHint="#b0b0b0"
+            android:padding="4dp"
             android:inputType="text"/>
 
         <!-- Largura -->
@@ -183,7 +182,7 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="40dp"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
@@ -191,21 +190,20 @@
                 android:id="@+id/editLargura"
                 android:layout_width="0dp"
                 android:layout_weight="1"
-                android:layout_height="match_parent"
-                android:background="@drawable/edittext_rounded"
-                android:padding="8dp"
-                android:hint="0"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
                 android:textColor="#fdfdfd"
-                android:textColorHint="#b0b0b0"
+                android:text="0"
+                android:padding="4dp"
                 android:inputType="number"/>
 
             <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:text="m"
                 android:textColor="#fdfdfd"
-                android:gravity="center"
-                android:paddingStart="6dp"/>
+                android:textSize="14sp"
+                android:paddingStart="4dp"/>
         </LinearLayout>
 
         <!-- Altura -->
@@ -220,7 +218,7 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="40dp"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
@@ -228,21 +226,20 @@
                 android:id="@+id/editAltura"
                 android:layout_width="0dp"
                 android:layout_weight="1"
-                android:layout_height="match_parent"
-                android:background="@drawable/edittext_rounded"
-                android:padding="8dp"
-                android:hint="0"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
                 android:textColor="#fdfdfd"
-                android:textColorHint="#b0b0b0"
+                android:text="0"
+                android:padding="4dp"
                 android:inputType="number"/>
 
             <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:text="m"
                 android:textColor="#fdfdfd"
-                android:gravity="center"
-                android:paddingStart="6dp"/>
+                android:textSize="14sp"
+                android:paddingStart="4dp"/>
         </LinearLayout>
 
         <!-- Rotação -->
@@ -257,7 +254,7 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="40dp"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
@@ -265,30 +262,31 @@
                 android:id="@+id/editRotacao"
                 android:layout_width="0dp"
                 android:layout_weight="1"
-                android:layout_height="match_parent"
-                android:background="@drawable/edittext_rounded"
-                android:padding="8dp"
-                android:hint="0"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
+                android:text="0"
                 android:textColor="#fdfdfd"
-                android:textColorHint="#b0b0b0"
+                android:padding="4dp"
                 android:inputType="number"/>
 
             <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:text="°"
-                android:textColor="#fdfdfd"
-                android:gravity="center"
-                android:paddingStart="6dp"/>
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                android:paddingStart="4dp"/>
         </LinearLayout>
 
         <!-- Color Picker -->
         <com.example.indoorar.views.ColorPickerView
             android:id="@+id/colorPicker"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
+            android:layout_height="40dp"
             android:layout_marginTop="12dp"/>
+
     </LinearLayout>
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

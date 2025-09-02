@@ -58,11 +58,11 @@ class MapCanvasView @JvmOverloads constructor(
                 // Símbolos especiais como PNG
                 "escada", "elevador", "porta", "extintor", "banheiro" -> {
                     val resId = when (shape.tipo) {
-                        "escada" -> R.drawable.ic_escada
-                        "elevador" -> R.drawable.ic_elevador
-                        "porta" -> R.drawable.ic_porta
-                        "extintor" -> R.drawable.ic_extintor
-                        "banheiro" -> R.drawable.ic_banheiro
+                        "escada" -> R.drawable.ic_stairs
+                        "elevador" -> R.drawable.ic_elevator
+                        "porta" -> R.drawable.ic_door
+                        "extintor" -> R.drawable.ic_fireextinguisher
+                        "banheiro" -> R.drawable.ic_bathroom
                         else -> 0
                     }
                     if (resId != 0) {

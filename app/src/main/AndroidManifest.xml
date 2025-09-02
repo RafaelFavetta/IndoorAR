@@ -26,9 +26,6 @@
         <activity
             android:name=".ActivityForgotPassword"
             android:exported="false" />
-        <activity android:name=".MapCreatorActivity"
-            android:screenOrientation="landscape"
-            android:exported="false"/>
         <activity
             android:name=".ActivityPerfil"
             android:exported="false" />
@@ -71,6 +68,10 @@
         <activity
             android:name=".ActivityMap"
             android:exported="false" />
+        <activity android:name=".ui.ActivityMapCreator"
+            android:screenOrientation="landscape"
+            android:exported="false"/>
+
     </application>
 
 </manifest>

@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#fdfdfd">
+
+    <!-- Sidebar esquerda -->
+    <ScrollView
+        android:id="@+id/sidebar"
+        android:layout_width="75dp"
+        android:layout_height="0dp"
+        android:background="#32357A"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:padding="4dp">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- Formas geométricas -->
+            <ImageButton
+                android:id="@+id/btnQuadrado"
+                android:layout_width="60dp"
+                android:layout_height="50dp"
+                android:contentDescription="quadrado"
+                android:src="@drawable/ic_square"
+                android:scaleType="centerInside"
+                android:backgroundTint="#4A5EC8"/>
+
+            <ImageButton
+                android:id="@+id/btnCirculo"
+                android:layout_width="60dp"
+                android:layout_height="50dp"
+                android:contentDescription="círculo"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_circle"
+                android:backgroundTint="#4A5EC8"/>
+
+            <ImageButton
+                android:id="@+id/btnTriangulo"
+                android:layout_width="60dp"
+                android:layout_height="50dp"
+                android:contentDescription="triângulo"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_triangule"
+                android:backgroundTint="#4A5EC8"/>
+
+            <ImageButton
+                android:id="@+id/btnLinha"
+                android:layout_width="60dp"
+                android:layout_height="50dp"
+                android:contentDescription="linha"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_linha"
+                android:backgroundTint="#4A5EC8"/>
+
+            <ImageButton
+                android:id="@+id/btnEscada"
+                android:layout_width="60dp"
+                android:layout_height="50dp"
+                android:contentDescription="escada"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_stairs"
+                android:backgroundTint="#4A5EC8"/>
+
+            <ImageButton
+                android:id="@+id/btnElevador"
+                android:layout_width="60dp"
+                android:layout_height="50dp"
+                android:contentDescription="elevador"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_elevator"
+                android:backgroundTint="#4A5EC8"/>
+
+            <ImageButton
+                android:id="@+id/btnPorta"
+                android:layout_width="60dp"
+                android:layout_height="50dp"
+                android:contentDescription="porta"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_door"
+                android:backgroundTint="#4A5EC8"/>
+
+            <ImageButton
+                android:id="@+id/btnExtintor"
+                android:layout_width="60dp"
+                android:layout_height="50dp"
+                android:contentDescription="extintor"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_fireextinguisher"
+                android:backgroundTint="#4A5EC8"/>
+
+            <ImageButton
+                android:id="@+id/btnBanheiro"
+                android:layout_width="60dp"
+                android:layout_height="50dp"
+                android:contentDescription="banheiro"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_bathroom"
+                android:backgroundTint="#4A5EC8"/>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Canvas -->
+    <com.example.indoorar.views.MapCanvasView
+        android:id="@+id/mapCanvasView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintStart_toEndOf="@+id/sidebar"
+        app:layout_constraintEnd_toStartOf="@+id/popout"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:background="#fdfdfd"/>
+
+    <!-- Popout direita -->
+    <LinearLayout
+        android:id="@+id/popout"
+        android:orientation="vertical"
+        android:layout_width="200dp"
+        android:layout_height="0dp"
+        android:background="#32357A"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:padding="8dp"
+        android:gravity="top">
+
+        <!-- Nome -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Nome"
+            android:textColor="#fdfdfd"
+            android:textSize="14sp"
+            android:paddingBottom="2dp"/>
+
+        <EditText
+            android:id="@+id/editNome"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="@drawable/edittext_rounded"
+            android:padding="8dp"
+            android:hint="Digite o nome"
+            android:textColor="#fdfdfd"
+            android:textColorHint="#b0b0b0"
+            android:inputType="text"/>
+
+        <!-- Descrição -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Descrição"
+            android:textColor="#fdfdfd"
+            android:textSize="14sp"
+            android:paddingTop="8dp"
+            android:paddingBottom="2dp"/>
+
+        <EditText
+            android:id="@+id/editDescricao"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="@drawable/edittext_rounded"
+            android:padding="8dp"
+            android:hint="Digite a descrição"
+            android:textColor="#fdfdfd"
+            android:textColorHint="#b0b0b0"
+            android:inputType="text"/>
+
+        <!-- Largura -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Largura"
+            android:textColor="#fdfdfd"
+            android:textSize="14sp"
+            android:paddingTop="8dp"
+            android:paddingBottom="2dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <EditText
+                android:id="@+id/editLargura"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:background="@drawable/edittext_rounded"
+                android:padding="8dp"
+                android:hint="0"
+                android:textColor="#fdfdfd"
+                android:textColorHint="#b0b0b0"
+                android:inputType="number"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="m"
+                android:textColor="#fdfdfd"
+                android:gravity="center"
+                android:paddingStart="6dp"/>
+        </LinearLayout>
+
+        <!-- Altura -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Altura"
+            android:textColor="#fdfdfd"
+            android:textSize="14sp"
+            android:paddingTop="8dp"
+            android:paddingBottom="2dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <EditText
+                android:id="@+id/editAltura"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:background="@drawable/edittext_rounded"
+                android:padding="8dp"
+                android:hint="0"
+                android:textColor="#fdfdfd"
+                android:textColorHint="#b0b0b0"
+                android:inputType="number"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="m"
+                android:textColor="#fdfdfd"
+                android:gravity="center"
+                android:paddingStart="6dp"/>
+        </LinearLayout>
+
+        <!-- Rotação -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Rotação"
+            android:textColor="#fdfdfd"
+            android:textSize="14sp"
+            android:paddingTop="8dp"
+            android:paddingBottom="2dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <EditText
+                android:id="@+id/editRotacao"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:background="@drawable/edittext_rounded"
+                android:padding="8dp"
+                android:hint="0"
+                android:textColor="#fdfdfd"
+                android:textColorHint="#b0b0b0"
+                android:inputType="number"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="°"
+                android:textColor="#fdfdfd"
+                android:gravity="center"
+                android:paddingStart="6dp"/>
+        </LinearLayout>
+
+        <!-- Color Picker -->
+        <com.example.indoorar.views.ColorPickerView
+            android:id="@+id/colorPicker"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="12dp"/>
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

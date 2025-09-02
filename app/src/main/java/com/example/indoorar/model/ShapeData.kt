@@ -6,15 +6,16 @@ data class Posicao(
 )
 
 data class Tamanho(
-    var altura: Float = 100f,
-    var largura: Float = 100f
+    var largura: Float = 100f,
+    var altura: Float = 100f
 )
 
 data class ShapeData(
     var nome: String = "",
     var descricao: String = "",
-    var cor: Int = 0xFF000000.toInt(),
-    var tipo: String = "retangulo", // quadrado, círculo, triângulo etc.
+    var cor: Int = 0xFF32357A.toInt(),
+    var tipo: String = "",
     var posicao: Posicao = Posicao(),
-    var tamanho: Tamanho = Tamanho()
+    var tamanho: Tamanho = Tamanho(),
+    var rotacao: Int = 0
 )

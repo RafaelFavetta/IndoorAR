@@ -26,14 +26,14 @@
         android:letterSpacing="0.05"
         android:text="Bem-vindo"
         android:textColor="#32357A"
-        android:textSize="45sp"
+        android:textSize="55sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.686"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.159" />
+        app:layout_constraintVertical_bias="0.16" />
 
     <TextView
         android:id="@+id/txtDeVolta"
@@ -43,14 +43,14 @@
         android:letterSpacing="0.05"
         android:text="de volta!"
         android:textColor="#32357A"
-        android:textSize="45sp"
+        android:textSize="55sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.686"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.223" />
+        app:layout_constraintVertical_bias="0.235" />
 
     <Button
         android:id="@+id/btnEntrar"

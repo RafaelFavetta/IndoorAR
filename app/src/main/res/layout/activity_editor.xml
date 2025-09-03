@@ -8,15 +8,13 @@
     android:background="#F5F5F5"
     tools:context=".views.EditorActivity">
 
-    <View
-        android:id="@+id/view"
+    <com.example.indoorar.views.MapEditorView
+        android:id="@+id/mapEditor"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:backgroundTint="#D19595"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        tools:background="#EAEAEA"
+        tools:layout_editor_absoluteX="1dp" />
+
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -143,6 +141,8 @@
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
+
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

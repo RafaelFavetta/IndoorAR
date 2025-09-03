@@ -43,41 +43,41 @@
 
                 <LinearLayout
                     android:id="@+id/linear"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
                     android:gravity="center"
                     android:orientation="vertical">
 
                     <ImageView
-                        android:id="@+id/imageView3"
+                        android:id="@+id/imageView"
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:layout_weight="100"
-                        app:srcCompat="@drawable/bottom_btn1" />
+                        android:padding="2dp"
+                        app:srcCompat="@drawable/cursor1" />
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/linear"
-                    android:layout_width="match_parent"
+                    android:id="@+id/linear2"
+                    android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
                     android:gravity="center"
                     android:orientation="vertical">
 
                     <ImageView
-                        android:id="@+id/imageView3"
+                        android:id="@+id/imageView2"
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:layout_weight="100"
-                        app:srcCompat="@drawable/bottom_btn1" />
+                        android:padding="3dp"
+                        app:srcCompat="@drawable/square" />
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/linear"
-                    android:layout_width="match_parent"
+                    android:id="@+id/linear3"
+                    android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
                     android:gravity="center"
@@ -88,43 +88,58 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:layout_weight="100"
-                        app:srcCompat="@drawable/bottom_btn1" />
+                        android:scaleType="fitCenter"
+                        app:srcCompat="@drawable/pencil" />
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/linear"
-                    android:layout_width="match_parent"
+                    android:id="@+id/linear4"
+                    android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
                     android:gravity="center"
                     android:orientation="vertical">
 
                     <ImageView
-                        android:id="@+id/imageView3"
+                        android:id="@+id/imageView4"
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:layout_weight="100"
-                        app:srcCompat="@drawable/bottom_btn1" />
+                        app:srcCompat="@drawable/type" />
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/linear"
-                    android:layout_width="match_parent"
+                    android:id="@+id/linear5"
+                    android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
                     android:gravity="center"
                     android:orientation="vertical">
 
                     <ImageView
-                        android:id="@+id/imageView3"
+                        android:id="@+id/imageView5"
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:layout_weight="100"
-                        app:srcCompat="@drawable/bottom_btn1" />
+                        app:srcCompat="@drawable/layers" />
                 </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/linear6"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.25"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/imageView6"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        app:srcCompat="@drawable/restore" />
+                </LinearLayout>
+
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>

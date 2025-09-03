@@ -8,6 +8,7 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import com.example.indoorar.R
 import com.example.indoorar.model.ShapeData
+import androidx.core.graphics.scale
 
 class MapCanvasView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -58,20 +59,18 @@ class MapCanvasView @JvmOverloads constructor(
                 // Símbolos especiais como PNG
                 "escada", "elevador", "porta", "extintor", "banheiro" -> {
                     val resId = when (shape.tipo) {
-                        "escada" -> R.drawable.ic_stairs
-                        "elevador" -> R.drawable.ic_elevator
-                        "porta" -> R.drawable.ic_door
-                        "extintor" -> R.drawable.ic_fireextinguisher
-                        "banheiro" -> R.drawable.ic_bathroom
+                        "escada" -> R.drawable.ic_stairs_branco
+                        "elevador" -> R.drawable.ic_elevator_branco
+                        "porta" -> R.drawable.ic_door_branco
+                        "extintor" -> R.drawable.ic_extintor_branco
+                        "banheiro" -> R.drawable.ic_banheiro_branco
                         else -> 0
                     }
                     if (resId != 0) {
                         val bitmap = BitmapFactory.decodeResource(resources, resId)
-                        val scaledBitmap = Bitmap.createScaledBitmap(
-                            bitmap,
+                        val scaledBitmap = bitmap.scale(
                             shape.tamanho.largura.toInt(),
-                            shape.tamanho.altura.toInt(),
-                            true
+                            shape.tamanho.altura.toInt()
                         )
                         canvas.drawBitmap(
                             scaledBitmap,

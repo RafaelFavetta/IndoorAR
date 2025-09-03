@@ -129,7 +129,7 @@
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintStart_toStartOf="parent"
                                         app:layout_constraintTop_toTopOf="parent"
-                                        app:srcCompat="@drawable/meus_mapas" />
+                                        app:srcCompat="@drawable/ic_meus_mapas" />
                                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                                 <TextView
@@ -137,7 +137,7 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:fontFamily="@font/inter"
-                                    android:text="Favoritos"
+                                    android:text="Meus mapas"
                                     android:textAlignment="center"
 
                                     android:textStyle="bold" />
@@ -172,7 +172,7 @@
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintStart_toStartOf="parent"
                                         app:layout_constraintTop_toTopOf="parent"
-                                        app:srcCompat="@drawable/criar_mapa" />
+                                        app:srcCompat="@drawable/ic_criar_mapa_azul" />
                                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                                 <TextView
@@ -215,7 +215,7 @@
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintStart_toStartOf="parent"
                                         app:layout_constraintTop_toTopOf="parent"
-                                        app:srcCompat="@drawable/estatisticas" />
+                                        app:srcCompat="@drawable/ic_estatisticas_azul" />
                                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                                 <TextView
@@ -223,7 +223,7 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:fontFamily="@font/inter"
-                                    android:text="Favoritos"
+                                    android:text="Estatísticas"
                                     android:textAlignment="center"
 
                                     android:textStyle="bold" />

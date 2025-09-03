@@ -54,7 +54,7 @@
                         android:layout_height="20dp"
                         android:layout_gravity="center"
                         android:padding="2dp"
-                        app:srcCompat="@drawable/cursor1" />
+                        app:srcCompat="@drawable/ic_cursor_azul" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -71,7 +71,7 @@
                         android:layout_height="20dp"
                         android:layout_gravity="center"
                         android:padding="3dp"
-                        app:srcCompat="@drawable/square" />
+                        app:srcCompat="@drawable/ic_square_azul" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -88,7 +88,7 @@
                         android:layout_height="20dp"
                         android:layout_gravity="center"
                         android:scaleType="fitCenter"
-                        app:srcCompat="@drawable/pencil" />
+                        app:srcCompat="@drawable/ic_criar_mapa_azul" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -104,7 +104,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        app:srcCompat="@drawable/type" />
+                        app:srcCompat="@drawable/ic_texto" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -120,7 +120,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        app:srcCompat="@drawable/layers" />
+                        app:srcCompat="@drawable/ic_layers" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -136,7 +136,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        app:srcCompat="@drawable/restore" />
+                        app:srcCompat="@drawable/ic_desfazer" />
                 </LinearLayout>
 
             </LinearLayout>

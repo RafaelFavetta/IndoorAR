@@ -28,7 +28,7 @@
                 android:layout_width="60dp"
                 android:layout_height="50dp"
                 android:contentDescription="quadrado"
-                android:src="@drawable/ic_square"
+                android:src="@drawable/ic_square_branco"
                 android:scaleType="centerInside"
                 android:backgroundTint="#4A5EC8"/>
 
@@ -38,7 +38,7 @@
                 android:layout_height="50dp"
                 android:contentDescription="círculo"
                 android:scaleType="centerInside"
-                android:src="@drawable/ic_circle"
+                android:src="@drawable/ic_circle_branco"
                 android:backgroundTint="#4A5EC8"/>
 
             <ImageButton
@@ -47,7 +47,7 @@
                 android:layout_height="50dp"
                 android:contentDescription="triângulo"
                 android:scaleType="centerInside"
-                android:src="@drawable/ic_triangule"
+                android:src="@drawable/ic_triangle_branco"
                 android:backgroundTint="#4A5EC8"/>
 
             <ImageButton
@@ -56,7 +56,7 @@
                 android:layout_height="50dp"
                 android:contentDescription="linha"
                 android:scaleType="centerInside"
-                android:src="@drawable/ic_linha"
+                android:src="@drawable/ic_linha_branco"
                 android:backgroundTint="#4A5EC8"/>
 
             <ImageButton
@@ -65,7 +65,7 @@
                 android:layout_height="50dp"
                 android:contentDescription="escada"
                 android:scaleType="centerInside"
-                android:src="@drawable/ic_stairs"
+                android:src="@drawable/ic_stairs_branco"
                 android:backgroundTint="#4A5EC8"/>
 
             <ImageButton
@@ -74,7 +74,7 @@
                 android:layout_height="50dp"
                 android:contentDescription="elevador"
                 android:scaleType="centerInside"
-                android:src="@drawable/ic_elevator"
+                android:src="@drawable/ic_elevator_branco"
                 android:backgroundTint="#4A5EC8"/>
 
             <ImageButton
@@ -83,7 +83,7 @@
                 android:layout_height="50dp"
                 android:contentDescription="porta"
                 android:scaleType="centerInside"
-                android:src="@drawable/ic_door"
+                android:src="@drawable/ic_door_branco"
                 android:backgroundTint="#4A5EC8"/>
 
             <ImageButton
@@ -92,7 +92,7 @@
                 android:layout_height="50dp"
                 android:contentDescription="extintor"
                 android:scaleType="centerInside"
-                android:src="@drawable/ic_fireextinguisher"
+                android:src="@drawable/ic_extintor_branco"
                 android:backgroundTint="#4A5EC8"/>
 
             <ImageButton
@@ -101,7 +101,7 @@
                 android:layout_height="50dp"
                 android:contentDescription="banheiro"
                 android:scaleType="centerInside"
-                android:src="@drawable/ic_bathroom"
+                android:src="@drawable/ic_banheiro_branco"
                 android:backgroundTint="#4A5EC8"/>
         </LinearLayout>
     </ScrollView>

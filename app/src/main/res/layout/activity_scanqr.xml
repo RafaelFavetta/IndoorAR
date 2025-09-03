@@ -115,7 +115,7 @@
                             android:layout_width="40dp"
                             android:layout_height="40dp"
                             android:contentDescription="Meus Mapas"
-                            android:src="@drawable/meus_mapas" />
+                            android:src="@drawable/ic_meus_mapas" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -145,7 +145,7 @@
                             android:layout_width="40dp"
                             android:layout_height="40dp"
                             android:contentDescription="Estatísticas"
-                            android:src="@drawable/estatisticas" />
+                            android:src="@drawable/ic_estatisticas_azul" />
 
                         <TextView
                             android:layout_width="wrap_content"

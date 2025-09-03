@@ -179,7 +179,7 @@
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintStart_toStartOf="parent"
                                         app:layout_constraintTop_toTopOf="parent"
-                                        app:srcCompat="@drawable/escanear" />
+                                        app:srcCompat="@drawable/ic_scanner_azul" />
                                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                                 <TextView
@@ -222,7 +222,7 @@
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintStart_toStartOf="parent"
                                         app:layout_constraintTop_toTopOf="parent"
-                                        app:srcCompat="@drawable/historico" />
+                                        app:srcCompat="@drawable/ic_historico_azul" />
                                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                                 <TextView
@@ -329,7 +329,7 @@
                             android:layout_height="20dp"
                             android:layout_gravity="center"
                             android:layout_marginTop="8dp"
-                            app:srcCompat="@drawable/bottom_btn1" />
+                            app:srcCompat="@drawable/ic_home" />
 
                         <TextView
                             android:id="@+id/Txtbottom2"
@@ -351,7 +351,7 @@
                             android:layout_height="20dp"
                             android:layout_gravity="center"
                             android:layout_marginTop="8dp"
-                            app:srcCompat="@drawable/bottom_btn1" />
+                            app:srcCompat="@drawable/ic_home" />
 
                         <TextView
                             android:id="@+id/Txtbottom4"
@@ -396,7 +396,7 @@
                             android:layout_height="20dp"
                             android:layout_gravity="center"
                             android:layout_marginTop="8dp"
-                            app:srcCompat="@drawable/bottom_btn1" />
+                            app:srcCompat="@drawable/ic_home" />
 
                         <TextView
                             android:id="@+id/txtbottom5"
@@ -418,7 +418,7 @@
                             android:layout_height="20dp"
                             android:layout_gravity="center"
                             android:layout_marginTop="8dp"
-                            app:srcCompat="@drawable/bottom_btn1" />
+                            app:srcCompat="@drawable/ic_home" />
 
                         <TextView
                             android:id="@+id/textView7"

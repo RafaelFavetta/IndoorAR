@@ -128,7 +128,7 @@
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintStart_toStartOf="parent"
                                         app:layout_constraintTop_toTopOf="parent"
-                                        app:srcCompat="@drawable/ic_meus_mapas" />
+                                        app:srcCompat="@drawable/ic_meusmapas" />
                                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                                 <TextView
@@ -171,7 +171,7 @@
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintStart_toStartOf="parent"
                                         app:layout_constraintTop_toTopOf="parent"
-                                        app:srcCompat="@drawable/ic_criar_mapa_azul" />
+                                        app:srcCompat="@drawable/ic_addmapa" />
                                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                                 <TextView
@@ -214,7 +214,7 @@
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintStart_toStartOf="parent"
                                         app:layout_constraintTop_toTopOf="parent"
-                                        app:srcCompat="@drawable/ic_estatisticas_azul" />
+                                        app:srcCompat="@drawable/ic_estatisticas" />
                                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                                 <TextView

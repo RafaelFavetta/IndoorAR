@@ -7,10 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import android.widget.ImageView
-import com.example.indoorar.views.EditorActivity
-import com.example.indoorar.ui.ActivityMapCreator
-import com.example.indoorar.views.MapCanvasView
-import com.example.indoorar.views.MapEditorView
+import com.example.indoorar.ui.ActivityEditor
 
 
 class ActivityHomeMaker : AppCompatActivity() {
@@ -28,7 +25,7 @@ class ActivityHomeMaker : AppCompatActivity() {
         // Pegando o botão "Criar mapa"
         val btnCriarMapa = findViewById<ImageView>(R.id.btnCriarMapa)
         btnCriarMapa.setOnClickListener {
-            val intent = Intent(this, EditorActivity::class.java)
+            val intent = Intent(this, ActivityEditor::class.java)
             startActivity(intent)
         }
     }

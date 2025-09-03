@@ -21,7 +21,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.IndoorAR">
         <activity
-            android:name=".views.EditorActivity"
+            android:name=".ui.ActivityEditor"
             android:screenOrientation="landscape"
             android:exported="true"
             android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"/> />

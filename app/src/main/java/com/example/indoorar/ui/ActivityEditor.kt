@@ -1,4 +1,4 @@
-package com.example.indoorar.views
+package com.example.indoorar.ui
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
@@ -7,7 +7,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.indoorar.R
 
-class EditorActivity : AppCompatActivity() {
+class ActivityEditor : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

@@ -24,7 +24,7 @@
             android:name=".ui.ActivityEditor"
             android:screenOrientation="landscape"
             android:exported="true"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"/> />
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"/>
         <activity
             android:name=".ActivityHomeMaker"
             android:exported="false" />
@@ -70,10 +70,7 @@
         <activity
             android:name=".ActivityMap"
             android:exported="false" />
-        <activity
-            android:name=".ui.ActivityMapCreator"
-            android:exported="false"
-            android:screenOrientation="landscape" />
+
 
     </application>
 

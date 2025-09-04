@@ -9,7 +9,17 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.indoorar.R
 
+
+enum class Tool {
+    CURSOR,
+    FORMAS,
+    POI,
+    TEXTO,
+    LAYERS,
+    DESFAZER
+}
 class ActivityEditor : AppCompatActivity() {
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,5 +75,8 @@ class ActivityEditor : AppCompatActivity() {
 
         // Define o cursor como selecionado ao abrir
         selectIcon(cursor)
+
+
+
     }
 }

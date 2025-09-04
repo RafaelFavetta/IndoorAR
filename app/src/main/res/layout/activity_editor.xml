@@ -98,7 +98,7 @@
                         android:layout_gravity="center"
                         android:scaleType="fitCenter"
                         app:tint="@color/icon_tint_selector"
-                        app:srcCompat="@drawable/ic_criar_mapa_azul" />
+                        app:srcCompat="@drawable/ic_brush" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -117,7 +117,7 @@
                         android:layout_height="20dp"
                         android:layout_gravity="center"
                         app:tint="@color/icon_tint_selector"
-                        app:srcCompat="@drawable/ic_texto" />
+                        app:srcCompat="@drawable/ic_poi" />
                 </LinearLayout>
 
                 <LinearLayout

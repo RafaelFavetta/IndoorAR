@@ -2,6 +2,7 @@ package com.example.indoorar.ui
 
 import android.os.Bundle
 import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -21,6 +22,14 @@ class ActivityEditor : AppCompatActivity() {
             insets
         }
 
+        // Pega os layouts (área clicável)
+        val cursorLayout = findViewById<LinearLayout>(R.id.linear)
+        val formasLayout = findViewById<LinearLayout>(R.id.linear2)
+        val iconesLayout = findViewById<LinearLayout>(R.id.linear3)
+        val textoLayout = findViewById<LinearLayout>(R.id.linear4)
+        val layersLayout = findViewById<LinearLayout>(R.id.linear5)
+        val desfazerLayout = findViewById<LinearLayout>(R.id.linear6)
+
         // Pega os ícones
         val cursor = findViewById<ImageView>(R.id.cursor)
         val formas = findViewById<ImageView>(R.id.formas)
@@ -29,17 +38,27 @@ class ActivityEditor : AppCompatActivity() {
         val layers = findViewById<ImageView>(R.id.layers)
         val desfazer = findViewById<ImageView>(R.id.desfazer)
 
-        val icons = listOf(cursor, formas, icones, texto, layers, desfazer)
+        // Lista de pares (layout -> ícone)
+        val layouts = listOf(
+            cursorLayout to cursor,
+            formasLayout to formas,
+            iconesLayout to icones,
+            textoLayout to texto,
+            layersLayout to layers,
+            desfazerLayout to desfazer
+        )
 
         // Função pra marcar só 1 como selecionado
         fun selectIcon(selected: ImageView) {
-            icons.forEach { it.isSelected = false }
+            listOf(cursor, formas, icones, texto, layers, desfazer).forEach {
+                it.isSelected = false
+            }
             selected.isSelected = true
         }
 
-        // Adiciona clique em todos
-        icons.forEach { icon ->
-            icon.setOnClickListener {
+        // Adiciona clique em cada layout
+        layouts.forEach { (layout, icon) ->
+            layout.setOnClickListener {
                 selectIcon(icon)
             }
         }

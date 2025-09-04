@@ -47,6 +47,8 @@
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
                     android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:orientation="vertical">
 
                     <ImageView
@@ -54,8 +56,6 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:padding="4dp"
-                        android:clickable="true"
-                        android:focusable="true"
                         app:tint="@color/icon_tint_selector"
                         app:srcCompat="@drawable/ic_cursor_azul"
                          />
@@ -67,6 +67,8 @@
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
                     android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:orientation="vertical">
 
                     <ImageView
@@ -75,8 +77,6 @@
                         android:layout_height="20dp"
                         android:layout_gravity="center"
                         android:padding="3dp"
-                        android:clickable="true"
-                        android:focusable="true"
                         app:tint="@color/icon_tint_selector"
                         app:srcCompat="@drawable/ic_square_azul" />
                 </LinearLayout>
@@ -87,6 +87,8 @@
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
                     android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:orientation="vertical">
 
                     <ImageView
@@ -95,8 +97,6 @@
                         android:layout_height="20dp"
                         android:layout_gravity="center"
                         android:scaleType="fitCenter"
-                        android:clickable="true"
-                        android:focusable="true"
                         app:tint="@color/icon_tint_selector"
                         app:srcCompat="@drawable/ic_criar_mapa_azul" />
                 </LinearLayout>
@@ -107,6 +107,8 @@
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
                     android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:orientation="vertical">
 
                     <ImageView
@@ -114,8 +116,6 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:clickable="true"
-                        android:focusable="true"
                         app:tint="@color/icon_tint_selector"
                         app:srcCompat="@drawable/ic_texto" />
                 </LinearLayout>
@@ -126,6 +126,8 @@
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
                     android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:orientation="vertical">
 
                     <ImageView
@@ -133,8 +135,6 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:clickable="true"
-                        android:focusable="true"
                         app:tint="@color/icon_tint_selector"
                         app:srcCompat="@drawable/ic_layers" />
                 </LinearLayout>
@@ -145,6 +145,8 @@
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
                     android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:orientation="vertical">
 
                     <ImageView
@@ -152,8 +154,6 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:clickable="true"
-                        android:focusable="true"
                         app:tint="@color/icon_tint_selector"
                         app:srcCompat="@drawable/ic_desfazer" />
                 </LinearLayout>

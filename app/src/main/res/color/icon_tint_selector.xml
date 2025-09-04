@@ -3,7 +3,7 @@
     <!-- Selecionado -->
     <item android:color="#32357A" android:state_selected="true"/>
     <!-- Pressionado (efeito momentâneo) -->
-    <item android:color="#64B5F6" android:state_pressed="true"/>
+    <item android:color="#9932357A" android:state_pressed="true"/>
     <!-- Normal -->
     <item android:color="#000000"/>
 </selector>

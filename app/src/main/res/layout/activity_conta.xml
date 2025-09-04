@@ -17,14 +17,14 @@
         android:letterSpacing="0.05"
         android:text="ESCOLHA O TIPO DE USUÁRIO"
         android:textColor="#FDFDFD"
-        android:textSize="35sp"
+        android:textSize="37sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.486"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.08" />
+        app:layout_constraintVertical_bias="0.06" />
 
     <TextView
         android:id="@+id/tiponormal"

@@ -2,65 +2,69 @@ package com.example.indoorar.ui
 
 import android.os.Bundle
 import android.widget.ImageView
-import android.widget.LinearLayout
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.example.indoorar.R
-
-
+import com.example.indoorar.views.MapEditorView
+import com.example.indoorar.ui.Tool
 
 class ActivityEditor : AppCompatActivity() {
 
-    private var selectedTool: Tool = Tool.CURSOR
+    private lateinit var mapEditor: MapEditorView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_editor)
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+        mapEditor = findViewById(R.id.mapEditor)
+
+        // Função para atualizar qual botão está ativo
+        fun updateSelectedButton(selectedId: Int) {
+            val buttons = listOf(
+                R.id.cursor,
+                R.id.formas,
+                R.id.brush,
+                R.id.poi
+            )
+            buttons.forEach { id ->
+                findViewById<ImageView>(id).isSelected = (id == selectedId)
+            }
         }
 
-        // Pega os layouts (área clicável)
-        val cursorLayout = findViewById<LinearLayout>(R.id.linearcursor)
-        val formasLayout = findViewById<LinearLayout>(R.id.linearformas)
-        val brushLayout = findViewById<LinearLayout>(R.id.linearbrush)
-        val poiLayout = findViewById<LinearLayout>(R.id.linearpoi)
-        val layersLayout = findViewById<LinearLayout>(R.id.linearlayers)
-        val desfazerLayout = findViewById<LinearLayout>(R.id.lineardesfazer)
-
-        // Pega os ícones
-        val cursor = findViewById<ImageView>(R.id.cursor)
-        val formas = findViewById<ImageView>(R.id.formas)
-        val brush = findViewById<ImageView>(R.id.brush)
-        val poi = findViewById<ImageView>(R.id.poi)
-        val layers = findViewById<ImageView>(R.id.layers)
-        val desfazer = findViewById<ImageView>(R.id.desfazer)
-
-        // variaveis adicionadas ao .kt
-        val icons = listOf(cursor, formas, brush, poi, layers, desfazer)
-
-        // Função pra marcar só 1 como selecionado e setar ferramenta
-        fun selectIcon(selected: ImageView, tool: Tool) {
-            icons.forEach { it.isSelected = false }
-            selected.isSelected = true
-            selectedTool = tool
+        // Cursor
+        findViewById<ImageView>(R.id.cursor).setOnClickListener {
+            mapEditor.setTool(Tool.CURSOR)
+            updateSelectedButton(R.id.cursor)
         }
 
-        // Adiciona clique em cada layout
-        cursorLayout.setOnClickListener { selectIcon(cursor, Tool.CURSOR) }
-        formasLayout.setOnClickListener { selectIcon(formas, Tool.FORMAS) }
-        brushLayout.setOnClickListener { selectIcon(brush, Tool.BRUSH) }
-        poiLayout.setOnClickListener { selectIcon(poi, Tool.POI) }
-        layersLayout.setOnClickListener { selectIcon(layers, Tool.LAYERS) }
-        desfazerLayout.setOnClickListener { selectIcon(desfazer, Tool.DESFAZER) }
+        // Formas
+        findViewById<ImageView>(R.id.formas).setOnClickListener {
+            mapEditor.setTool(Tool.FORMAS)
+            updateSelectedButton(R.id.formas)
+        }
 
-        // Define o cursor como selecionado ao abrir
-        selectIcon(cursor, Tool.CURSOR)
+        // Brush
+        findViewById<ImageView>(R.id.brush).setOnClickListener {
+            mapEditor.setTool(Tool.BRUSH)
+            updateSelectedButton(R.id.brush)
+        }
+
+        // POI
+        findViewById<ImageView>(R.id.poi).setOnClickListener {
+            mapEditor.setTool(Tool.POI)
+            updateSelectedButton(R.id.poi)
+        }
+
+        // Camadas (grid por enquanto)
+        findViewById<ImageView>(R.id.layers).setOnClickListener {
+            mapEditor.toggleGrid()
+        }
+
+        // Desfazer
+        findViewById<ImageView>(R.id.desfazer).setOnClickListener {
+            mapEditor.undo()
+        }
+
+        // Define o botão inicial selecionado (cursor)
+        updateSelectedButton(R.id.cursor)
     }
 }

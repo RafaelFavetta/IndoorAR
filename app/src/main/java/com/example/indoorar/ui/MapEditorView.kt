@@ -91,10 +91,11 @@ class MapEditorView @JvmOverloads constructor(
 
     fun undo() {
         if (actions.isNotEmpty()) {
-            actions.removeLast()
+            actions.removeAt(actions.lastIndex) // mais seguro
             invalidate()
         }
     }
+
 
     fun toggleGrid() { showGrid = !showGrid; invalidate() }
     fun toggleBrushLayer() { showBrush = !showBrush; invalidate() }

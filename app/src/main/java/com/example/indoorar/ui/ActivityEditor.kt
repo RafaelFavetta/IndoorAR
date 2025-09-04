@@ -3,11 +3,12 @@ package com.example.indoorar.ui
 import android.os.Bundle
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import com.example.indoorar.BaseActivity
 import com.example.indoorar.R
 import com.example.indoorar.views.MapEditorView
 import com.example.indoorar.ui.Tool
 
-class ActivityEditor : AppCompatActivity() {
+class ActivityEditor : BaseActivity() {
 
     private lateinit var mapEditor: MapEditorView
 

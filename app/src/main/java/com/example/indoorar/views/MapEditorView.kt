@@ -1,7 +1,11 @@
 package com.example.indoorar.views
 
 import android.content.Context
-import android.graphics.*
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.PointF
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -51,7 +55,8 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     // ======= GESTOS =======
-    private val scaleDetector = ScaleGestureDetector(context,
+    private val scaleDetector = ScaleGestureDetector(
+        context,
         object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector): Boolean {
                 val prevScale = scale
@@ -67,9 +72,15 @@ class MapEditorView @JvmOverloads constructor(
             }
         })
 
-    private val gestureDetector = GestureDetector(context,
+    private val gestureDetector = GestureDetector(
+        context,
         object : GestureDetector.SimpleOnGestureListener() {
-            override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean {
+            override fun onScroll(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                dx: Float,
+                dy: Float
+            ): Boolean {
                 // Só faz pan com um dedo quando a ferramenta é CURSOR (senão conflita com desenho)
                 if (currentTool == Tool.CURSOR) {
                     offsetX -= dx

@@ -6,8 +6,10 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import com.google.ar.sceneform.ux.ArFragment
+import com.example.indoorar.BaseActivity
 
-class ActivityMap : AppCompatActivity() {
+
+class ActivityMap : BaseActivity() {
 
     private lateinit var arFragment: ArFragment
     private lateinit var loadingText: TextView

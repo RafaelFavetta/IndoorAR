@@ -16,8 +16,10 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import com.redmadrobot.inputmask.MaskedTextChangedListener
+import com.example.indoorar.BaseActivity
 
-class ActivityCriar : AppCompatActivity() {
+
+class ActivityCriar : BaseActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore

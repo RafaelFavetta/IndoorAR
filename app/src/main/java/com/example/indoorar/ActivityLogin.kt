@@ -12,9 +12,9 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import androidx.core.graphics.toColorInt
 import android.widget.TextView
+import com.example.indoorar.BaseActivity
 
-
-class ActivityLogin : AppCompatActivity() {
+class ActivityLogin : BaseActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var btnEntrar: Button

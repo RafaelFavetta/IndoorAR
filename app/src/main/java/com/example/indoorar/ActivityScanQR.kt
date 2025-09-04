@@ -18,8 +18,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.zxing.*
 import com.google.zxing.common.HybridBinarizer
 import androidx.core.net.toUri
+import com.example.indoorar.BaseActivity
 
-class ActivityScanQR : AppCompatActivity() {
+
+class ActivityScanQR : BaseActivity() {
 
     private lateinit var previewView: PreviewView
     private lateinit var btnResult: Button

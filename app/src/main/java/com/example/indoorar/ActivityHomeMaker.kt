@@ -8,9 +8,11 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import android.widget.ImageView
 import com.example.indoorar.ui.ActivityEditor
+import com.example.indoorar.BaseActivity
 
 
-class ActivityHomeMaker : AppCompatActivity() {
+
+class ActivityHomeMaker : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

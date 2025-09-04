@@ -9,14 +9,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.indoorar.R
 
-enum class Tool {
-    CURSOR,
-    FORMAS,
-    BRUSH,
-    POI,
-    LAYERS,
-    DESFAZER
-}
+
 
 class ActivityEditor : AppCompatActivity() {
 
@@ -49,7 +42,7 @@ class ActivityEditor : AppCompatActivity() {
         val layers = findViewById<ImageView>(R.id.layers)
         val desfazer = findViewById<ImageView>(R.id.desfazer)
 
-        // Inclui o brush na lista
+        // variaveis adicionadas ao .kt
         val icons = listOf(cursor, formas, brush, poi, layers, desfazer)
 
         // Função pra marcar só 1 como selecionado e setar ferramenta

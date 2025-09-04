@@ -42,7 +42,7 @@
                 android:orientation="horizontal">
 
                 <LinearLayout
-                    android:id="@+id/linear"
+                    android:id="@+id/linearcursor"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
@@ -62,7 +62,7 @@
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/linear2"
+                    android:id="@+id/linearformas"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
@@ -82,7 +82,7 @@
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/linear3"
+                    android:id="@+id/linearbrush"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
@@ -92,7 +92,7 @@
                     android:orientation="vertical">
 
                     <ImageView
-                        android:id="@+id/icones"
+                        android:id="@+id/brush"
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
@@ -102,7 +102,7 @@
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/linear4"
+                    android:id="@+id/linearpoi"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
@@ -112,16 +112,16 @@
                     android:orientation="vertical">
 
                     <ImageView
-                        android:id="@+id/texto"
-                        android:layout_width="20dp"
+                        android:id="@+id/poi"
+                        android:layout_width="wrap_content"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        app:tint="@color/icon_tint_selector"
-                        app:srcCompat="@drawable/ic_poi" />
+                        app:srcCompat="@drawable/ic_poi"
+                        app:tint="@color/icon_tint_selector" />
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/linear5"
+                    android:id="@+id/linearlayers"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
@@ -140,7 +140,7 @@
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/linear6"
+                    android:id="@+id/lineardesfazer"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"

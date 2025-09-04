@@ -15,6 +15,7 @@ import com.example.indoorar.ui.Action
 import com.example.indoorar.ui.Tool
 import kotlin.math.max
 import kotlin.math.min
+import androidx.core.graphics.withTranslation
 
 class MapEditorView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -165,15 +166,14 @@ class MapEditorView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        canvas.save()
-        canvas.translate(offsetX, offsetY)
-        canvas.scale(scale, scale)
+        canvas.withTranslation(offsetX, offsetY) {
+            scale(scale, scale)
 
-        if (showGrid) drawGrid(canvas)
-        drawActions(canvas)
-        drawTemp(canvas)
+            if (showGrid) drawGrid(this)
+            drawActions(this)
+            drawTemp(this)
 
-        canvas.restore()
+        }
     }
 
     private fun drawGrid(canvas: Canvas) {

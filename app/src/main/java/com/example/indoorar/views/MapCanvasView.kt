@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat
 import com.example.indoorar.R
 import com.example.indoorar.model.ShapeData
 import androidx.core.graphics.scale
+import androidx.core.graphics.withSave
 
 class MapCanvasView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -22,66 +23,71 @@ class MapCanvasView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         shapes.forEach { shape ->
-            canvas.save()
-            val centerX = shape.posicao.x + shape.tamanho.largura / 2
-            val centerY = shape.posicao.y + shape.tamanho.altura / 2
-            canvas.rotate(shape.rotacao.toFloat(), centerX, centerY)
+            canvas.withSave {
+                val centerX = shape.posicao.x + shape.tamanho.largura / 2
+                val centerY = shape.posicao.y + shape.tamanho.altura / 2
+                rotate(shape.rotacao.toFloat(), centerX, centerY)
 
-            when (shape.tipo) {
-                "quadrado", "retangulo" -> {
-                    paint.color = shape.cor
-                    canvas.drawRect(
-                        shape.posicao.x,
-                        shape.posicao.y,
-                        shape.posicao.x + shape.tamanho.largura,
-                        shape.posicao.y + shape.tamanho.altura,
-                        paint
-                    )
-                }
-                "circulo" -> {
-                    paint.color = shape.cor
-                    canvas.drawCircle(
-                        centerX,
-                        centerY,
-                        shape.tamanho.largura / 2,
-                        paint
-                    )
-                }
-                "triangulo" -> {
-                    paint.color = shape.cor
-                    val path = Path()
-                    path.moveTo(centerX, shape.posicao.y)
-                    path.lineTo(shape.posicao.x, shape.posicao.y + shape.tamanho.altura)
-                    path.lineTo(shape.posicao.x + shape.tamanho.largura, shape.posicao.y + shape.tamanho.altura)
-                    path.close()
-                    canvas.drawPath(path, paint)
-                }
-                // Símbolos especiais como PNG
-                "escada", "elevador", "porta", "extintor", "banheiro" -> {
-                    val resId = when (shape.tipo) {
-                        "escada" -> R.drawable.ic_stairs_branco
-                        "elevador" -> R.drawable.ic_elevator_branco
-                        "porta" -> R.drawable.ic_door_branco
-                        "extintor" -> R.drawable.ic_extintor_branco
-                        "banheiro" -> R.drawable.ic_banheiro_branco
-                        else -> 0
-                    }
-                    if (resId != 0) {
-                        val bitmap = BitmapFactory.decodeResource(resources, resId)
-                        val scaledBitmap = bitmap.scale(
-                            shape.tamanho.largura.toInt(),
-                            shape.tamanho.altura.toInt()
-                        )
-                        canvas.drawBitmap(
-                            scaledBitmap,
+                when (shape.tipo) {
+                    "quadrado", "retangulo" -> {
+                        paint.color = shape.cor
+                        drawRect(
                             shape.posicao.x,
                             shape.posicao.y,
+                            shape.posicao.x + shape.tamanho.largura,
+                            shape.posicao.y + shape.tamanho.altura,
                             paint
                         )
                     }
+
+                    "circulo" -> {
+                        paint.color = shape.cor
+                        drawCircle(
+                            centerX,
+                            centerY,
+                            shape.tamanho.largura / 2,
+                            paint
+                        )
+                    }
+
+                    "triangulo" -> {
+                        paint.color = shape.cor
+                        val path = Path()
+                        path.moveTo(centerX, shape.posicao.y)
+                        path.lineTo(shape.posicao.x, shape.posicao.y + shape.tamanho.altura)
+                        path.lineTo(
+                            shape.posicao.x + shape.tamanho.largura,
+                            shape.posicao.y + shape.tamanho.altura
+                        )
+                        path.close()
+                        drawPath(path, paint)
+                    }
+                    // Símbolos especiais como PNG
+                    "escada", "elevador", "porta", "extintor", "banheiro" -> {
+                        val resId = when (shape.tipo) {
+                            "escada" -> R.drawable.ic_stairs_branco
+                            "elevador" -> R.drawable.ic_elevator_branco
+                            "porta" -> R.drawable.ic_door_branco
+                            "extintor" -> R.drawable.ic_extintor_branco
+                            "banheiro" -> R.drawable.ic_banheiro_branco
+                            else -> 0
+                        }
+                        if (resId != 0) {
+                            val bitmap = BitmapFactory.decodeResource(resources, resId)
+                            val scaledBitmap = bitmap.scale(
+                                shape.tamanho.largura.toInt(),
+                                shape.tamanho.altura.toInt()
+                            )
+                            drawBitmap(
+                                scaledBitmap,
+                                shape.posicao.x,
+                                shape.posicao.y,
+                                paint
+                            )
+                        }
+                    }
                 }
             }
-            canvas.restore()
         }
     }
 

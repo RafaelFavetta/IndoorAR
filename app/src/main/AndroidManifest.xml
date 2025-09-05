@@ -20,13 +20,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.IndoorAR">
-
+        <activity
+            android:name=".Activity_perfil2"
+            android:exported="false" />
         <activity
             android:name=".ui.ActivityEditor"
             android:exported="true"
             android:screenOrientation="landscape"
             android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
-
         <activity
             android:name=".ActivityHomeMaker"
             android:exported="false" />
@@ -72,8 +73,6 @@
         <activity
             android:name=".ActivityMap"
             android:exported="false" />
-
-
     </application>
 
 </manifest>

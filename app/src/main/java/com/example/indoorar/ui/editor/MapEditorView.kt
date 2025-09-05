@@ -41,6 +41,13 @@ class MapEditorView @JvmOverloads constructor(
     private var draggingShape: Action.Shape? = null
     private var lastDragPoint: PointF? = null
 
+    private var activeHandle: Handle? = null
+
+    private enum class Handle {
+        TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT
+    }
+
+
     // ======= PAINTS =======
     internal val gridDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.rgb(210, 210, 210)
@@ -154,34 +161,77 @@ class MapEditorView @JvmOverloads constructor(
                 MotionEvent.ACTION_DOWN -> {
                     // limpa seleção anterior
                     actions.forEach { if (it is Action.Shape) it.selected = false }
+
                     // tenta selecionar shape
                     val hit = hitTestShapes(world)
                     if (hit != null) {
                         hit.selected = true
                         draggingShape = hit
                         lastDragPoint = world
+
+                        // verifica se clicou em um handle
+                        activeHandle = hitTestHandles(hit, world)
+
                         invalidate()
                     } else {
                         draggingShape = null
                         lastDragPoint = null
+                        activeHandle = null
                         gestureDetector.onTouchEvent(event)
                     }
                 }
+
                 MotionEvent.ACTION_MOVE -> {
                     if (draggingShape != null && lastDragPoint != null) {
                         val dx = world.x - lastDragPoint!!.x
                         val dy = world.y - lastDragPoint!!.y
-                        draggingShape!!.start = PointF(draggingShape!!.start.x + dx, draggingShape!!.start.y + dy)
-                        draggingShape!!.end   = PointF(draggingShape!!.end.x   + dx, draggingShape!!.end.y   + dy)
+
+                        if (activeHandle != null) {
+                            // 🔹 Resize pelos handles
+                            if (activeHandle != null) {
+                                when (activeHandle!!) {
+                                    Handle.TOP_LEFT -> {
+                                        draggingShape!!.start.x += dx
+                                        draggingShape!!.start.y += dy
+                                    }
+                                    Handle.TOP_RIGHT -> {
+                                        draggingShape!!.end.x += dx
+                                        draggingShape!!.start.y += dy
+                                    }
+                                    Handle.BOTTOM_LEFT -> {
+                                        draggingShape!!.start.x += dx
+                                        draggingShape!!.end.y += dy
+                                    }
+                                    Handle.BOTTOM_RIGHT -> {
+                                        draggingShape!!.end.x += dx
+                                        draggingShape!!.end.y += dy
+                                    }
+                                }
+                            }
+
+                        } else {
+                            // 🔹 Drag normal (move tudo)
+                            draggingShape!!.start = PointF(
+                                draggingShape!!.start.x + dx,
+                                draggingShape!!.start.y + dy
+                            )
+                            draggingShape!!.end = PointF(
+                                draggingShape!!.end.x + dx,
+                                draggingShape!!.end.y + dy
+                            )
+                        }
+
                         lastDragPoint = world
                         invalidate()
                     } else {
                         gestureDetector.onTouchEvent(event)
                     }
                 }
+
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     draggingShape = null
                     lastDragPoint = null
+                    activeHandle = null
                     gestureDetector.onTouchEvent(event)
                 }
             }
@@ -335,6 +385,28 @@ class MapEditorView @JvmOverloads constructor(
         }
         return null
     }
+
+    private fun hitTestHandles(shape: Action.Shape, p: PointF, size: Float = dp(24f)): Handle? {
+        val rect = RectF(shape.start.x, shape.start.y, shape.end.x, shape.end.y)
+        val half = size / 2
+
+        val handles = mapOf(
+            Handle.TOP_LEFT to PointF(rect.left, rect.top),
+            Handle.TOP_RIGHT to PointF(rect.right, rect.top),
+            Handle.BOTTOM_LEFT to PointF(rect.left, rect.bottom),
+            Handle.BOTTOM_RIGHT to PointF(rect.right, rect.bottom)
+        )
+
+        for ((handle, pos) in handles) {
+            if (p.x in (pos.x - half)..(pos.x + half) &&
+                p.y in (pos.y - half)..(pos.y + half)) {
+                return handle
+            }
+        }
+        return null
+    }
+
+
 
     // ======= UTILS =======
     internal fun screenToWorld(x: Float, y: Float): PointF =

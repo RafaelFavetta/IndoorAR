@@ -2,7 +2,7 @@ package com.example.indoorar.ui
 
 import android.os.Bundle
 import android.widget.ImageView
-import androidx.appcompat.app.AppCompatActivity
+import android.widget.LinearLayout
 import com.example.indoorar.BaseActivity
 import com.example.indoorar.R
 import com.example.indoorar.views.MapEditorView
@@ -32,36 +32,36 @@ class ActivityEditor : BaseActivity() {
         }
 
         // Cursor
-        findViewById<ImageView>(R.id.cursor).setOnClickListener {
+        findViewById<LinearLayout>(R.id.linearcursor).setOnClickListener {
             mapEditor.setTool(Tool.CURSOR)
             updateSelectedButton(R.id.cursor)
         }
 
         // Formas
-        findViewById<ImageView>(R.id.formas).setOnClickListener {
+        findViewById<LinearLayout>(R.id.linearformas).setOnClickListener {
             mapEditor.setTool(Tool.FORMAS)
             updateSelectedButton(R.id.formas)
         }
 
         // Brush
-        findViewById<ImageView>(R.id.brush).setOnClickListener {
+        findViewById<LinearLayout>(R.id.linearbrush).setOnClickListener {
             mapEditor.setTool(Tool.BRUSH)
             updateSelectedButton(R.id.brush)
         }
 
         // POI
-        findViewById<ImageView>(R.id.poi).setOnClickListener {
+        findViewById<LinearLayout>(R.id.linearpoi).setOnClickListener {
             mapEditor.setTool(Tool.POI)
             updateSelectedButton(R.id.poi)
         }
 
         // Camadas (grid por enquanto)
-        findViewById<ImageView>(R.id.layers).setOnClickListener {
+        findViewById<LinearLayout>(R.id.linearlayers).setOnClickListener {
             mapEditor.toggleGrid()
         }
 
         // Desfazer
-        findViewById<ImageView>(R.id.desfazer).setOnClickListener {
+        findViewById<LinearLayout>(R.id.lineardesfazer).setOnClickListener {
             mapEditor.undo()
         }
 

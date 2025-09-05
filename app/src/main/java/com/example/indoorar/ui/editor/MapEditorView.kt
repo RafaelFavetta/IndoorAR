@@ -16,6 +16,8 @@ import com.example.indoorar.ui.editor.ShapeEditor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlin.math.abs
+import android.os.SystemClock
 
 
 class MapEditorView @JvmOverloads constructor(
@@ -32,11 +34,28 @@ class MapEditorView @JvmOverloads constructor(
         private set
 
     // ======= CAMADAS =======
-
-
     var showGrid = true
     var showBrush = true
     var showPois = true
+
+    // ======= SNAP GUIDES =====
+    private val snapGuides = mutableListOf<Pair<PointF, PointF>>() // linhas visuais
+
+    // --- Snap inteligente (histerese + dwell) ---
+    private data class AxisSnap(
+        var active: Float? = null,     // alvo travado (linha X ou Y)
+        var candidate: Float? = null,  // candidato sob avaliação
+        var seenAt: Long = 0L          // quando vimos o candidato pela 1ª vez
+    )
+
+    private val snapX = AxisSnap()
+    private val snapY = AxisSnap()
+
+    private val gridSpacing = 40f               // mesmo passo do seu grid
+    private val snapAccept = dp(6f)             // distância para GRUDAR
+    private val snapRelease = dp(14f)           // distância para SOLTAR
+    private val snapDwellMs = 60L               // precisa ficar ~60ms perto pra travar
+
 
     // ======= DADOS =======
     private val actions = mutableListOf<Action>()
@@ -52,34 +71,31 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     // ======= PAINTS =======
-    internal val gridDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+     val gridDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.rgb(210, 210, 210)
         style = Paint.Style.FILL
     }
-    internal val brushPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    val brushPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.rgb(50, 100, 255)
         style = Paint.Style.STROKE
         strokeWidth = dp(2f)
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
+
+
     }
-    internal val poiPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+     val poiPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.BLACK
         style = Paint.Style.FILL
     }
-
-    // (antigo tracejado — pode remover se não usar)
-    private val selectionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.RED
-        style = Paint.Style.STROKE
-        strokeWidth = dp(3f)
-        pathEffect = DashPathEffect(floatArrayOf(12f, 12f), 0f)
-    }
-
-    private val shapeSelectionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+     val shapeSelectionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#0D99FF") // azul Figma
         style = Paint.Style.STROKE
         strokeWidth = dp(2f)
+    }
+    private val snapPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#FF6A00") // laranja Figma
+        strokeWidth = dp(1.5f)
     }
 
     // ======= EDITORES =======
@@ -144,153 +160,132 @@ class MapEditorView @JvmOverloads constructor(
 
     // ======= TOUCH =======
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        // pinch-zoom sempre
         scaleDetector.onTouchEvent(event)
+
+        // Se NÃO estiver no cursor, delega para o editor correspondente e sai.
+        if (currentTool != Tool.CURSOR) {
+            return when (currentTool) {
+                Tool.BRUSH  -> brushEditor.onTouch(event)
+                Tool.FORMAS -> shapeEditor.onTouch(event)
+                Tool.POI    -> poiEditor.onTouch(event)
+                else        -> true
+            }
+        }
+
+        // Modo cursor: permitir pan com gesto (quando não está arrastando shape)
+        gestureDetector.onTouchEvent(event)
+
         val world = screenToWorld(event.x, event.y)
 
-        if (currentTool == Tool.CURSOR) {
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    actions.forEach { if (it is Action.Shape) it.selected = false }
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                lastDragPoint = world
 
-                    val hit = hitTestShapes(world)
-                    if (hit != null) {
-                        hit.selected = true
-                        draggingShape = hit
-                        lastDragPoint = world
-                        activeHandle = hitTestHandles(hit, world)
-                        invalidate()
-                    } else {
-                        draggingShape = null
-                        activeHandle = null
-                        lastDragPoint = null
-                        gestureDetector.onTouchEvent(event)
-                    }
-                }
+                // limpar seleção anterior
+                actions.forEach { if (it is Action.Shape) it.selected = false }
 
-                MotionEvent.ACTION_MOVE -> {
-                    if (draggingShape != null && lastDragPoint != null) {
-                        val dx = world.x - lastDragPoint!!.x
-                        val dy = world.y - lastDragPoint!!.y
-
-                        if (activeHandle != null) {
-                            // 🔹 Resize com mínimo
-                            val minSize = dp(30f)
-                            val rect = RectF(
-                                draggingShape!!.start.x,
-                                draggingShape!!.start.y,
-                                draggingShape!!.end.x,
-                                draggingShape!!.end.y
-                            )
-
-                            if (activeHandle != null) {
-                                val minSize = dp(30f)
-                                val rect = RectF(
-                                    draggingShape!!.start.x,
-                                    draggingShape!!.start.y,
-                                    draggingShape!!.end.x,
-                                    draggingShape!!.end.y
-                                )
-
-                                activeHandle?.let { handle ->
-                                    when (handle) {
-                                        Handle.TOP_LEFT -> {
-                                            val newLeft = draggingShape!!.start.x + dx
-                                            val newTop = draggingShape!!.start.y + dy
-                                            if ((rect.right - newLeft) > minSize) draggingShape!!.start.x = newLeft
-                                            if ((rect.bottom - newTop) > minSize) draggingShape!!.start.y = newTop
-                                        }
-                                        Handle.TOP_RIGHT -> {
-                                            val newRight = draggingShape!!.end.x + dx
-                                            val newTop = draggingShape!!.start.y + dy
-                                            if ((newRight - rect.left) > minSize) draggingShape!!.end.x = newRight
-                                            if ((rect.bottom - newTop) > minSize) draggingShape!!.start.y = newTop
-                                        }
-                                        Handle.BOTTOM_LEFT -> {
-                                            val newLeft = draggingShape!!.start.x + dx
-                                            val newBottom = draggingShape!!.end.y + dy
-                                            if ((rect.right - newLeft) > minSize) draggingShape!!.start.x = newLeft
-                                            if ((newBottom - rect.top) > minSize) draggingShape!!.end.y = newBottom
-                                        }
-                                        Handle.BOTTOM_RIGHT -> {
-                                            val newRight = draggingShape!!.end.x + dx
-                                            val newBottom = draggingShape!!.end.y + dy
-                                            if ((newRight - rect.left) > minSize) draggingShape!!.end.x = newRight
-                                            if ((newBottom - rect.top) > minSize) draggingShape!!.end.y = newBottom
-                                        }
-                                        Handle.TOP_CENTER -> {
-                                            val newTop = draggingShape!!.start.y + dy
-                                            if ((rect.bottom - newTop) > minSize) draggingShape!!.start.y = newTop
-                                        }
-                                        Handle.BOTTOM_CENTER -> {
-                                            val newBottom = draggingShape!!.end.y + dy
-                                            if ((newBottom - rect.top) > minSize) draggingShape!!.end.y = newBottom
-                                        }
-                                        Handle.LEFT_CENTER -> {
-                                            val newLeft = draggingShape!!.start.x + dx
-                                            if ((rect.right - newLeft) > minSize) draggingShape!!.start.x = newLeft
-                                        }
-                                        Handle.RIGHT_CENTER -> {
-                                            val newRight = draggingShape!!.end.x + dx
-                                            if ((newRight - rect.left) > minSize) draggingShape!!.end.x = newRight
-                                        }
-                                    }
-                                }
-                            }
-
-                        } else {
-                            // 🔹 Drag normal (mover shape inteiro)
-                            draggingShape!!.start = PointF(
-                                draggingShape!!.start.x + dx,
-                                draggingShape!!.start.y + dy
-                            )
-                            draggingShape!!.end = PointF(
-                                draggingShape!!.end.x + dx,
-                                draggingShape!!.end.y + dy
-                            )
-                        }
-
-                        lastDragPoint = world
-                        invalidate()
-                    } else {
-                        gestureDetector.onTouchEvent(event)
-                    }
-                }
-
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    // 🔹 Normalizar top-left → bottom-right
-                    draggingShape?.let { shape ->
-                        val left = min(shape.start.x, shape.end.x)
-                        val top = min(shape.start.y, shape.end.y)
-                        val right = max(shape.start.x, shape.end.x)
-                        val bottom = max(shape.start.y, shape.end.y)
-                        shape.start = PointF(left, top)
-                        shape.end = PointF(right, bottom)
-
-                        // 🔹 Snap to grid
-                        if (showGrid) {
-                            shape.start.x = snap(shape.start.x)
-                            shape.start.y = snap(shape.start.y)
-                            shape.end.x = snap(shape.end.x)
-                            shape.end.y = snap(shape.end.y)
-                        }
-                    }
-
+                // hit-test em shapes
+                val hit = hitTestShapes(world)
+                if (hit != null) {
+                    hit.selected = true
+                    draggingShape = hit
+                    activeHandle = hitTestHandles(hit, world)
+                } else {
                     draggingShape = null
-                    lastDragPoint = null
                     activeHandle = null
-                    gestureDetector.onTouchEvent(event)
                 }
+
+                invalidate()
             }
-            return true
+
+            MotionEvent.ACTION_MOVE -> {
+                val prev = lastDragPoint ?: world
+                val dx = world.x - prev.x
+                val dy = world.y - prev.y
+
+                draggingShape?.let { shape ->
+                    val minSize = dp(30f)
+                    val rect = RectF(shape.start.x, shape.start.y, shape.end.x, shape.end.y)
+
+                    if (activeHandle != null) {
+                        // ===== RESIZE =====
+                        when (activeHandle!!) {
+                            Handle.TOP_LEFT -> {
+                                val newLeft = shape.start.x + dx
+                                val newTop = shape.start.y + dy
+                                if ((rect.right - newLeft) > minSize) shape.start.x = newLeft
+                                if ((rect.bottom - newTop) > minSize) shape.start.y = newTop
+                            }
+                            Handle.TOP_RIGHT -> {
+                                val newRight = shape.end.x + dx
+                                val newTop = shape.start.y + dy
+                                if ((newRight - rect.left) > minSize) shape.end.x = newRight
+                                if ((rect.bottom - newTop) > minSize) shape.start.y = newTop
+                            }
+                            Handle.BOTTOM_LEFT -> {
+                                val newLeft = shape.start.x + dx
+                                val newBottom = shape.end.y + dy
+                                if ((rect.right - newLeft) > minSize) shape.start.x = newLeft
+                                if ((newBottom - rect.top) > minSize) shape.end.y = newBottom
+                            }
+                            Handle.BOTTOM_RIGHT -> {
+                                val newRight = shape.end.x + dx
+                                val newBottom = shape.end.y + dy
+                                if ((newRight - rect.left) > minSize) shape.end.x = newRight
+                                if ((newBottom - rect.top) > minSize) shape.end.y = newBottom
+                            }
+                            Handle.TOP_CENTER -> {
+                                val newTop = shape.start.y + dy
+                                if ((rect.bottom - newTop) > minSize) shape.start.y = newTop
+                            }
+                            Handle.BOTTOM_CENTER -> {
+                                val newBottom = shape.end.y + dy
+                                if ((newBottom - rect.top) > minSize) shape.end.y = newBottom
+                            }
+                            Handle.LEFT_CENTER -> {
+                                val newLeft = shape.start.x + dx
+                                if ((rect.right - newLeft) > minSize) shape.start.x = newLeft
+                            }
+                            Handle.RIGHT_CENTER -> {
+                                val newRight = shape.end.x + dx
+                                if ((newRight - rect.left) > minSize) shape.end.x = newRight
+                            }
+                        }
+
+                        // snap durante resize
+                        snapToOtherShapes(shape)
+                    } else {
+                        // ===== DRAG NORMAL =====
+                        shape.start.x += dx
+                        shape.start.y += dy
+                        shape.end.x += dx
+                        shape.end.y += dy
+
+                        // snap durante drag
+                        snapToOtherShapes(shape)
+                    }
+                }
+
+                lastDragPoint = world
+                invalidate()
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                draggingShape = null
+                activeHandle = null
+                lastDragPoint = null
+
+                // limpa snap e guias
+                snapX.active = null; snapX.candidate = null
+                snapY.active = null; snapY.candidate = null
+                snapGuides.clear()
+
+                invalidate()
+            }
+
         }
 
-        // 🔹 Delegar para outros editores
-        return when (currentTool) {
-            Tool.BRUSH  -> brushEditor.onTouch(event)
-            Tool.FORMAS -> shapeEditor.onTouch(event)
-            Tool.POI    -> poiEditor.onTouch(event)
-            else        -> true
-        }
+        return true
     }
 
 
@@ -304,11 +299,22 @@ class MapEditorView @JvmOverloads constructor(
             if (showGrid) drawGrid(this)
             drawActions(this)
 
-            // previews temporários (dos editores)
             brushEditor.onDrawTemp(this)
             shapeEditor.onDrawTemp(this)
+            drawSnapGuides(this)
         }
     }
+
+    private fun drawSnapGuides(canvas: Canvas) {
+        snapGuides.clear()
+        snapX.active?.let { x -> snapGuides.add(PointF(x, 0f) to PointF(x, height.toFloat())) }
+        snapY.active?.let { y -> snapGuides.add(PointF(0f, y) to PointF(width.toFloat(), y)) }
+
+        snapGuides.forEach { (p1, p2) ->
+            canvas.drawLine(p1.x, p1.y, p2.x, p2.y, snapPaint)
+        }
+    }
+
 
     private fun drawGrid(canvas: Canvas) {
         val spacing = 40f
@@ -346,20 +352,14 @@ class MapEditorView @JvmOverloads constructor(
                 }
 
                 is Action.Shape -> {
-                    val rect = RectF(
-                        action.start.x,
-                        action.start.y,
-                        action.end.x,
-                        action.end.y
-                    )
-
+                    val rect = RectF(action.start.x, action.start.y, action.end.x, action.end.y)
                     val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         color = Color.parseColor("#D9D9D9")
                         style = Paint.Style.FILL
                     }
 
                     if (action.selected) {
-                        selectedShapes.add(action) // redesenha por cima
+                        selectedShapes.add(action)
                     } else {
                         canvas.drawRect(rect, fillPaint)
                     }
@@ -367,7 +367,6 @@ class MapEditorView @JvmOverloads constructor(
             }
         }
 
-        // desenha selecionados por cima (fill + stroke azul + handles)
         selectedShapes.forEach { shape ->
             val rect = RectF(shape.start.x, shape.start.y, shape.end.x, shape.end.y)
 
@@ -431,7 +430,6 @@ class MapEditorView @JvmOverloads constructor(
         return null
     }
 
-    // hit-test maior (24dp) para facilitar a pegada
     private fun hitTestHandles(shape: Action.Shape, p: PointF, size: Float = dp(24f)): Handle? {
         val rect = RectF(shape.start.x, shape.start.y, shape.end.x, shape.end.y)
         val half = size / 2
@@ -460,6 +458,127 @@ class MapEditorView @JvmOverloads constructor(
         return (value / spacing).roundToInt() * spacing
     }
 
+    private fun snapToOtherShapes(shape: Action.Shape) {
+        val rect = RectF(shape.start.x, shape.start.y, shape.end.x, shape.end.y)
+
+        // Âncoras ativas (pontos do shape atual)
+        val anchorsX: FloatArray = when (activeHandle) {
+            Handle.LEFT_CENTER, Handle.TOP_LEFT, Handle.BOTTOM_LEFT -> floatArrayOf(rect.left)
+            Handle.RIGHT_CENTER, Handle.TOP_RIGHT, Handle.BOTTOM_RIGHT -> floatArrayOf(rect.right)
+            Handle.TOP_CENTER, Handle.BOTTOM_CENTER -> floatArrayOf() // mexendo só Y
+            else -> floatArrayOf(rect.left, rect.centerX(), rect.right) // drag normal
+        }
+        val anchorsY: FloatArray = when (activeHandle) {
+            Handle.TOP_CENTER, Handle.TOP_LEFT, Handle.TOP_RIGHT -> floatArrayOf(rect.top)
+            Handle.BOTTOM_CENTER, Handle.BOTTOM_LEFT, Handle.BOTTOM_RIGHT -> floatArrayOf(rect.bottom)
+            Handle.LEFT_CENTER, Handle.RIGHT_CENTER -> floatArrayOf() // mexendo só X
+            else -> floatArrayOf(rect.top, rect.centerY(), rect.bottom) // drag normal
+        }
+
+        // 1. Bordas/centros de outras shapes
+        val candidatesX = mutableListOf<Float>()
+        val candidatesY = mutableListOf<Float>()
+        actions.forEach { a ->
+            if (a is Action.Shape && a !== shape) {
+                val r = RectF(a.start.x, a.start.y, a.end.x, a.end.y)
+                candidatesX += listOf(r.left, r.centerX(), r.right)
+                candidatesY += listOf(r.top, r.centerY(), r.bottom)
+            }
+        }
+
+        // 2. Grid como fallback (só entra se não houver shapes relevantes)
+        if (candidatesX.isEmpty()) {
+            anchorsX.forEach { ax -> candidatesX += nearestGrid(ax) }
+        }
+        if (candidatesY.isEmpty()) {
+            anchorsY.forEach { ay -> candidatesY += nearestGrid(ay) }
+        }
+
+        // Snap final
+        val dx = applyAxisSnap(snapX, anchorsX, candidatesX)
+        val dy = applyAxisSnap(snapY, anchorsY, candidatesY)
+
+        if (dx != 0f) {
+            when (activeHandle) {
+                Handle.LEFT_CENTER, Handle.TOP_LEFT, Handle.BOTTOM_LEFT -> shape.start.x += dx
+                Handle.RIGHT_CENTER, Handle.TOP_RIGHT, Handle.BOTTOM_RIGHT -> shape.end.x += dx
+                else -> { shape.start.x += dx; shape.end.x += dx }
+            }
+        }
+        if (dy != 0f) {
+            when (activeHandle) {
+                Handle.TOP_CENTER, Handle.TOP_LEFT, Handle.TOP_RIGHT -> shape.start.y += dy
+                Handle.BOTTOM_CENTER, Handle.BOTTOM_LEFT, Handle.BOTTOM_RIGHT -> shape.end.y += dy
+                else -> { shape.start.y += dy; shape.end.y += dy }
+            }
+        }
+    }
+
+
+    private data class Candidate(val target: Float, val anchor: Float, val dist: Float)
+
+    private fun applyAxisSnap(axis: AxisSnap, anchors: FloatArray, candidates: List<Float>): Float {
+        if (anchors.isEmpty() || candidates.isEmpty()) return 0f
+        val now = SystemClock.uptimeMillis()
+
+        // melhor candidato (menor distância entre QUALQUER âncora e QUALQUER candidato)
+        var best: Candidate? = null
+        anchors.forEach { a ->
+            candidates.forEach { c ->
+                val d = abs(a - c)
+                if (best == null || d < best!!.dist) best = Candidate(c, a, d)
+            }
+        }
+
+        // Se já está travado neste eixo, mantém enquanto não ultrapassar o "release"
+        axis.active?.let { locked ->
+            val (closestAnchor, distToLocked) = anchors.toList().minByWithDist { abs(it - locked) }
+            return if (distToLocked <= snapRelease) {
+                locked - closestAnchor // mantém travado
+            } else {
+                axis.active = null
+                axis.candidate = null
+                0f
+            }
+        }
+
+        // Não travado: só trava se perto o suficiente e após dwell
+        best?.let { b ->
+            if (b.dist <= snapAccept) {
+                if (axis.candidate == b.target) {
+                    if (now - axis.seenAt >= snapDwellMs) {
+                        axis.active = b.target
+                        axis.candidate = null
+                        val (closestAnchor, _) = anchors.toList().minByWithDist { abs(it - axis.active!!) }
+                        return axis.active!! - closestAnchor
+                    }
+                } else {
+                    axis.candidate = b.target
+                    axis.seenAt = now
+                }
+            } else {
+                axis.candidate = null
+            }
+        }
+        return 0f
+    }
+
+    private fun nearestGrid(v: Float): Float {
+        return (v / gridSpacing).roundToInt() * gridSpacing
+    }
+
+
+    private inline fun <T> Iterable<T>.minByWithDist(dist: (T) -> Float): Pair<T, Float> {
+        var bestItem: T? = null
+        var bestDist = Float.MAX_VALUE
+        for (item in this) {
+            val d = dist(item)
+            if (d < bestDist) { bestDist = d; bestItem = item }
+        }
+        @Suppress("UNCHECKED_CAST")
+        return bestItem as T to bestDist
+    }
+
 
     // ======= UTILS =======
     internal fun screenToWorld(x: Float, y: Float): PointF =
@@ -467,3 +586,5 @@ class MapEditorView @JvmOverloads constructor(
 
     internal fun dp(v: Float): Float = v * resources.displayMetrics.density
 }
+
+

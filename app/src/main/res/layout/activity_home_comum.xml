@@ -266,6 +266,8 @@
                                 android:layout_marginStart="32dp"
                                 android:layout_weight="1"
                                 android:text="Trend"
+                                android:textStyle="bold"
+                                android:textColor="@color/colorPrimaryDark"
                                 android:textSize="20sp" />
 
                             <TextView
@@ -275,14 +277,18 @@
                                 android:layout_marginEnd="32dp"
                                 android:layout_weight="1"
                                 android:text="View All"
+                                android:textColor="@color/colorPrimaryDark"
+                                android:textStyle="bold"
                                 android:textAlignment="viewEnd" />
                         </LinearLayout>
 
                         <androidx.recyclerview.widget.RecyclerView
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
+                            android:clipToPadding="false"
                             android:paddingStart="24dp"
                             android:paddingEnd="24dp" />
+
 
                     </LinearLayout>
 

@@ -7,52 +7,53 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
+import androidx.core.graphics.withTranslation
 import com.example.indoorar.ui.Action
 import com.example.indoorar.ui.Tool
+import com.example.indoorar.ui.editor.BrushEditor
+import com.example.indoorar.ui.editor.PoiEditor
+import com.example.indoorar.ui.editor.ShapeEditor
 import kotlin.math.max
 import kotlin.math.min
-import androidx.core.graphics.withTranslation
 
 class MapEditorView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
-    // ======= ESTADO DE VISUALIZAÇÃO (pan/zoom) =======
+    // ======= VISUAL (pan/zoom) =======
     private var scale = 1f
     private var offsetX = 0f
     private var offsetY = 0f
 
-    // ======= FERRAMENTA ATUAL =======
+    // ======= TOOL =======
     var currentTool: Tool = Tool.CURSOR
+        private set
 
     // ======= CAMADAS =======
     var showGrid = true
     var showBrush = true
     var showPois = true
 
-    // ======= AÇÕES =======
+    // ======= DADOS =======
     private val actions = mutableListOf<Action>()
-    private var tempStroke: MutableList<PointF>? = null
-    private var tempShapeStart: PointF? = null
-    private var tempShapeEnd: PointF? = null
 
-    // Seleção/drag
+    // ======= SELEÇÃO/DRAG =======
     private var draggingShape: Action.Shape? = null
     private var lastDragPoint: PointF? = null
 
-    // ======= PAINTS =======
-    private val gridDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // ======= PAINTS (expostos aos editores) =======
+    internal val gridDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.rgb(210, 210, 210)
         style = Paint.Style.FILL
     }
-    private val brushPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    internal val brushPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.rgb(50, 100, 255)
         style = Paint.Style.STROKE
         strokeWidth = dp(2f)
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
     }
-    private val poiPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    internal val poiPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.BLACK
         style = Paint.Style.FILL
     }
@@ -62,6 +63,11 @@ class MapEditorView @JvmOverloads constructor(
         strokeWidth = dp(3f)
         pathEffect = DashPathEffect(floatArrayOf(12f, 12f), 0f)
     }
+
+    // ======= EDITORES =======
+    private val brushEditor = BrushEditor(this)
+    private val shapeEditor = ShapeEditor(this)
+    private val poiEditor = PoiEditor(this)
 
     // ======= GESTOS =======
     private val scaleDetector = ScaleGestureDetector(
@@ -83,13 +89,8 @@ class MapEditorView @JvmOverloads constructor(
     private val gestureDetector = GestureDetector(
         context,
         object : GestureDetector.SimpleOnGestureListener() {
-            override fun onScroll(
-                e1: MotionEvent?,
-                e2: MotionEvent,
-                dx: Float,
-                dy: Float
-            ): Boolean {
-                if (currentTool == Tool.CURSOR) {
+            override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean {
+                if (currentTool == Tool.CURSOR && draggingShape == null) {
                     offsetX -= dx
                     offsetY -= dy
                     invalidate()
@@ -99,14 +100,14 @@ class MapEditorView @JvmOverloads constructor(
             }
         })
 
-    // ======= API pública =======
+    // ======= API =======
     fun setTool(tool: Tool) {
         currentTool = tool
-        if (tool != Tool.BRUSH) tempStroke = null
-        if (tool != Tool.FORMAS) {
-            tempShapeStart = null
-            tempShapeEnd = null
-        }
+        // limpa estados temporários ao trocar
+        brushEditor.cancel()
+        shapeEditor.cancel()
+        draggingShape = null
+        lastDragPoint = null
         invalidate()
     }
 
@@ -121,15 +122,22 @@ class MapEditorView @JvmOverloads constructor(
     fun toggleBrushLayer() { showBrush = !showBrush; invalidate() }
     fun togglePoiLayer() { showPois = !showPois; invalidate() }
 
+    // usado pelos editores
+    internal fun addAction(action: Action) { actions.add(action) }
+
+    // ======= TOUCH =======
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleDetector.onTouchEvent(event)
+
         val world = screenToWorld(event.x, event.y)
 
         if (currentTool == Tool.CURSOR) {
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    val hit = hitTestRectangles(world)
+                    // limpa seleção anterior
                     actions.forEach { if (it is Action.Shape) it.selected = false }
+                    // tenta selecionar shape
+                    val hit = hitTestShapes(world)
                     if (hit != null) {
                         hit.selected = true
                         draggingShape = hit
@@ -146,7 +154,7 @@ class MapEditorView @JvmOverloads constructor(
                         val dx = world.x - lastDragPoint!!.x
                         val dy = world.y - lastDragPoint!!.y
                         draggingShape!!.start = PointF(draggingShape!!.start.x + dx, draggingShape!!.start.y + dy)
-                        draggingShape!!.end   = PointF(draggingShape!!.end.x + dx, draggingShape!!.end.y + dy)
+                        draggingShape!!.end   = PointF(draggingShape!!.end.x   + dx, draggingShape!!.end.y   + dy)
                         lastDragPoint = world
                         invalidate()
                     } else {
@@ -162,79 +170,28 @@ class MapEditorView @JvmOverloads constructor(
             return true
         }
 
-        when (currentTool) {
-            Tool.BRUSH -> handleBrushTouch(event)
-            Tool.POI -> handlePoiTouch(event)
-            Tool.FORMAS -> handleShapeTouch(event)
-            else -> {}
-        }
-        return true
-    }
-
-    private fun handleBrushTouch(event: MotionEvent) {
-        val p = screenToWorld(event.x, event.y)
-        when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                tempStroke = mutableListOf(p)
-                invalidate()
-            }
-            MotionEvent.ACTION_MOVE -> {
-                tempStroke?.add(p)
-                invalidate()
-            }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                tempStroke?.let { points ->
-                    if (points.size > 1) {
-                        actions.add(Action.BrushStroke(points.toList()))
-                    }
-                }
-                tempStroke = null
-                invalidate()
-            }
-        }
-    }
-
-    private fun handlePoiTouch(event: MotionEvent) {
-        if (event.actionMasked == MotionEvent.ACTION_UP) {
-            val p = screenToWorld(event.x, event.y)
-            actions.add(Action.Poi(p))
-            invalidate()
-        }
-    }
-
-    private fun handleShapeTouch(event: MotionEvent) {
-        val p = screenToWorld(event.x, event.y)
-        when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                tempShapeStart = p
-                tempShapeEnd = p
-                invalidate()
-            }
-            MotionEvent.ACTION_MOVE -> {
-                tempShapeEnd = p
-                invalidate()
-            }
-            MotionEvent.ACTION_UP -> {
-                tempShapeStart?.let { start ->
-                    tempShapeEnd?.let { end ->
-                        actions.add(Action.Shape(start, end))
-                    }
-                }
-                tempShapeStart = null
-                tempShapeEnd = null
-                invalidate()
-            }
+        // delega para os editores
+        return when (currentTool) {
+            Tool.BRUSH  -> brushEditor.onTouch(event)
+            Tool.FORMAS -> shapeEditor.onTouch(event)
+            Tool.POI    -> poiEditor.onTouch(event)
+            else        -> true
         }
     }
 
     // ======= DRAW =======
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+
         canvas.withTranslation(offsetX, offsetY) {
             scale(scale, scale)
+
             if (showGrid) drawGrid(this)
             drawActions(this)
-            drawTemp(this)
+
+            // previews temporários (dos editores)
+            brushEditor.onDrawTemp(this)
+            shapeEditor.onDrawTemp(this)
         }
     }
 
@@ -260,7 +217,8 @@ class MapEditorView @JvmOverloads constructor(
                     action.points.firstOrNull()?.let { first ->
                         path.moveTo(first.x, first.y)
                         for (k in 1 until action.points.size) {
-                            path.lineTo(action.points[k].x, action.points[k].y)
+                            val pt = action.points[k]
+                            path.lineTo(pt.x, pt.y)
                         }
                         canvas.drawPath(path, brushPaint)
                     }
@@ -270,36 +228,16 @@ class MapEditorView @JvmOverloads constructor(
                 }
                 is Action.Shape -> {
                     val rect = RectF(action.start.x, action.start.y, action.end.x, action.end.y)
+                    canvas.drawRect(rect, brushPaint)
                     if (action.selected) {
                         canvas.drawRect(rect, selectionPaint)
-                    } else {
-                        canvas.drawRect(rect, brushPaint)
                     }
                 }
             }
         }
     }
 
-    private fun drawTemp(canvas: Canvas) {
-        tempStroke?.let { points ->
-            if (points.size > 1) {
-                val path = Path()
-                path.moveTo(points[0].x, points[0].y)
-                for (k in 1 until points.size) {
-                    path.lineTo(points[k].x, points[k].y)
-                }
-                canvas.drawPath(path, brushPaint)
-            }
-        }
-        tempShapeStart?.let { start ->
-            tempShapeEnd?.let { end ->
-                val rect = RectF(start.x, start.y, end.x, end.y)
-                canvas.drawRect(rect, brushPaint)
-            }
-        }
-    }
-
-    private fun hitTestRectangles(p: PointF, padding: Float = dp(6f)): Action.Shape? {
+    private fun hitTestShapes(p: PointF, padding: Float = dp(6f)): Action.Shape? {
         for (i in actions.size - 1 downTo 0) {
             val a = actions[i]
             if (a is Action.Shape) {
@@ -313,10 +251,9 @@ class MapEditorView @JvmOverloads constructor(
         return null
     }
 
-    // ======= UTILS =======
-    private fun screenToWorld(x: Float, y: Float): PointF {
-        return PointF((x - offsetX) / scale, (y - offsetY) / scale)
-    }
+    // ======= UTILS (visíveis aos editores) =======
+    internal fun screenToWorld(x: Float, y: Float): PointF =
+        PointF((x - offsetX) / scale, (y - offsetY) / scale)
 
-    private fun dp(v: Float): Float = v * resources.displayMetrics.density
+    internal fun dp(v: Float): Float = v * resources.displayMetrics.density
 }

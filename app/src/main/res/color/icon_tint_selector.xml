@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Selecionado -->
-    <item android:color="#32357A" android:state_selected="true"/>
+    <item android:color="#1ABCFE" android:state_selected="true"/>
     <!-- Pressionado (efeito momentâneo) -->
-    <item android:color="#9932357A" android:state_pressed="true"/>
+    <item android:color="#1ABCFE" android:state_pressed="true"/>
     <!-- Normal -->
     <item android:color="#000000"/>
 </selector>

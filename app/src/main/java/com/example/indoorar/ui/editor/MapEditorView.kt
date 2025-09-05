@@ -41,7 +41,7 @@ class MapEditorView @JvmOverloads constructor(
     private var draggingShape: Action.Shape? = null
     private var lastDragPoint: PointF? = null
 
-    // ======= PAINTS (expostos aos editores) =======
+    // ======= PAINTS =======
     internal val gridDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.rgb(210, 210, 210)
         style = Paint.Style.FILL
@@ -57,11 +57,29 @@ class MapEditorView @JvmOverloads constructor(
         color = Color.BLACK
         style = Paint.Style.FILL
     }
+
+    // (opcional, sobrando do layout antigo com tracejado vermelho — pode remover se quiser)
     private val selectionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.RED
         style = Paint.Style.STROKE
         strokeWidth = dp(3f)
         pathEffect = DashPathEffect(floatArrayOf(12f, 12f), 0f)
+    }
+
+    // Paints para Shapes
+    private val shapeFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        style = Paint.Style.FILL
+    }
+    private val shapeStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.BLACK
+        style = Paint.Style.STROKE
+        strokeWidth = dp(1f)
+    }
+    private val shapeSelectionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#0D99FF") // azul Figma
+        style = Paint.Style.STROKE
+        strokeWidth = dp(2f)
     }
 
     // ======= EDITORES =======
@@ -210,6 +228,8 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     private fun drawActions(canvas: Canvas) {
+        val selectedShapes = mutableListOf<Action.Shape>()
+
         actions.forEach { action ->
             when (action) {
                 is Action.BrushStroke -> if (showBrush) {
@@ -223,17 +243,82 @@ class MapEditorView @JvmOverloads constructor(
                         canvas.drawPath(path, brushPaint)
                     }
                 }
+
                 is Action.Poi -> if (showPois) {
                     canvas.drawCircle(action.position.x, action.position.y, dp(5f), poiPaint)
                 }
+
                 is Action.Shape -> {
-                    val rect = RectF(action.start.x, action.start.y, action.end.x, action.end.y)
-                    canvas.drawRect(rect, brushPaint)
+                    val rect = RectF(
+                        action.start.x,
+                        action.start.y,
+                        action.end.x,
+                        action.end.y
+                    )
+
+                    val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = Color.parseColor("#D9D9D9")
+                        style = Paint.Style.FILL
+                    }
+
                     if (action.selected) {
-                        canvas.drawRect(rect, selectionPaint)
+                        // guarda para redesenhar por cima
+                        selectedShapes.add(action)
+                    } else {
+                        // normal
+                        canvas.drawRect(rect, fillPaint)
                     }
                 }
             }
+        }
+
+        // redesenha só os selecionados por cima
+        selectedShapes.forEach { shape ->
+            val rect = RectF(shape.start.x, shape.start.y, shape.end.x, shape.end.y)
+
+            val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.parseColor("#D9D9D9")
+                style = Paint.Style.FILL
+            }
+
+            canvas.drawRect(rect, fillPaint)
+            canvas.drawRect(rect, shapeSelectionPaint)
+            drawHandles(canvas, rect)
+        }
+    }
+
+
+
+    // <-- ESTA FUNÇÃO PRECISA FICAR FORA do drawActions/when -->
+    private fun drawHandles(canvas: Canvas, rect: RectF) {
+        val handleSize = dp(8f)
+        val half = handleSize / 2
+
+        val points = listOf(
+            PointF(rect.left, rect.top),
+            PointF(rect.right, rect.top),
+            PointF(rect.left, rect.bottom),
+            PointF(rect.right, rect.bottom)
+        )
+
+        // fundo branco + borda azul em cada handle
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            style = Paint.Style.FILL
+        }
+        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#0D99FF")
+            style = Paint.Style.STROKE
+            strokeWidth = dp(2f)
+        }
+
+        points.forEach { p ->
+            val left = p.x - half
+            val top = p.y - half
+            val right = p.x + half
+            val bottom = p.y + half
+            canvas.drawRect(left, top, right, bottom, fill)
+            canvas.drawRect(left, top, right, bottom, stroke)
         }
     }
 
@@ -251,7 +336,7 @@ class MapEditorView @JvmOverloads constructor(
         return null
     }
 
-    // ======= UTILS (visíveis aos editores) =======
+    // ======= UTILS =======
     internal fun screenToWorld(x: Float, y: Float): PointF =
         PointF((x - offsetX) / scale, (y - offsetY) / scale)
 

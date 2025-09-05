@@ -40,13 +40,11 @@ class MapEditorView @JvmOverloads constructor(
     // ======= SELEÇÃO/DRAG =======
     private var draggingShape: Action.Shape? = null
     private var lastDragPoint: PointF? = null
-
     private var activeHandle: Handle? = null
 
     private enum class Handle {
         TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT
     }
-
 
     // ======= PAINTS =======
     internal val gridDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -65,7 +63,7 @@ class MapEditorView @JvmOverloads constructor(
         style = Paint.Style.FILL
     }
 
-    // (opcional, sobrando do layout antigo com tracejado vermelho — pode remover se quiser)
+    // (antigo tracejado — pode remover se não usar)
     private val selectionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.RED
         style = Paint.Style.STROKE
@@ -73,16 +71,6 @@ class MapEditorView @JvmOverloads constructor(
         pathEffect = DashPathEffect(floatArrayOf(12f, 12f), 0f)
     }
 
-    // Paints para Shapes
-    private val shapeFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
-        style = Paint.Style.FILL
-    }
-    private val shapeStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.BLACK
-        style = Paint.Style.STROKE
-        strokeWidth = dp(1f)
-    }
     private val shapeSelectionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#0D99FF") // azul Figma
         style = Paint.Style.STROKE
@@ -128,11 +116,11 @@ class MapEditorView @JvmOverloads constructor(
     // ======= API =======
     fun setTool(tool: Tool) {
         currentTool = tool
-        // limpa estados temporários ao trocar
         brushEditor.cancel()
         shapeEditor.cancel()
         draggingShape = null
         lastDragPoint = null
+        activeHandle = null
         invalidate()
     }
 
@@ -147,36 +135,29 @@ class MapEditorView @JvmOverloads constructor(
     fun toggleBrushLayer() { showBrush = !showBrush; invalidate() }
     fun togglePoiLayer() { showPois = !showPois; invalidate() }
 
-    // usado pelos editores
     internal fun addAction(action: Action) { actions.add(action) }
 
     // ======= TOUCH =======
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleDetector.onTouchEvent(event)
-
         val world = screenToWorld(event.x, event.y)
 
         if (currentTool == Tool.CURSOR) {
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    // limpa seleção anterior
                     actions.forEach { if (it is Action.Shape) it.selected = false }
 
-                    // tenta selecionar shape
                     val hit = hitTestShapes(world)
                     if (hit != null) {
                         hit.selected = true
                         draggingShape = hit
                         lastDragPoint = world
-
-                        // verifica se clicou em um handle
                         activeHandle = hitTestHandles(hit, world)
-
                         invalidate()
                     } else {
                         draggingShape = null
-                        lastDragPoint = null
                         activeHandle = null
+                        lastDragPoint = null
                         gestureDetector.onTouchEvent(event)
                     }
                 }
@@ -187,30 +168,46 @@ class MapEditorView @JvmOverloads constructor(
                         val dy = world.y - lastDragPoint!!.y
 
                         if (activeHandle != null) {
-                            // 🔹 Resize pelos handles
-                            if (activeHandle != null) {
-                                when (activeHandle!!) {
+                            // Resize com tamanho mínimo
+                            val minSize = dp(30f)
+                            val rect = RectF(
+                                draggingShape!!.start.x,
+                                draggingShape!!.start.y,
+                                draggingShape!!.end.x,
+                                draggingShape!!.end.y
+                            )
+
+                            activeHandle?.let {
+                                when (it) {
                                     Handle.TOP_LEFT -> {
-                                        draggingShape!!.start.x += dx
-                                        draggingShape!!.start.y += dy
+                                        val newLeft = draggingShape!!.start.x + dx
+                                        val newTop = draggingShape!!.start.y + dy
+                                        if ((rect.right - newLeft) > minSize) draggingShape!!.start.x = newLeft
+                                        if ((rect.bottom - newTop) > minSize) draggingShape!!.start.y = newTop
                                     }
                                     Handle.TOP_RIGHT -> {
-                                        draggingShape!!.end.x += dx
-                                        draggingShape!!.start.y += dy
+                                        val newRight = draggingShape!!.end.x + dx
+                                        val newTop = draggingShape!!.start.y + dy
+                                        if ((newRight - rect.left) > minSize) draggingShape!!.end.x = newRight
+                                        if ((rect.bottom - newTop) > minSize) draggingShape!!.start.y = newTop
                                     }
                                     Handle.BOTTOM_LEFT -> {
-                                        draggingShape!!.start.x += dx
-                                        draggingShape!!.end.y += dy
+                                        val newLeft = draggingShape!!.start.x + dx
+                                        val newBottom = draggingShape!!.end.y + dy
+                                        if ((rect.right - newLeft) > minSize) draggingShape!!.start.x = newLeft
+                                        if ((newBottom - rect.top) > minSize) draggingShape!!.end.y = newBottom
                                     }
                                     Handle.BOTTOM_RIGHT -> {
-                                        draggingShape!!.end.x += dx
-                                        draggingShape!!.end.y += dy
+                                        val newRight = draggingShape!!.end.x + dx
+                                        val newBottom = draggingShape!!.end.y + dy
+                                        if ((newRight - rect.left) > minSize) draggingShape!!.end.x = newRight
+                                        if ((newBottom - rect.top) > minSize) draggingShape!!.end.y = newBottom
                                     }
                                 }
                             }
 
                         } else {
-                            // 🔹 Drag normal (move tudo)
+                            // Drag normal (mover)
                             draggingShape!!.start = PointF(
                                 draggingShape!!.start.x + dx,
                                 draggingShape!!.start.y + dy
@@ -312,17 +309,15 @@ class MapEditorView @JvmOverloads constructor(
                     }
 
                     if (action.selected) {
-                        // guarda para redesenhar por cima
-                        selectedShapes.add(action)
+                        selectedShapes.add(action) // redesenha por cima
                     } else {
-                        // normal
                         canvas.drawRect(rect, fillPaint)
                     }
                 }
             }
         }
 
-        // redesenha só os selecionados por cima
+        // desenha selecionados por cima (fill + stroke azul + handles)
         selectedShapes.forEach { shape ->
             val rect = RectF(shape.start.x, shape.start.y, shape.end.x, shape.end.y)
 
@@ -337,11 +332,8 @@ class MapEditorView @JvmOverloads constructor(
         }
     }
 
-
-
-    // <-- ESTA FUNÇÃO PRECISA FICAR FORA do drawActions/when -->
     private fun drawHandles(canvas: Canvas, rect: RectF) {
-        val handleSize = dp(8f)
+        val handleSize = dp(8f) // visual pequeno…
         val half = handleSize / 2
 
         val points = listOf(
@@ -351,7 +343,6 @@ class MapEditorView @JvmOverloads constructor(
             PointF(rect.right, rect.bottom)
         )
 
-        // fundo branco + borda azul em cada handle
         val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             style = Paint.Style.FILL
@@ -386,6 +377,7 @@ class MapEditorView @JvmOverloads constructor(
         return null
     }
 
+    // hit-test maior (24dp) para facilitar a pegada
     private fun hitTestHandles(shape: Action.Shape, p: PointF, size: Float = dp(24f)): Handle? {
         val rect = RectF(shape.start.x, shape.start.y, shape.end.x, shape.end.y)
         val half = size / 2
@@ -405,8 +397,6 @@ class MapEditorView @JvmOverloads constructor(
         }
         return null
     }
-
-
 
     // ======= UTILS =======
     internal fun screenToWorld(x: Float, y: Float): PointF =

@@ -2,13 +2,16 @@ package com.example.indoorar.ui
 
 import android.graphics.PointF
 
+// Todas as "ações" que o editor desenha/gerencia
 sealed class Action {
     data class BrushStroke(val points: List<PointF>) : Action()
+
     data class Poi(val position: PointF) : Action()
 
-    // NOVO: Forma geométrica básica (retângulo por enquanto)
+    // Retângulo básico (p/ “Formas”), com flag de seleção
     data class Shape(
-        val start: PointF,
-        val end: PointF
+        var start: PointF,
+        var end: PointF,
+        var selected: Boolean = false
     ) : Action()
 }

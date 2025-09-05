@@ -33,10 +33,12 @@ class MapEditorView @JvmOverloads constructor(
     // ======= AÇÕES =======
     private val actions = mutableListOf<Action>()
     private var tempStroke: MutableList<PointF>? = null
-
-    // NOVO: variáveis temporárias para formas
     private var tempShapeStart: PointF? = null
     private var tempShapeEnd: PointF? = null
+
+    // Seleção/drag
+    private var draggingShape: Action.Shape? = null
+    private var lastDragPoint: PointF? = null
 
     // ======= PAINTS =======
     private val gridDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -54,6 +56,12 @@ class MapEditorView @JvmOverloads constructor(
         color = Color.BLACK
         style = Paint.Style.FILL
     }
+    private val selectionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.RED
+        style = Paint.Style.STROKE
+        strokeWidth = dp(3f)
+        pathEffect = DashPathEffect(floatArrayOf(12f, 12f), 0f)
+    }
 
     // ======= GESTOS =======
     private val scaleDetector = ScaleGestureDetector(
@@ -63,7 +71,6 @@ class MapEditorView @JvmOverloads constructor(
                 val prevScale = scale
                 scale *= detector.scaleFactor
                 scale = max(0.5f, min(scale, 3f))
-                // manter foco
                 val fx = detector.focusX
                 val fy = detector.focusY
                 offsetX = (offsetX - fx) * (scale / prevScale) + fx
@@ -114,12 +121,45 @@ class MapEditorView @JvmOverloads constructor(
     fun toggleBrushLayer() { showBrush = !showBrush; invalidate() }
     fun togglePoiLayer() { showPois = !showPois; invalidate() }
 
-    // ======= TOUCH =======
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleDetector.onTouchEvent(event)
+        val world = screenToWorld(event.x, event.y)
 
         if (currentTool == Tool.CURSOR) {
-            gestureDetector.onTouchEvent(event)
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    val hit = hitTestRectangles(world)
+                    actions.forEach { if (it is Action.Shape) it.selected = false }
+                    if (hit != null) {
+                        hit.selected = true
+                        draggingShape = hit
+                        lastDragPoint = world
+                        invalidate()
+                    } else {
+                        draggingShape = null
+                        lastDragPoint = null
+                        gestureDetector.onTouchEvent(event)
+                    }
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (draggingShape != null && lastDragPoint != null) {
+                        val dx = world.x - lastDragPoint!!.x
+                        val dy = world.y - lastDragPoint!!.y
+                        draggingShape!!.start = PointF(draggingShape!!.start.x + dx, draggingShape!!.start.y + dy)
+                        draggingShape!!.end   = PointF(draggingShape!!.end.x + dx, draggingShape!!.end.y + dy)
+                        lastDragPoint = world
+                        invalidate()
+                    } else {
+                        gestureDetector.onTouchEvent(event)
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    draggingShape = null
+                    lastDragPoint = null
+                    gestureDetector.onTouchEvent(event)
+                }
+            }
+            return true
         }
 
         when (currentTool) {
@@ -190,10 +230,8 @@ class MapEditorView @JvmOverloads constructor(
     // ======= DRAW =======
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-
         canvas.withTranslation(offsetX, offsetY) {
             scale(scale, scale)
-
             if (showGrid) drawGrid(this)
             drawActions(this)
             drawTemp(this)
@@ -222,8 +260,7 @@ class MapEditorView @JvmOverloads constructor(
                     action.points.firstOrNull()?.let { first ->
                         path.moveTo(first.x, first.y)
                         for (k in 1 until action.points.size) {
-                            val pt = action.points[k]
-                            path.lineTo(pt.x, pt.y)
+                            path.lineTo(action.points[k].x, action.points[k].y)
                         }
                         canvas.drawPath(path, brushPaint)
                     }
@@ -232,13 +269,12 @@ class MapEditorView @JvmOverloads constructor(
                     canvas.drawCircle(action.position.x, action.position.y, dp(5f), poiPaint)
                 }
                 is Action.Shape -> {
-                    val rect = RectF(
-                        action.start.x,
-                        action.start.y,
-                        action.end.x,
-                        action.end.y
-                    )
-                    canvas.drawRect(rect, brushPaint)
+                    val rect = RectF(action.start.x, action.start.y, action.end.x, action.end.y)
+                    if (action.selected) {
+                        canvas.drawRect(rect, selectionPaint)
+                    } else {
+                        canvas.drawRect(rect, brushPaint)
+                    }
                 }
             }
         }
@@ -255,13 +291,26 @@ class MapEditorView @JvmOverloads constructor(
                 canvas.drawPath(path, brushPaint)
             }
         }
-
         tempShapeStart?.let { start ->
             tempShapeEnd?.let { end ->
                 val rect = RectF(start.x, start.y, end.x, end.y)
                 canvas.drawRect(rect, brushPaint)
             }
         }
+    }
+
+    private fun hitTestRectangles(p: PointF, padding: Float = dp(6f)): Action.Shape? {
+        for (i in actions.size - 1 downTo 0) {
+            val a = actions[i]
+            if (a is Action.Shape) {
+                val left = min(a.start.x, a.end.x) - padding
+                val right = max(a.start.x, a.end.x) + padding
+                val top = min(a.start.y, a.end.y) - padding
+                val bottom = max(a.start.y, a.end.y) + padding
+                if (p.x in left..right && p.y in top..bottom) return a
+            }
+        }
+        return null
     }
 
     // ======= UTILS =======

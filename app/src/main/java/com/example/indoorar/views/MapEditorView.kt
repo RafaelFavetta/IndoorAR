@@ -1,11 +1,7 @@
 package com.example.indoorar.views
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Path
-import android.graphics.PointF
+import android.graphics.*
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -29,14 +25,18 @@ class MapEditorView @JvmOverloads constructor(
     // ======= FERRAMENTA ATUAL =======
     var currentTool: Tool = Tool.CURSOR
 
-    // ======= CAMADAS (pode desligar/ligar depois) =======
+    // ======= CAMADAS =======
     var showGrid = true
     var showBrush = true
     var showPois = true
 
-    // ======= AÇÕES (para desenhar e desfazer) =======
+    // ======= AÇÕES =======
     private val actions = mutableListOf<Action>()
     private var tempStroke: MutableList<PointF>? = null
+
+    // NOVO: variáveis temporárias para formas
+    private var tempShapeStart: PointF? = null
+    private var tempShapeEnd: PointF? = null
 
     // ======= PAINTS =======
     private val gridDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -82,7 +82,6 @@ class MapEditorView @JvmOverloads constructor(
                 dx: Float,
                 dy: Float
             ): Boolean {
-                // Só faz pan com um dedo quando a ferramenta é CURSOR (senão conflita com desenho)
                 if (currentTool == Tool.CURSOR) {
                     offsetX -= dx
                     offsetY -= dy
@@ -96,18 +95,20 @@ class MapEditorView @JvmOverloads constructor(
     // ======= API pública =======
     fun setTool(tool: Tool) {
         currentTool = tool
-        // cancela traço temporário se trocar de ferramenta no meio
         if (tool != Tool.BRUSH) tempStroke = null
+        if (tool != Tool.FORMAS) {
+            tempShapeStart = null
+            tempShapeEnd = null
+        }
         invalidate()
     }
 
     fun undo() {
         if (actions.isNotEmpty()) {
-            actions.removeAt(actions.lastIndex) // mais seguro
+            actions.removeAt(actions.lastIndex)
             invalidate()
         }
     }
-
 
     fun toggleGrid() { showGrid = !showGrid; invalidate() }
     fun toggleBrushLayer() { showBrush = !showBrush; invalidate() }
@@ -115,10 +116,8 @@ class MapEditorView @JvmOverloads constructor(
 
     // ======= TOUCH =======
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        // Pinça sempre funciona
         scaleDetector.onTouchEvent(event)
 
-        // Pan com 1 dedo só funciona no modo CURSOR
         if (currentTool == Tool.CURSOR) {
             gestureDetector.onTouchEvent(event)
         }
@@ -126,7 +125,8 @@ class MapEditorView @JvmOverloads constructor(
         when (currentTool) {
             Tool.BRUSH -> handleBrushTouch(event)
             Tool.POI -> handlePoiTouch(event)
-            else -> { /* outras ferramentas/seleção virão depois */ }
+            Tool.FORMAS -> handleShapeTouch(event)
+            else -> {}
         }
         return true
     }
@@ -162,6 +162,31 @@ class MapEditorView @JvmOverloads constructor(
         }
     }
 
+    private fun handleShapeTouch(event: MotionEvent) {
+        val p = screenToWorld(event.x, event.y)
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                tempShapeStart = p
+                tempShapeEnd = p
+                invalidate()
+            }
+            MotionEvent.ACTION_MOVE -> {
+                tempShapeEnd = p
+                invalidate()
+            }
+            MotionEvent.ACTION_UP -> {
+                tempShapeStart?.let { start ->
+                    tempShapeEnd?.let { end ->
+                        actions.add(Action.Shape(start, end))
+                    }
+                }
+                tempShapeStart = null
+                tempShapeEnd = null
+                invalidate()
+            }
+        }
+    }
+
     // ======= DRAW =======
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -172,7 +197,6 @@ class MapEditorView @JvmOverloads constructor(
             if (showGrid) drawGrid(this)
             drawActions(this)
             drawTemp(this)
-
         }
     }
 
@@ -207,6 +231,15 @@ class MapEditorView @JvmOverloads constructor(
                 is Action.Poi -> if (showPois) {
                     canvas.drawCircle(action.position.x, action.position.y, dp(5f), poiPaint)
                 }
+                is Action.Shape -> {
+                    val rect = RectF(
+                        action.start.x,
+                        action.start.y,
+                        action.end.x,
+                        action.end.y
+                    )
+                    canvas.drawRect(rect, brushPaint)
+                }
             }
         }
     }
@@ -220,6 +253,13 @@ class MapEditorView @JvmOverloads constructor(
                     path.lineTo(points[k].x, points[k].y)
                 }
                 canvas.drawPath(path, brushPaint)
+            }
+        }
+
+        tempShapeStart?.let { start ->
+            tempShapeEnd?.let { end ->
+                val rect = RectF(start.x, start.y, end.x, end.y)
+                canvas.drawRect(rect, brushPaint)
             }
         }
     }

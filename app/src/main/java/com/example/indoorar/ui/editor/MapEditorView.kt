@@ -15,6 +15,8 @@ import com.example.indoorar.ui.editor.PoiEditor
 import com.example.indoorar.ui.editor.ShapeEditor
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
+
 
 class MapEditorView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -30,6 +32,8 @@ class MapEditorView @JvmOverloads constructor(
         private set
 
     // ======= CAMADAS =======
+
+
     var showGrid = true
     var showBrush = true
     var showPois = true
@@ -168,9 +172,8 @@ class MapEditorView @JvmOverloads constructor(
                         val dx = world.x - lastDragPoint!!.x
                         val dy = world.y - lastDragPoint!!.y
 
-                        val handle = activeHandle
-                        if (handle != null) {
-                            // Resize com tamanho mínimo
+                        if (activeHandle != null) {
+                            // 🔹 Resize com mínimo
                             val minSize = dp(30f)
                             val rect = RectF(
                                 draggingShape!!.start.x,
@@ -179,50 +182,63 @@ class MapEditorView @JvmOverloads constructor(
                                 draggingShape!!.end.y
                             )
 
-                            when (handle) {
-                                Handle.TOP_LEFT -> {
-                                    val newLeft = draggingShape!!.start.x + dx
-                                    val newTop = draggingShape!!.start.y + dy
-                                    if ((rect.right - newLeft) > minSize) draggingShape!!.start.x = newLeft
-                                    if ((rect.bottom - newTop) > minSize) draggingShape!!.start.y = newTop
-                                }
-                                Handle.TOP_RIGHT -> {
-                                    val newRight = draggingShape!!.end.x + dx
-                                    val newTop = draggingShape!!.start.y + dy
-                                    if ((newRight - rect.left) > minSize) draggingShape!!.end.x = newRight
-                                    if ((rect.bottom - newTop) > minSize) draggingShape!!.start.y = newTop
-                                }
-                                Handle.BOTTOM_LEFT -> {
-                                    val newLeft = draggingShape!!.start.x + dx
-                                    val newBottom = draggingShape!!.end.y + dy
-                                    if ((rect.right - newLeft) > minSize) draggingShape!!.start.x = newLeft
-                                    if ((newBottom - rect.top) > minSize) draggingShape!!.end.y = newBottom
-                                }
-                                Handle.BOTTOM_RIGHT -> {
-                                    val newRight = draggingShape!!.end.x + dx
-                                    val newBottom = draggingShape!!.end.y + dy
-                                    if ((newRight - rect.left) > minSize) draggingShape!!.end.x = newRight
-                                    if ((newBottom - rect.top) > minSize) draggingShape!!.end.y = newBottom
-                                }
-                                Handle.TOP_CENTER -> {
-                                    val newTop = draggingShape!!.start.y + dy
-                                    if ((rect.bottom - newTop) > minSize) draggingShape!!.start.y = newTop
-                                }
-                                Handle.BOTTOM_CENTER -> {
-                                    val newBottom = draggingShape!!.end.y + dy
-                                    if ((newBottom - rect.top) > minSize) draggingShape!!.end.y = newBottom
-                                }
-                                Handle.LEFT_CENTER -> {
-                                    val newLeft = draggingShape!!.start.x + dx
-                                    if ((rect.right - newLeft) > minSize) draggingShape!!.start.x = newLeft
-                                }
-                                Handle.RIGHT_CENTER -> {
-                                    val newRight = draggingShape!!.end.x + dx
-                                    if ((newRight - rect.left) > minSize) draggingShape!!.end.x = newRight
+                            if (activeHandle != null) {
+                                val minSize = dp(30f)
+                                val rect = RectF(
+                                    draggingShape!!.start.x,
+                                    draggingShape!!.start.y,
+                                    draggingShape!!.end.x,
+                                    draggingShape!!.end.y
+                                )
+
+                                activeHandle?.let { handle ->
+                                    when (handle) {
+                                        Handle.TOP_LEFT -> {
+                                            val newLeft = draggingShape!!.start.x + dx
+                                            val newTop = draggingShape!!.start.y + dy
+                                            if ((rect.right - newLeft) > minSize) draggingShape!!.start.x = newLeft
+                                            if ((rect.bottom - newTop) > minSize) draggingShape!!.start.y = newTop
+                                        }
+                                        Handle.TOP_RIGHT -> {
+                                            val newRight = draggingShape!!.end.x + dx
+                                            val newTop = draggingShape!!.start.y + dy
+                                            if ((newRight - rect.left) > minSize) draggingShape!!.end.x = newRight
+                                            if ((rect.bottom - newTop) > minSize) draggingShape!!.start.y = newTop
+                                        }
+                                        Handle.BOTTOM_LEFT -> {
+                                            val newLeft = draggingShape!!.start.x + dx
+                                            val newBottom = draggingShape!!.end.y + dy
+                                            if ((rect.right - newLeft) > minSize) draggingShape!!.start.x = newLeft
+                                            if ((newBottom - rect.top) > minSize) draggingShape!!.end.y = newBottom
+                                        }
+                                        Handle.BOTTOM_RIGHT -> {
+                                            val newRight = draggingShape!!.end.x + dx
+                                            val newBottom = draggingShape!!.end.y + dy
+                                            if ((newRight - rect.left) > minSize) draggingShape!!.end.x = newRight
+                                            if ((newBottom - rect.top) > minSize) draggingShape!!.end.y = newBottom
+                                        }
+                                        Handle.TOP_CENTER -> {
+                                            val newTop = draggingShape!!.start.y + dy
+                                            if ((rect.bottom - newTop) > minSize) draggingShape!!.start.y = newTop
+                                        }
+                                        Handle.BOTTOM_CENTER -> {
+                                            val newBottom = draggingShape!!.end.y + dy
+                                            if ((newBottom - rect.top) > minSize) draggingShape!!.end.y = newBottom
+                                        }
+                                        Handle.LEFT_CENTER -> {
+                                            val newLeft = draggingShape!!.start.x + dx
+                                            if ((rect.right - newLeft) > minSize) draggingShape!!.start.x = newLeft
+                                        }
+                                        Handle.RIGHT_CENTER -> {
+                                            val newRight = draggingShape!!.end.x + dx
+                                            if ((newRight - rect.left) > minSize) draggingShape!!.end.x = newRight
+                                        }
+                                    }
                                 }
                             }
+
                         } else {
-                            // Drag normal (mover)
+                            // 🔹 Drag normal (mover shape inteiro)
                             draggingShape!!.start = PointF(
                                 draggingShape!!.start.x + dx,
                                 draggingShape!!.start.y + dy
@@ -241,6 +257,24 @@ class MapEditorView @JvmOverloads constructor(
                 }
 
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    // 🔹 Normalizar top-left → bottom-right
+                    draggingShape?.let { shape ->
+                        val left = min(shape.start.x, shape.end.x)
+                        val top = min(shape.start.y, shape.end.y)
+                        val right = max(shape.start.x, shape.end.x)
+                        val bottom = max(shape.start.y, shape.end.y)
+                        shape.start = PointF(left, top)
+                        shape.end = PointF(right, bottom)
+
+                        // 🔹 Snap to grid
+                        if (showGrid) {
+                            shape.start.x = snap(shape.start.x)
+                            shape.start.y = snap(shape.start.y)
+                            shape.end.x = snap(shape.end.x)
+                            shape.end.y = snap(shape.end.y)
+                        }
+                    }
+
                     draggingShape = null
                     lastDragPoint = null
                     activeHandle = null
@@ -250,7 +284,7 @@ class MapEditorView @JvmOverloads constructor(
             return true
         }
 
-        // delega para os editores
+        // 🔹 Delegar para outros editores
         return when (currentTool) {
             Tool.BRUSH  -> brushEditor.onTouch(event)
             Tool.FORMAS -> shapeEditor.onTouch(event)
@@ -258,6 +292,7 @@ class MapEditorView @JvmOverloads constructor(
             else        -> true
         }
     }
+
 
     // ======= DRAW =======
     override fun onDraw(canvas: Canvas) {
@@ -420,6 +455,11 @@ class MapEditorView @JvmOverloads constructor(
         }
         return null
     }
+
+    private fun snap(value: Float, spacing: Float = 40f): Float {
+        return (value / spacing).roundToInt() * spacing
+    }
+
 
     // ======= UTILS =======
     internal fun screenToWorld(x: Float, y: Float): PointF =

@@ -53,6 +53,7 @@
             android:layout_height="60dp"
             android:layout_marginStart="16dp"
             android:layout_marginTop="32dp"
+            android:contentDescription="voltar"
             android:background="@drawable/ripple_clickable"
             android:clickable="true"
             android:focusable="true"

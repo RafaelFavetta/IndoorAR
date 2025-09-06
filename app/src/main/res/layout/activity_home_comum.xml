@@ -48,8 +48,8 @@
 
                         <ImageView
                             android:id="@+id/btnSignOut"
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:layout_marginEnd="28dp"
                             android:layout_marginTop="40dp"
                             android:contentDescription="Logout"
@@ -83,6 +83,7 @@
                         android:layout_marginTop="16dp"
                         android:layout_marginEnd="32dp"
                         android:layout_marginBottom="16dp"
+                        android:autofillHints=""
                         android:background="@drawable/editext_background"
                         android:drawableStart="@drawable/search"
                         android:drawableEnd="@drawable/microphone"
@@ -106,6 +107,7 @@
                         android:id="@+id/imageView7"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:contentDescription="cards"
                         android:scaleType="centerCrop"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
@@ -144,10 +146,11 @@
 
                                     <ImageView
                                         android:id="@+id/btnFavoritos"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
+                                        android:layout_width="48dp"
+                                        android:layout_height="48dp"
                                         android:background="@drawable/ripple_clickable"
                                         android:clickable="true"
+                                        android:contentDescription="favoritos"
                                         android:focusable="true"
                                         app:layout_constraintBottom_toBottomOf="parent"
                                         app:layout_constraintEnd_toEndOf="parent"
@@ -194,6 +197,7 @@
                                         android:layout_height="wrap_content"
                                         android:background="@drawable/ripple_clickable"
                                         android:clickable="true"
+                                        android:contentDescription="homeeee"
                                         android:focusable="true"
                                         app:layout_constraintBottom_toBottomOf="parent"
                                         app:layout_constraintEnd_toEndOf="parent"
@@ -238,10 +242,11 @@
 
                                     <ImageView
                                         android:id="@+id/btnHistorico"
-                                        android:layout_width="45dp"
-                                        android:layout_height="wrap_content"
+                                        android:layout_width="48dp"
+                                        android:layout_height="48dp"
                                         android:background="@drawable/ripple_clickable"
                                         android:clickable="true"
+                                        android:contentDescription="histórico"
                                         android:focusable="true"
                                         app:layout_constraintBottom_toBottomOf="parent"
                                         app:layout_constraintEnd_toEndOf="parent"
@@ -296,7 +301,7 @@
                             <TextView
                                 android:id="@+id/textView3"
                                 android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
+                                android:layout_height="48dp"
                                 android:layout_marginEnd="32dp"
                                 android:layout_weight="1"
                                 android:text="View All"
@@ -349,6 +354,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:baselineAligned="false"
                     android:orientation="horizontal">
 
                     <LinearLayout
@@ -359,12 +365,13 @@
 
                         <ImageView
                             android:id="@+id/Imgbottom1"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:layout_gravity="center"
                             android:layout_marginTop="8dp"
                             android:background="@drawable/ripple_clickable"
                             android:clickable="true"
+                            android:contentDescription="ODO"
                             android:focusable="true"
                             app:srcCompat="@drawable/ic_home" />
 
@@ -384,12 +391,13 @@
 
                         <ImageView
                             android:id="@+id/Imgbottom3"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:layout_gravity="center"
                             android:layout_marginTop="8dp"
                             android:background="@drawable/ripple_clickable"
                             android:clickable="true"
+                            android:contentDescription="home"
                             android:focusable="true"
                             app:srcCompat="@drawable/ic_home" />
 
@@ -424,12 +432,13 @@
 
                         <ImageView
                             android:id="@+id/Imgbottom6"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:layout_gravity="center"
                             android:layout_marginTop="8dp"
                             android:background="@drawable/ripple_clickable"
                             android:clickable="true"
+                            android:contentDescription="homee"
                             android:focusable="true"
                             app:srcCompat="@drawable/ic_home" />
 
@@ -449,11 +458,12 @@
 
                         <ImageView
                             android:id="@+id/imageView5"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:layout_gravity="center"
                             android:background="@drawable/ripple_clickable"
                             android:clickable="true"
+                            android:contentDescription="homeee"
                             android:focusable="true"
                             android:layout_marginTop="8dp"
                             app:srcCompat="@drawable/ic_home" />
@@ -471,6 +481,7 @@
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="todo"
                 app:layout_anchor="@id/app_bar"
                 app:layout_anchorGravity="center"
                 app:maxImageSize="30dp"

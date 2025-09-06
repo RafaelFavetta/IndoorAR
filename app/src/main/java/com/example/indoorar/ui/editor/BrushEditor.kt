@@ -31,8 +31,10 @@ class BrushEditor(private val host: MapEditorView) {
             moveTo(points[0].x, points[0].y)
             for (i in 1 until points.size) lineTo(points[i].x, points[i].y)
         }
-        canvas.drawPath(path, host.brushPaint)
+        canvas.drawPath(path, host.getBrushPaint())
     }
+
+
 
     fun cancel() { tempStroke = null }
 }

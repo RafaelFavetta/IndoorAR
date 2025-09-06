@@ -160,8 +160,23 @@
 
             </LinearLayout>
 
+
+
         </com.google.android.material.card.MaterialCardView>
 
+        <androidx.cardview.widget.CardView
+            android:layout_width="170dp"
+            android:layout_height="415dp"
+            android:layout_marginStart="100dp"
+            app:cardCornerRadius="5dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="#fdfdfd"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0" />
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

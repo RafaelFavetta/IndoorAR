@@ -1,12 +1,14 @@
 package com.example.indoorar
 
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.View
 import android.view.WindowInsets
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.graphics.toColorInt
 import androidx.core.view.*
+import com.google.android.material.snackbar.Snackbar
 
 open class BaseActivity : AppCompatActivity() {
 
@@ -20,7 +22,6 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     private fun setupUltimateFullScreen() {
-        // Fullscreen compatível
         WindowCompat.setDecorFitsSystemWindows(window, false)
         insetsController = WindowInsetsControllerCompat(window, window.decorView)
         insetsController.systemBarsBehavior =
@@ -28,9 +29,7 @@ open class BaseActivity : AppCompatActivity() {
 
         hideSystemBars()
 
-        // Listener para barras reaparecerem e sumirem automaticamente
         window.decorView.setOnApplyWindowInsetsListener { _, insets ->
-            // Usa o compat só para ler
             val compatInsets = WindowInsetsCompat.toWindowInsetsCompat(insets)
             val systemBarsVisible = compatInsets.isVisible(WindowInsetsCompat.Type.systemBars())
 
@@ -41,7 +40,6 @@ open class BaseActivity : AppCompatActivity() {
             insets
         }
 
-        // Layout change listener (compatível)
         window.decorView.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             hideSystemBars()
         }
@@ -54,5 +52,13 @@ open class BaseActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
+    }
+
+    fun showSnackbar(message: String) {
+        val rootView = findViewById<android.view.View>(android.R.id.content)
+        Snackbar.make(rootView, message, Snackbar.LENGTH_SHORT).apply {
+            setTextColor(Color.WHITE)
+            setBackgroundTint("#32357A".toColorInt())
+        }.show()
     }
 }

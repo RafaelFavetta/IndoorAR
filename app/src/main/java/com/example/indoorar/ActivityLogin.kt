@@ -7,18 +7,18 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
-import androidx.appcompat.app.AppCompatActivity
+import android.widget.TextView
+import androidx.core.graphics.toColorInt
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
-import androidx.core.graphics.toColorInt
-import android.widget.TextView
-import com.example.indoorar.BaseActivity
+import com.google.firebase.firestore.FirebaseFirestore
 
 class ActivityLogin : BaseActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var btnEntrar: Button
     private lateinit var progressBar: ProgressBar
+    private val db = FirebaseFirestore.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,8 +36,6 @@ class ActivityLogin : BaseActivity() {
             val intent = Intent(this, ActivityForgotPassword::class.java)
             startActivity(intent)
         }
-
-
 
         btnEntrar.setOnClickListener {
             val email = editEmail.text.toString().trim()
@@ -58,8 +56,34 @@ class ActivityLogin : BaseActivity() {
                     progressBar.visibility = View.GONE
 
                     if (task.isSuccessful) {
-                        startActivity(Intent(this, ActivityHomeComum::class.java))
-                        finish()
+                        val userId = auth.currentUser?.uid
+                        if (userId != null) {
+                            db.collection("usuarios").document(userId).get()
+                                .addOnSuccessListener { document ->
+                                    if (document.exists()) {
+                                        val tipoConta = document.getString("tipoConta")
+
+                                        when (tipoConta) {
+                                            "comum" -> {
+                                                startActivity(Intent(this, ActivityHomeComum::class.java))
+                                                finish()
+                                            }
+                                            "maker" -> {
+                                                startActivity(Intent(this, ActivityHomeMaker::class.java))
+                                                finish()
+                                            }
+                                            else -> {
+                                                snackbar("Tipo de conta inválido.")
+                                            }
+                                        }
+                                    } else {
+                                        snackbar("Usuário sem dados no banco.")
+                                    }
+                                }
+                                .addOnFailureListener {
+                                    snackbar("Erro ao buscar dados: ${it.message}")
+                                }
+                        }
                     } else {
                         snackbar("Erro no login: ${task.exception?.message}")
                     }
@@ -73,6 +97,4 @@ class ActivityLogin : BaseActivity() {
             setBackgroundTint("#32357A".toColorInt())
         }.show()
     }
-
-
 }

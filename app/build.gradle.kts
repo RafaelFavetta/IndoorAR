@@ -56,18 +56,17 @@ android {
 }
 
 dependencies {
-    implementation("com.google.android.material:material:1.12.0")
-    // Core Android
+    implementation("com.google.android.material:material:1.13.0")
     implementation("androidx.core:core-ktx:1.17.0")
     implementation("androidx.appcompat:appcompat:1.7.1")
-    implementation("com.google.android.material:material:1.12.0")
+    implementation("com.google.android.material:material:1.13.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
 
     //API Google
-    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation("com.google.android.gms:play-services-auth:21.4.0")
 
     // ZXing
-    implementation("com.google.zxing:core:3.5.2")
+    implementation("com.google.zxing:core:3.5.3")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
     // CameraX
@@ -92,8 +91,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview:1.9.0")
 
     // Layout pra base da home (os icones de app e etc)
-    implementation("androidx.coordinatorlayout:coordinatorlayout:1.2.0")
-    implementation("com.google.android.material:material:1.9.0")
+    implementation("androidx.coordinatorlayout:coordinatorlayout:1.3.0")
+    implementation("com.google.android.material:material:1.13.0")
 
 
     // Firebase BOM
@@ -103,10 +102,10 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
 
     implementation("androidx.activity:activity-ktx:1.10.1")
-    implementation("androidx.activity:activity:1.8.0")
+    implementation("androidx.activity:activity:1.10.1")
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("androidx.cardview:cardview:1.0.0")
-    implementation("androidx.recyclerview:recyclerview:1.3.0")
+    implementation("androidx.recyclerview:recyclerview:1.4.0")
 
     testImplementation("junit:junit:4.13.2")
 }

@@ -1,23 +1,16 @@
 package com.example.indoorar
 
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
-import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.graphics.toColorInt
-import com.google.android.material.snackbar.Snackbar
+import androidx.core.content.getSystemService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
-import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.ktx.Firebase
 import com.redmadrobot.inputmask.MaskedTextChangedListener
-import com.example.indoorar.BaseActivity
-
 
 class ActivityCriar2 : BaseActivity() {
 
@@ -32,7 +25,7 @@ class ActivityCriar2 : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_criar2)
 
-        auth = Firebase.auth
+        auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
 
         val nomeField = findViewById<EditText>(R.id.editNome)
@@ -42,6 +35,7 @@ class ActivityCriar2 : BaseActivity() {
         btnCadastrar = findViewById(R.id.btnCadastro)
         progressBar = findViewById(R.id.progressBar)
 
+        // Máscara de telefone
         MaskedTextChangedListener.installOn(
             editText = telefoneField,
             primaryFormat = "+55 ([00]) [00000]-[0000]",
@@ -53,6 +47,7 @@ class ActivityCriar2 : BaseActivity() {
         )
 
         btnCadastrar.setOnClickListener {
+            closeKeyboard()
             val nome = nomeField.text.toString().trim()
             val email = emailField.text.toString().trim()
             val telefone = telefoneBruto
@@ -61,7 +56,7 @@ class ActivityCriar2 : BaseActivity() {
             if (!validarCampos(nome, email, telefone, senha)) return@setOnClickListener
 
             btnCadastrar.isEnabled = false
-            progressBar.visibility = View.VISIBLE
+            progressBar.visibility = ProgressBar.VISIBLE
 
             criarContaMaker(nome, email, telefone, senha)
         }
@@ -69,10 +64,10 @@ class ActivityCriar2 : BaseActivity() {
 
     private fun validarCampos(nome: String, email: String, telefone: String, senha: String): Boolean {
         return when {
-            nome.isEmpty() -> { snackbar("Preencha o nome"); false }
-            email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> { snackbar("Digite um email válido"); false }
-            telefone.isEmpty() || telefone.length < 11 -> { snackbar("Informe um telefone válido com DDD"); false }
-            senha.length < 6 -> { snackbar("Senha deve ter pelo menos 6 caracteres"); false }
+            nome.isEmpty() -> { showSnackbar("Preencha o nome"); false }
+            email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> { showSnackbar("Digite um email válido"); false }
+            telefone.isEmpty() || telefone.length < 11 -> { showSnackbar("Informe um telefone válido com DDD"); false }
+            senha.length < 6 -> { showSnackbar("Senha deve ter pelo menos 6 caracteres"); false }
             else -> true
         }
     }
@@ -80,11 +75,11 @@ class ActivityCriar2 : BaseActivity() {
     private fun criarContaMaker(nome: String, email: String, telefone: String, senha: String) {
         auth.createUserWithEmailAndPassword(email, senha)
             .addOnCompleteListener(this) { task ->
-                progressBar.visibility = View.GONE
+                progressBar.visibility = ProgressBar.GONE
                 btnCadastrar.isEnabled = true
 
                 if (task.isSuccessful) {
-                    val uid = auth.currentUser?.uid ?: return@addOnCompleteListener snackbar("Erro ao obter UID")
+                    val uid = auth.currentUser?.uid ?: return@addOnCompleteListener showSnackbar("Erro ao obter UID")
 
                     val dadosUsuario = hashMapOf(
                         "nome" to nome,
@@ -97,15 +92,14 @@ class ActivityCriar2 : BaseActivity() {
                     db.collection("usuarios").document(uid)
                         .set(dadosUsuario)
                         .addOnSuccessListener {
-                            snackbar("Conta criada com sucesso!")
-                            val intent = Intent(this, ActivityHomeMaker::class.java)
-                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                            startActivity(intent)
+                            showSnackbar("Conta criada com sucesso!")
+                            startActivity(Intent(this, ActivityHomeMaker::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            })
                         }
                         .addOnFailureListener {
-                            snackbar("Erro ao salvar dados: ${it.message}")
+                            showSnackbar("Erro ao salvar dados: ${it.message}")
                         }
-
                 } else {
                     val exception = task.exception
                     val mensagem = when ((exception as? FirebaseAuthException)?.errorCode) {
@@ -115,15 +109,13 @@ class ActivityCriar2 : BaseActivity() {
                         "ERROR_NETWORK_REQUEST_FAILED" -> "Sem conexão com a internet"
                         else -> "Erro: ${exception?.message}"
                     }
-                    snackbar(mensagem)
+                    showSnackbar(mensagem)
                 }
             }
     }
 
-    private fun snackbar(msg: String) {
-        Snackbar.make(findViewById(R.id.main), msg, Snackbar.LENGTH_SHORT).apply {
-            setTextColor(Color.WHITE)
-            setBackgroundTint("#32357A".toColorInt())
-        }.show()
+    private fun closeKeyboard() {
+        val imm = getSystemService<InputMethodManager>()
+        imm?.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
     }
 }

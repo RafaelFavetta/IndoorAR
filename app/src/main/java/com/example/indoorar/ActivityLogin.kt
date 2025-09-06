@@ -1,40 +1,36 @@
 package com.example.indoorar
 
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
-import android.widget.TextView
-import androidx.core.graphics.toColorInt
-import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 class ActivityLogin : BaseActivity() {
 
     private lateinit var auth: FirebaseAuth
+    private lateinit var db: FirebaseFirestore
     private lateinit var btnEntrar: Button
     private lateinit var progressBar: ProgressBar
-    private val db = FirebaseFirestore.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
         auth = FirebaseAuth.getInstance()
+        db = FirebaseFirestore.getInstance()
 
         val editEmail = findViewById<EditText>(R.id.editEmail)
         val editSenha = findViewById<EditText>(R.id.editSenha)
         btnEntrar = findViewById(R.id.btnEntrar)
         progressBar = findViewById(R.id.progressBar)
 
-        val txtEsqueciSenha = findViewById<TextView>(R.id.txtEsqueciSenha)
+        val txtEsqueciSenha = findViewById<View>(R.id.txtEsqueciSenha)
         txtEsqueciSenha.setOnClickListener {
-            val intent = Intent(this, ActivityForgotPassword::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, ActivityForgotPassword::class.java))
         }
 
         btnEntrar.setOnClickListener {
@@ -42,11 +38,10 @@ class ActivityLogin : BaseActivity() {
             val senha = editSenha.text.toString().trim()
 
             if (email.isEmpty() || senha.isEmpty()) {
-                snackbar("Preencha todos os campos!")
+                showSnackbar("Preencha todos os campos!")
                 return@setOnClickListener
             }
 
-            // trava botão e mostra loading
             btnEntrar.isEnabled = false
             progressBar.visibility = View.VISIBLE
 
@@ -56,45 +51,32 @@ class ActivityLogin : BaseActivity() {
                     progressBar.visibility = View.GONE
 
                     if (task.isSuccessful) {
-                        val userId = auth.currentUser?.uid
-                        if (userId != null) {
-                            db.collection("usuarios").document(userId).get()
-                                .addOnSuccessListener { document ->
-                                    if (document.exists()) {
-                                        val tipoConta = document.getString("tipoConta")
-
-                                        when (tipoConta) {
-                                            "comum" -> {
-                                                startActivity(Intent(this, ActivityHomeComum::class.java))
-                                                finish()
-                                            }
-                                            "maker" -> {
-                                                startActivity(Intent(this, ActivityHomeMaker::class.java))
-                                                finish()
-                                            }
-                                            else -> {
-                                                snackbar("Tipo de conta inválido.")
-                                            }
+                        val uid = auth.currentUser?.uid
+                        if (uid != null) {
+                            // pega o tipo de conta do Firestore
+                            db.collection("usuarios").document(uid).get()
+                                .addOnSuccessListener { doc ->
+                                    val tipoConta = doc.getString("tipoConta") ?: "comum"
+                                    when (tipoConta.lowercase()) {
+                                        "maker" -> {
+                                            startActivity(Intent(this, ActivityHomeMaker::class.java))
                                         }
-                                    } else {
-                                        snackbar("Usuário sem dados no banco.")
+                                        else -> {
+                                            startActivity(Intent(this, ActivityHomeComum::class.java))
+                                        }
                                     }
+                                    finish()
                                 }
-                                .addOnFailureListener {
-                                    snackbar("Erro ao buscar dados: ${it.message}")
+                                .addOnFailureListener { e ->
+                                    showSnackbar("Erro ao recuperar dados: ${e.message}")
                                 }
+                        } else {
+                            showSnackbar("Erro interno: UID não encontrado")
                         }
                     } else {
-                        snackbar("Erro no login: ${task.exception?.message}")
+                        showSnackbar("Erro no login: ${task.exception?.message}")
                     }
                 }
         }
-    }
-
-    private fun snackbar(msg: String) {
-        Snackbar.make(findViewById(R.id.main), msg, Snackbar.LENGTH_SHORT).apply {
-            setTextColor(Color.WHITE)
-            setBackgroundTint("#32357A".toColorInt())
-        }.show()
     }
 }

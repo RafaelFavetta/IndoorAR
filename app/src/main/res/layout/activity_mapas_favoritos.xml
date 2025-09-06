@@ -97,6 +97,9 @@
                         <RelativeLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
+                            android:background="@drawable/ripple_clickable"
+                            android:clickable="true"
+                            android:focusable="true"
                             android:padding="12dp">
 
                             <ImageView
@@ -159,6 +162,9 @@
                         <RelativeLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
+                            android:background="@drawable/ripple_clickable"
+                            android:clickable="true"
+                            android:focusable="true"
                             android:padding="12dp">
 
                             <ImageView
@@ -221,6 +227,9 @@
                         <RelativeLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
+                            android:background="@drawable/ripple_clickable"
+                            android:clickable="true"
+                            android:focusable="true"
                             android:padding="12dp">
 
                             <ImageView

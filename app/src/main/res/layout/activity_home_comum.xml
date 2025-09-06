@@ -46,6 +46,20 @@
                             app:layout_constraintTop_toTopOf="parent"
                             app:srcCompat="@drawable/logo_branca" />
 
+                        <ImageView
+                            android:id="@+id/btnSignOut"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:layout_marginEnd="28dp"
+                            android:layout_marginTop="40dp"
+                            android:contentDescription="Logout"
+                            android:background="@drawable/ripple_clickable"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:srcCompat="@drawable/ic_logout_branco" />
+
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
                     <TextView
@@ -132,6 +146,9 @@
                                         android:id="@+id/btnFavoritos"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
+                                        android:background="@drawable/ripple_clickable"
+                                        android:clickable="true"
+                                        android:focusable="true"
                                         app:layout_constraintBottom_toBottomOf="parent"
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintStart_toStartOf="parent"
@@ -175,6 +192,9 @@
                                         android:id="@+id/btnEscanear"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
+                                        android:background="@drawable/ripple_clickable"
+                                        android:clickable="true"
+                                        android:focusable="true"
                                         app:layout_constraintBottom_toBottomOf="parent"
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintHorizontal_bias="0.533"
@@ -220,6 +240,9 @@
                                         android:id="@+id/btnHistorico"
                                         android:layout_width="45dp"
                                         android:layout_height="wrap_content"
+                                        android:background="@drawable/ripple_clickable"
+                                        android:clickable="true"
+                                        android:focusable="true"
                                         app:layout_constraintBottom_toBottomOf="parent"
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintStart_toStartOf="parent"
@@ -277,6 +300,9 @@
                                 android:layout_marginEnd="32dp"
                                 android:layout_weight="1"
                                 android:text="View All"
+                                android:background="@drawable/ripple_clickable"
+                                android:clickable="true"
+                                android:focusable="true"
                                 android:textColor="@color/colorPrimaryDark"
                                 android:textStyle="bold"
                                 android:textAlignment="viewEnd" />
@@ -337,6 +363,9 @@
                             android:layout_height="20dp"
                             android:layout_gravity="center"
                             android:layout_marginTop="8dp"
+                            android:background="@drawable/ripple_clickable"
+                            android:clickable="true"
+                            android:focusable="true"
                             app:srcCompat="@drawable/ic_home" />
 
                         <TextView
@@ -359,6 +388,9 @@
                             android:layout_height="20dp"
                             android:layout_gravity="center"
                             android:layout_marginTop="8dp"
+                            android:background="@drawable/ripple_clickable"
+                            android:clickable="true"
+                            android:focusable="true"
                             app:srcCompat="@drawable/ic_home" />
 
                         <TextView
@@ -375,14 +407,6 @@
                         android:layout_weight="0.25"
                         android:orientation="vertical"
                         android:visibility="invisible">
-
-                        <ImageView
-                            android:id="@+id/Imgbottom5"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_gravity="center"
-                            android:layout_marginTop="8dp"
-                            app:srcCompat="@drawable/bottom_btn1" />
 
                         <TextView
                             android:id="@+id/Txtbottom6"
@@ -404,6 +428,9 @@
                             android:layout_height="20dp"
                             android:layout_gravity="center"
                             android:layout_marginTop="8dp"
+                            android:background="@drawable/ripple_clickable"
+                            android:clickable="true"
+                            android:focusable="true"
                             app:srcCompat="@drawable/ic_home" />
 
                         <TextView
@@ -425,6 +452,9 @@
                             android:layout_width="20dp"
                             android:layout_height="20dp"
                             android:layout_gravity="center"
+                            android:background="@drawable/ripple_clickable"
+                            android:clickable="true"
+                            android:focusable="true"
                             android:layout_marginTop="8dp"
                             app:srcCompat="@drawable/ic_home" />
 
@@ -444,6 +474,9 @@
                 app:layout_anchor="@id/app_bar"
                 app:layout_anchorGravity="center"
                 app:maxImageSize="30dp"
+                android:background="@drawable/ripple_clickable"
+                android:clickable="true"
+                android:focusable="true"
                 app:backgroundTint="#32357A"
                 app:tint="#fdfdfd"
                 android:src="@drawable/float_icon" />

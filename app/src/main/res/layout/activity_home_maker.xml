@@ -41,6 +41,20 @@
                             app:layout_constraintTop_toTopOf="parent"
                             app:srcCompat="@drawable/logo_branca" />
 
+                        <ImageView
+                            android:id="@+id/btnSignOut"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:layout_marginEnd="28dp"
+                            android:layout_marginTop="40dp"
+                            android:contentDescription="Logout"
+                            android:background="@drawable/ripple_clickable"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:srcCompat="@drawable/ic_logout_branco" />
+
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
                     <TextView
@@ -121,9 +135,12 @@
                                     android:background="@drawable/background_oval_2">
 
                                     <ImageView
-                                        android:id="@+id/imageView4"
+                                        android:id="@+id/btnMeusMapas"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
+                                        android:background="@drawable/ripple_clickable"
+                                        android:clickable="true"
+                                        android:focusable="true"
                                         app:layout_constraintBottom_toBottomOf="parent"
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintStart_toStartOf="parent"
@@ -167,6 +184,9 @@
                                         android:id="@+id/btnCriarMapa"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
+                                        android:background="@drawable/ripple_clickable"
+                                        android:clickable="true"
+                                        android:focusable="true"
                                         app:layout_constraintBottom_toBottomOf="parent"
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintStart_toStartOf="parent"
@@ -210,6 +230,9 @@
                                         android:id="@+id/imageView8"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
+                                        android:background="@drawable/ripple_clickable"
+                                        android:clickable="true"
+                                        android:focusable="true"
                                         app:layout_constraintBottom_toBottomOf="parent"
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintStart_toStartOf="parent"

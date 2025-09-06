@@ -51,9 +51,11 @@
             android:id="@+id/backButtonLayout"
             android:layout_width="60dp"
             android:layout_height="60dp"
-            android:layout_marginStart="32dp"
+            android:layout_marginStart="16dp"
             android:layout_marginTop="32dp"
-            android:background="@drawable/editext_background"
+            android:background="@drawable/ripple_clickable"
+            android:clickable="true"
+            android:focusable="true"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
@@ -106,6 +108,9 @@
                 android:id="@+id/itemNotificacoes"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/ripple_clickable"
+                android:clickable="true"
+                android:focusable="true"
                 android:layout_marginStart="32dp"
                 android:layout_marginEnd="32dp">
 
@@ -147,6 +152,9 @@
                 android:id="@+id/itemCalendario"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/ripple_clickable"
+                android:clickable="true"
+                android:focusable="true"
                 android:layout_marginStart="32dp"
                 android:layout_marginEnd="32dp">
 
@@ -189,6 +197,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="32dp"
+                android:background="@drawable/ripple_clickable"
+                android:clickable="true"
+                android:focusable="true"
                 android:layout_marginEnd="32dp">
 
                 <ImageView
@@ -230,6 +241,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="32dp"
+                android:background="@drawable/ripple_clickable"
+                android:clickable="true"
+                android:focusable="true"
                 android:layout_marginEnd="32dp">
 
                 <ImageView
@@ -271,6 +285,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="32dp"
+                android:background="@drawable/ripple_clickable"
+                android:clickable="true"
+                android:focusable="true"
                 android:layout_marginEnd="32dp">
 
                 <ImageView
@@ -312,6 +329,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="32dp"
+                android:background="@drawable/ripple_clickable"
+                android:clickable="true"
+                android:focusable="true"
                 android:layout_marginEnd="32dp">
 
                 <ImageView

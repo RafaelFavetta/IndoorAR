@@ -4,7 +4,9 @@ import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
 import android.view.WindowInsets
+import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.toColorInt
 import androidx.core.view.*
@@ -54,11 +56,25 @@ open class BaseActivity : AppCompatActivity() {
         handler.removeCallbacksAndMessages(null)
     }
 
-    fun showSnackbar(message: String) {
-        val rootView = findViewById<android.view.View>(android.R.id.content)
-        Snackbar.make(rootView, message, Snackbar.LENGTH_SHORT).apply {
-            setTextColor(Color.WHITE)
-            setBackgroundTint("#32357A".toColorInt())
-        }.show()
+    fun hideKeyboard() {
+        val view = currentFocus
+        if (view != null) {
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(view.windowToken, 0)
+        }
+    }
+
+    fun showSnackbar(msg: String, anchorView: View? = null) {
+        hideKeyboard() // fecha teclado antes de mostrar uma mensagem
+
+        val rootView = findViewById<View>(android.R.id.content)
+        val snackbar = Snackbar.make(rootView, msg, Snackbar.LENGTH_SHORT)
+        snackbar.setTextColor(Color.WHITE)
+        snackbar.setBackgroundTint("#32357A".toColorInt())
+
+        // Se passar um anchorView, a snackbar vai aparecer acima dela
+        anchorView?.let { snackbar.setAnchorView(it) }
+
+        snackbar.show()
     }
 }

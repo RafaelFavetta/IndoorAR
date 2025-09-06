@@ -83,8 +83,9 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
                     android:orientation="vertical"
-                    android:gravity="center_horizontal">
+                    app:layout_constraintTop_toTopOf="parent">
 
 
                     <androidx.cardview.widget.CardView
@@ -108,8 +109,8 @@
                                 android:layout_height="40dp"
                                 android:layout_alignParentStart="true"
                                 android:layout_centerVertical="true"
-                                android:src="@drawable/ic_home"
-                                android:contentDescription="Ícone"/>
+                                android:contentDescription="Ícone"
+                                android:src="@drawable/ic_home" />
 
                             <ImageView
                                 android:id="@+id/imageDireita1"
@@ -117,36 +118,36 @@
                                 android:layout_height="24dp"
                                 android:layout_alignParentEnd="true"
                                 android:layout_centerVertical="true"
-                                android:src="@drawable/favoriteblue"
-                                android:contentDescription="Ícone Direito"/>
+                                android:contentDescription="Ícone Direito"
+                                android:src="@drawable/favoriteblue" />
 
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:layout_toEndOf="@id/imageEsquerda1"
-                                android:layout_toStartOf="@id/imageDireita1"
                                 android:layout_centerVertical="true"
                                 android:layout_marginStart="16dp"
-                                android:layout_marginEnd="16dp">
+                                android:layout_marginEnd="16dp"
+                                android:layout_toStartOf="@id/imageDireita1"
+                                android:layout_toEndOf="@id/imageEsquerda1"
+                                android:orientation="vertical">
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
                                     android:text="Fatec Pref. Antonio Brambila"
                                     android:textSize="18sp"
-                                    android:textStyle="bold"
-                                    android:ellipsize="end"
-                                    android:singleLine="true"/>
+                                    android:textStyle="bold" />
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Faculdade"
-                                    android:textSize="14sp"
-                                    android:textColor="#888888"
                                     android:ellipsize="end"
-                                    android:singleLine="true"/>
+                                    android:singleLine="true"
+                                    android:text="Faculdade"
+                                    android:textColor="#888888"
+                                    android:textSize="14sp" />
                             </LinearLayout>
                         </RelativeLayout>
                     </androidx.cardview.widget.CardView>
@@ -173,8 +174,8 @@
                                 android:layout_height="40dp"
                                 android:layout_alignParentStart="true"
                                 android:layout_centerVertical="true"
-                                android:src="@drawable/ic_home"
-                                android:contentDescription="Ícone"/>
+                                android:contentDescription="Ícone"
+                                android:src="@drawable/ic_home" />
 
                             <ImageView
                                 android:id="@+id/imageDireita2"
@@ -182,36 +183,36 @@
                                 android:layout_height="24dp"
                                 android:layout_alignParentEnd="true"
                                 android:layout_centerVertical="true"
-                                android:src="@drawable/favoriteblue"
-                                android:contentDescription="Ícone Direito"/>
+                                android:contentDescription="Ícone Direito"
+                                android:src="@drawable/favoriteblue" />
 
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:layout_toEndOf="@id/imageEsquerda2"
-                                android:layout_toStartOf="@id/imageDireita2"
                                 android:layout_centerVertical="true"
                                 android:layout_marginStart="16dp"
-                                android:layout_marginEnd="16dp">
+                                android:layout_marginEnd="16dp"
+                                android:layout_toStartOf="@id/imageDireita2"
+                                android:layout_toEndOf="@id/imageEsquerda2"
+                                android:orientation="vertical">
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
                                     android:text="Escola Municipal Araras"
                                     android:textSize="18sp"
-                                    android:textStyle="bold"
-                                    android:ellipsize="end"
-                                    android:singleLine="true"/>
+                                    android:textStyle="bold" />
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Ensino Fundamental"
-                                    android:textSize="14sp"
-                                    android:textColor="#888888"
                                     android:ellipsize="end"
-                                    android:singleLine="true"/>
+                                    android:singleLine="true"
+                                    android:text="Ensino Fundamental"
+                                    android:textColor="#888888"
+                                    android:textSize="14sp" />
                             </LinearLayout>
                         </RelativeLayout>
                     </androidx.cardview.widget.CardView>
@@ -238,8 +239,8 @@
                                 android:layout_height="40dp"
                                 android:layout_alignParentStart="true"
                                 android:layout_centerVertical="true"
-                                android:src="@drawable/ic_home"
-                                android:contentDescription="Ícone"/>
+                                android:contentDescription="Ícone"
+                                android:src="@drawable/ic_home" />
 
                             <ImageView
                                 android:id="@+id/imageDireita3"
@@ -247,36 +248,36 @@
                                 android:layout_height="24dp"
                                 android:layout_alignParentEnd="true"
                                 android:layout_centerVertical="true"
-                                android:src="@drawable/favoriteblue"
-                                android:contentDescription="Ícone Direito"/>
+                                android:contentDescription="Ícone Direito"
+                                android:src="@drawable/favoriteblue" />
 
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:layout_toEndOf="@id/imageEsquerda3"
-                                android:layout_toStartOf="@id/imageDireita3"
                                 android:layout_centerVertical="true"
                                 android:layout_marginStart="16dp"
-                                android:layout_marginEnd="16dp">
+                                android:layout_marginEnd="16dp"
+                                android:layout_toStartOf="@id/imageDireita3"
+                                android:layout_toEndOf="@id/imageEsquerda3"
+                                android:orientation="vertical">
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
                                     android:text="Universidade Paulista"
                                     android:textSize="18sp"
-                                    android:textStyle="bold"
-                                    android:ellipsize="end"
-                                    android:singleLine="true"/>
+                                    android:textStyle="bold" />
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Ensino Superior"
-                                    android:textSize="14sp"
-                                    android:textColor="#888888"
                                     android:ellipsize="end"
-                                    android:singleLine="true"/>
+                                    android:singleLine="true"
+                                    android:text="Ensino Superior"
+                                    android:textColor="#888888"
+                                    android:textSize="14sp" />
                             </LinearLayout>
                         </RelativeLayout>
                     </androidx.cardview.widget.CardView>

@@ -170,8 +170,8 @@
             android:layout_height="match_parent"
             android:layout_marginEnd="8dp"
             app:cardBackgroundColor="#FFFFFF"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="10dp"
+            app:cardCornerRadius="3dp"
+            app:cardElevation="12dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent">
@@ -190,152 +190,240 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
                         android:drawableStart="@drawable/ic_name"
                         android:drawablePadding="6dp"
                         android:text="Nome"
                         android:textColor="#444"
                         android:textSize="12sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:layout_marginBottom="4dp" />
 
                     <EditText
                         android:id="@+id/inputNome"
                         android:layout_width="match_parent"
                         android:layout_height="40dp"
                         android:layout_marginBottom="12dp"
-                        android:background="@drawable/edittext_background"
+                        android:background="#F5F5F5"
                         android:padding="8dp"
+                        android:hint="Insira um nome"
                         android:textColor="#000000"
-                        android:textColorHint="#000000"
+                        android:textColorHint="#999999"
                         android:textSize="13sp" />
+
+                    <!-- Linha separadora -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#E0E0E0"
+                        android:layout_marginBottom="12dp" />
 
                     <!-- Posição -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
                         android:drawableStart="@drawable/ic_posicao"
                         android:drawablePadding="6dp"
                         android:text="Posição"
                         android:textColor="#444"
                         android:textSize="12sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:layout_marginBottom="6dp" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
                         android:orientation="horizontal"
-                        android:weightSum="2">
+                        android:weightSum="2"
+                        android:layout_marginBottom="12dp">
 
-                        <EditText
-                            android:id="@+id/inputX"
+                        <LinearLayout
                             android:layout_width="0dp"
-                            android:layout_height="40dp"
+                            android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:background="@drawable/edittext_background"
-                            android:gravity="center"
-                            android:inputType="numberDecimal"
-                            android:textColor="#000000"
-                            android:textColorHint="#000000"
-                            android:textSize="13sp" />
+                            android:orientation="vertical">
 
-                        <EditText
-                            android:id="@+id/inputY"
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="X"
+                                android:textColor="#444"
+                                android:textSize="11sp"
+                                android:layout_marginBottom="2dp" />
+
+                            <EditText
+                                android:id="@+id/inputX"
+                                android:layout_width="match_parent"
+                                android:layout_height="40dp"
+                                android:background="#F5F5F5"
+                                android:gravity="center"
+                                android:hint="X"
+                                android:inputType="numberDecimal"
+                                android:textColor="#000000"
+                                android:textColorHint="#999999"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
                             android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_marginStart="8dp"
+                            android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:background="@drawable/edittext_background"
-                            android:gravity="center"
-                            android:hint="Y"
-                            android:inputType="numberDecimal"
-                            android:textColor="#000000"
-                            android:textColorHint="#000000"
-                            android:textSize="13sp" />
+                            android:orientation="vertical"
+                            android:layout_marginStart="8dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Y"
+                                android:textColor="#444"
+                                android:textSize="11sp"
+                                android:layout_marginBottom="2dp" />
+
+                            <EditText
+                                android:id="@+id/inputY"
+                                android:layout_width="match_parent"
+                                android:layout_height="40dp"
+                                android:background="#F5F5F5"
+                                android:gravity="center"
+                                android:hint="Y"
+                                android:inputType="numberDecimal"
+                                android:textColor="#000000"
+                                android:textColorHint="#999999"
+                                android:textSize="13sp" />
+                        </LinearLayout>
                     </LinearLayout>
+
+                    <!-- Linha separadora -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#E0E0E0"
+                        android:layout_marginBottom="12dp" />
 
                     <!-- Dimensões -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
                         android:drawableStart="@drawable/ic_dimensoes"
                         android:drawablePadding="6dp"
                         android:text="Dimensões"
                         android:textColor="#444"
                         android:textSize="12sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:layout_marginBottom="6dp" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
                         android:orientation="horizontal"
-                        android:weightSum="2">
+                        android:weightSum="2"
+                        android:layout_marginBottom="12dp">
 
-                        <EditText
-                            android:id="@+id/inputWidth"
+                        <LinearLayout
                             android:layout_width="0dp"
-                            android:layout_height="40dp"
+                            android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:background="@drawable/edittext_background"
-                            android:gravity="center"
-                            android:hint="Largura"
-                            android:inputType="numberDecimal"
-                            android:textColor="#000000"
-                            android:textColorHint="#000000"
-                            android:textSize="13sp" />
+                            android:orientation="vertical">
 
-                        <EditText
-                            android:id="@+id/inputHeight"
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Largura"
+                                android:textColor="#444"
+                                android:textSize="11sp"
+                                android:layout_marginBottom="2dp" />
+
+                            <EditText
+                                android:id="@+id/inputWidth"
+                                android:layout_width="match_parent"
+                                android:layout_height="40dp"
+                                android:background="#F5F5F5"
+                                android:gravity="center"
+                                android:hint="Largura"
+                                android:inputType="numberDecimal"
+                                android:textColor="#000000"
+                                android:textColorHint="#999999"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
                             android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_marginStart="8dp"
+                            android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:background="@drawable/edittext_background"
-                            android:gravity="center"
-                            android:inputType="numberDecimal"
-                            android:textColor="#000000"
-                            android:textColorHint="#000000"
-                            android:textSize="13sp" />
+                            android:orientation="vertical"
+                            android:layout_marginStart="8dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Altura"
+                                android:textColor="#444"
+                                android:textSize="11sp"
+                                android:layout_marginBottom="2dp" />
+
+                            <EditText
+                                android:id="@+id/inputHeight"
+                                android:layout_width="match_parent"
+                                android:layout_height="40dp"
+                                android:background="#F5F5F5"
+                                android:gravity="center"
+                                android:hint="Altura"
+                                android:inputType="numberDecimal"
+                                android:textColor="#000000"
+                                android:textColorHint="#999999"
+                                android:textSize="13sp" />
+                        </LinearLayout>
                     </LinearLayout>
+
+                    <!-- Linha separadora -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#E0E0E0"
+                        android:layout_marginBottom="12dp" />
 
                     <!-- Rotação -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
                         android:drawableStart="@drawable/ic_rotate"
                         android:drawablePadding="6dp"
                         android:text="Rotação"
                         android:textColor="#444"
                         android:textSize="12sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:layout_marginBottom="4dp" />
 
                     <EditText
                         android:id="@+id/inputRotation"
                         android:layout_width="match_parent"
                         android:layout_height="40dp"
                         android:layout_marginBottom="12dp"
-                        android:background="@drawable/edittext_background"
+                        android:background="#F5F5F5"
                         android:gravity="center"
+                        android:hint="0°"
                         android:inputType="numberDecimal"
                         android:textColor="#000000"
-                        android:textColorHint="#000000"
+                        android:textColorHint="#999999"
                         android:textSize="13sp" />
+
+                    <!-- Linha separadora -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#E0E0E0"
+                        android:layout_marginBottom="12dp" />
 
                     <!-- Cor -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
                         android:drawableStart="@drawable/ic_palette2"
                         android:drawablePadding="6dp"
                         android:text="Cor"
                         android:textColor="#444"
                         android:textSize="12sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:layout_marginBottom="4dp" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -357,11 +445,12 @@
                             android:layout_width="0dp"
                             android:layout_height="40dp"
                             android:layout_weight="2"
-                            android:background="@drawable/edittext_background"
+                            android:background="#F5F5F5"
                             android:gravity="center"
+                            android:hint="#FFFFFF"
                             android:inputType="text"
                             android:textColor="#000000"
-                            android:textColorHint="#000000"
+                            android:textColorHint="#999999"
                             android:textSize="13sp" />
 
                         <ImageButton
@@ -377,6 +466,7 @@
                 </LinearLayout>
             </ScrollView>
         </androidx.cardview.widget.CardView>
+
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

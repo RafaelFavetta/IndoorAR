@@ -163,123 +163,212 @@
 
 
         </com.google.android.material.card.MaterialCardView>
-
         <androidx.cardview.widget.CardView
-            android:layout_width="170dp"
-            android:layout_height="415dp"
-            android:layout_marginStart="100dp"
-            app:cardCornerRadius="5dp"
-            app:cardElevation="8dp"
-            app:cardBackgroundColor="#fdfdfd"
+            android:id="@+id/painelAtributos"
+            android:layout_width="200dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="8dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="10dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="1.0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.0" >
+            app:layout_constraintTop_toTopOf="parent">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <ScrollView
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:padding="12dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="horizontal">
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
-                    <androidx.constraintlayout.widget.ConstraintLayout
+                    <!-- Nome -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nome"
+                        android:textColor="#444"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:drawableStart="@drawable/ic_name"
+                        android:drawablePadding="6dp"
+                        android:layout_marginBottom="4dp"/>
+
+                    <EditText
+                        android:id="@+id/inputNome"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent">
+                        android:layout_height="40dp"
+                        android:background="@drawable/edittext_background"
+                        android:hint="Insira um nome"
+                        android:padding="8dp"
+                        android:textSize="13sp"
+                        android:layout_marginBottom="12dp"/>
 
-                        <LinearLayout
-                            android:id="@+id/txtElemento"
-                            android:layout_width="match_parent"
+                    <!-- Posição -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Posição"
+                        android:textColor="#444"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:drawableStart="@drawable/ic_posicao"
+                        android:drawablePadding="6dp"
+                        android:layout_marginBottom="4dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="2"
+                        android:layout_marginBottom="12dp">
+
+                        <EditText
+                            android:id="@+id/inputX"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/edittext_background"
+                            android:gravity="center"
+                            android:hint="X"
+                            android:inputType="numberDecimal"
+                            android:textSize="13sp"/>
+
+                        <EditText
+                            android:id="@+id/inputY"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/edittext_background"
+                            android:gravity="center"
+                            android:hint="Y"
+                            android:inputType="numberDecimal"
+                            android:textSize="13sp"/>
+                    </LinearLayout>
+
+                    <!-- Dimensões -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Dimensões"
+                        android:textColor="#444"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:drawableStart="@drawable/ic_dimensoes"
+                        android:drawablePadding="6dp"
+                        android:layout_marginBottom="4dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="2"
+                        android:layout_marginBottom="12dp">
+
+                        <EditText
+                            android:id="@+id/inputWidth"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/edittext_background"
+                            android:gravity="center"
+                            android:hint="Largura"
+                            android:inputType="numberDecimal"
+                            android:textSize="13sp"/>
+
+                        <EditText
+                            android:id="@+id/inputHeight"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/edittext_background"
+                            android:gravity="center"
+                            android:hint="Altura"
+                            android:inputType="numberDecimal"
+                            android:textSize="13sp"/>
+                    </LinearLayout>
+
+                    <!-- Rotação -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Rotação"
+                        android:textColor="#444"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:drawableStart="@drawable/ic_rotate"
+                        android:drawablePadding="6dp"
+                        android:layout_marginBottom="4dp"/>
+
+                    <EditText
+                        android:id="@+id/inputRotation"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:background="@drawable/edittext_background"
+                        android:gravity="center"
+                        android:hint="0°"
+                        android:inputType="numberDecimal"
+                        android:textSize="13sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <!-- Cor -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Cor"
+                        android:textColor="#444"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:drawableStart="@drawable/ic_palette2"
+                        android:drawablePadding="6dp"
+                        android:layout_marginBottom="4dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:weightSum="3"
+                        android:layout_marginBottom="12dp">
+
+                        <ImageView
+                            android:id="@+id/colorPreview"
+                            android:layout_width="30dp"
                             android:layout_height="30dp"
-                            android:layout_marginTop="10dp"
-                            android:orientation="horizontal"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent">
+                            android:layout_marginEnd="6dp"
+                            android:background="#D9D9D9"/>
 
-                            <TextView
-                                android:id="@+id/textView10"
-                                android:layout_width="wrap_content"
-                                android:layout_height="match_parent"
-                                android:layout_marginStart="10dp"
-                                android:layout_weight="1"
-                                android:fontFamily="@font/inter"
-                                android:gravity="center"
-                                android:text="Elemento"
-                                android:textAlignment="textStart"
-                                android:textColor="#000000"
-                                android:textSize="15sp" />
-                        </LinearLayout>
+                        <EditText
+                            android:id="@+id/inputHex"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="2"
+                            android:background="@drawable/edittext_background"
+                            android:gravity="center"
+                            android:hint="#FFFFFF"
+                            android:inputType="text"
+                            android:textSize="13sp"/>
 
-                        <LinearLayout
-                            android:id="@+id/linearPosicao"
-                            android:layout_width="match_parent"
-                            android:layout_height="80dp"
-                            android:orientation="horizontal"
-                            app:layout_constraintTop_toBottomOf="@+id/txtElemento"
-                            tools:layout_editor_absoluteX="0dp" >
-
-                            <TextView
-                                android:id="@+id/textView11"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="10dp"
-                                android:layout_weight="1"
-                                android:text="TextView" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:id="@+id/linearLayoutPop"
-                            android:layout_width="match_parent"
-                            android:layout_height="70dp"
-                            android:orientation="horizontal"
-                            app:layout_constraintTop_toBottomOf="@+id/linearPosicao"
-                            tools:layout_editor_absoluteX="0dp">
-
-                            <TextView
-                                android:id="@+id/textView12"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="10dp"
-                                android:layout_weight="1"
-                                android:text="TextView" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:id="@+id/linearAparencia"
-                            android:layout_width="match_parent"
-                            android:layout_height="60dp"
-                            android:orientation="horizontal"
-                            app:layout_constraintTop_toBottomOf="@+id/linearLayoutPop"
-                            tools:layout_editor_absoluteX="0dp" />
-
-                        <LinearLayout
-                            android:id="@+id/linearFill"
-                            android:layout_width="match_parent"
-                            android:layout_height="60dp"
-                            android:orientation="horizontal"
-                            app:layout_constraintTop_toBottomOf="@+id/linearAparencia"
-                            tools:layout_editor_absoluteX="0dp" />
-
-                        <LinearLayout
-                            android:id="@+id/linearStroke"
-                            android:layout_width="match_parent"
-                            android:layout_height="60dp"
-                            android:orientation="horizontal"
-                            app:layout_constraintTop_toBottomOf="@+id/linearFill"
-                            tools:layout_editor_absoluteX="0dp" />
-
-                    </androidx.constraintlayout.widget.ConstraintLayout>
+                        <ImageButton
+                            android:id="@+id/btnColorPicker"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:backgroundTint="@android:color/transparent"
+                            android:contentDescription="Selecionar cor"
+                            app:srcCompat="@drawable/ic_fill" />
+                    </LinearLayout>
 
                 </LinearLayout>
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
+            </ScrollView>
         </androidx.cardview.widget.CardView>
+
+
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

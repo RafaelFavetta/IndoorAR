@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+
 android {
     namespace = "com.example.indoorar"
     compileSdk = 36
@@ -16,7 +17,12 @@ android {
         versionCode = 1
         versionName = "1.0"
         multiDexEnabled = true
+
+        vectorDrawables {
+            useSupportLibrary = true
+        }
     }
+
 
     flavorDimensions += "default"
     productFlavors {

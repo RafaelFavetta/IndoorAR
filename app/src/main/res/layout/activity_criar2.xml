@@ -107,6 +107,7 @@
         android:background="@drawable/btn_arredondado3"
         android:drawableStart="@drawable/telephone"
         android:drawablePadding="12dp"
+        android:elevation="4dp"
         android:fontFamily="@font/inter"
         android:hint="Telefone"
         android:inputType="phone"
@@ -117,14 +118,12 @@
         android:textColorHint="#80121212"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:elevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.508"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintVertical_bias="0.470"
-        />
+        app:layout_constraintVertical_bias="0.468" />
 
     <EditText
         android:id="@+id/editSenha"

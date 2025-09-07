@@ -418,7 +418,7 @@ class MapEditorView @JvmOverloads constructor(
         return null
     }
 
-    private fun hitTestHandles(shape: Action.Shape, p: PointF, size: Float = dp(24f)): Handle? {
+    private fun hitTestHandles(shape: Action.Shape, p: PointF, size: Float = dp(50f)): Handle? {
         val rect = RectF(shape.start.x, shape.start.y, shape.end.x, shape.end.y)
         val half = size / 2
         val handles = mapOf(

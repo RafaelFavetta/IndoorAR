@@ -163,11 +163,13 @@
 
 
         </com.google.android.material.card.MaterialCardView>
+
         <androidx.cardview.widget.CardView
             android:id="@+id/painelAtributos"
             android:layout_width="200dp"
             android:layout_height="match_parent"
             android:layout_marginEnd="8dp"
+            android:visibility="gone"
             app:cardBackgroundColor="#FFFFFF"
             app:cardCornerRadius="12dp"
             app:cardElevation="10dp"
@@ -189,42 +191,42 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:drawableStart="@drawable/ic_name"
+                        android:drawablePadding="6dp"
                         android:text="Nome"
                         android:textColor="#444"
                         android:textSize="12sp"
-                        android:textStyle="bold"
-                        android:drawableStart="@drawable/ic_name"
-                        android:drawablePadding="6dp"
-                        android:layout_marginBottom="4dp"/>
+                        android:textStyle="bold" />
 
                     <EditText
                         android:id="@+id/inputNome"
                         android:layout_width="match_parent"
                         android:layout_height="40dp"
+                        android:layout_marginBottom="12dp"
                         android:background="@drawable/edittext_background"
                         android:hint="Insira um nome"
                         android:padding="8dp"
-                        android:textSize="13sp"
-                        android:layout_marginBottom="12dp"/>
+                        android:textSize="13sp" />
 
                     <!-- Posição -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:drawableStart="@drawable/ic_posicao"
+                        android:drawablePadding="6dp"
                         android:text="Posição"
                         android:textColor="#444"
                         android:textSize="12sp"
-                        android:textStyle="bold"
-                        android:drawableStart="@drawable/ic_posicao"
-                        android:drawablePadding="6dp"
-                        android:layout_marginBottom="4dp"/>
+                        android:textStyle="bold" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
                         android:orientation="horizontal"
-                        android:weightSum="2"
-                        android:layout_marginBottom="12dp">
+                        android:weightSum="2">
 
                         <EditText
                             android:id="@+id/inputX"
@@ -235,7 +237,7 @@
                             android:gravity="center"
                             android:hint="X"
                             android:inputType="numberDecimal"
-                            android:textSize="13sp"/>
+                            android:textSize="13sp" />
 
                         <EditText
                             android:id="@+id/inputY"
@@ -247,27 +249,27 @@
                             android:gravity="center"
                             android:hint="Y"
                             android:inputType="numberDecimal"
-                            android:textSize="13sp"/>
+                            android:textSize="13sp" />
                     </LinearLayout>
 
                     <!-- Dimensões -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:drawableStart="@drawable/ic_dimensoes"
+                        android:drawablePadding="6dp"
                         android:text="Dimensões"
                         android:textColor="#444"
                         android:textSize="12sp"
-                        android:textStyle="bold"
-                        android:drawableStart="@drawable/ic_dimensoes"
-                        android:drawablePadding="6dp"
-                        android:layout_marginBottom="4dp"/>
+                        android:textStyle="bold" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
                         android:orientation="horizontal"
-                        android:weightSum="2"
-                        android:layout_marginBottom="12dp">
+                        android:weightSum="2">
 
                         <EditText
                             android:id="@+id/inputWidth"
@@ -278,7 +280,7 @@
                             android:gravity="center"
                             android:hint="Largura"
                             android:inputType="numberDecimal"
-                            android:textSize="13sp"/>
+                            android:textSize="13sp" />
 
                         <EditText
                             android:id="@+id/inputHeight"
@@ -290,58 +292,58 @@
                             android:gravity="center"
                             android:hint="Altura"
                             android:inputType="numberDecimal"
-                            android:textSize="13sp"/>
+                            android:textSize="13sp" />
                     </LinearLayout>
 
                     <!-- Rotação -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:drawableStart="@drawable/ic_rotate"
+                        android:drawablePadding="6dp"
                         android:text="Rotação"
                         android:textColor="#444"
                         android:textSize="12sp"
-                        android:textStyle="bold"
-                        android:drawableStart="@drawable/ic_rotate"
-                        android:drawablePadding="6dp"
-                        android:layout_marginBottom="4dp"/>
+                        android:textStyle="bold" />
 
                     <EditText
                         android:id="@+id/inputRotation"
                         android:layout_width="match_parent"
                         android:layout_height="40dp"
+                        android:layout_marginBottom="12dp"
                         android:background="@drawable/edittext_background"
                         android:gravity="center"
                         android:hint="0°"
                         android:inputType="numberDecimal"
-                        android:textSize="13sp"
-                        android:layout_marginBottom="12dp"/>
+                        android:textSize="13sp" />
 
                     <!-- Cor -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:drawableStart="@drawable/ic_palette2"
+                        android:drawablePadding="6dp"
                         android:text="Cor"
                         android:textColor="#444"
                         android:textSize="12sp"
-                        android:textStyle="bold"
-                        android:drawableStart="@drawable/ic_palette2"
-                        android:drawablePadding="6dp"
-                        android:layout_marginBottom="4dp"/>
+                        android:textStyle="bold" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
-                        android:weightSum="3"
-                        android:layout_marginBottom="12dp">
+                        android:weightSum="3">
 
                         <ImageView
                             android:id="@+id/colorPreview"
                             android:layout_width="30dp"
                             android:layout_height="30dp"
                             android:layout_marginEnd="6dp"
-                            android:background="#D9D9D9"/>
+                            android:background="#D9D9D9" />
 
                         <EditText
                             android:id="@+id/inputHex"
@@ -352,7 +354,7 @@
                             android:gravity="center"
                             android:hint="#FFFFFF"
                             android:inputType="text"
-                            android:textSize="13sp"/>
+                            android:textSize="13sp" />
 
                         <ImageButton
                             android:id="@+id/btnColorPicker"

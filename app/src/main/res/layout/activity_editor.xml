@@ -169,7 +169,6 @@
             android:layout_width="200dp"
             android:layout_height="match_parent"
             android:layout_marginEnd="8dp"
-            android:visibility="gone"
             app:cardBackgroundColor="#FFFFFF"
             app:cardCornerRadius="12dp"
             app:cardElevation="10dp"
@@ -205,8 +204,9 @@
                         android:layout_height="40dp"
                         android:layout_marginBottom="12dp"
                         android:background="@drawable/edittext_background"
-                        android:hint="Insira um nome"
                         android:padding="8dp"
+                        android:textColor="#000000"
+                        android:textColorHint="#000000"
                         android:textSize="13sp" />
 
                     <!-- Posição -->
@@ -235,8 +235,9 @@
                             android:layout_weight="1"
                             android:background="@drawable/edittext_background"
                             android:gravity="center"
-                            android:hint="X"
                             android:inputType="numberDecimal"
+                            android:textColor="#000000"
+                            android:textColorHint="#000000"
                             android:textSize="13sp" />
 
                         <EditText
@@ -249,6 +250,8 @@
                             android:gravity="center"
                             android:hint="Y"
                             android:inputType="numberDecimal"
+                            android:textColor="#000000"
+                            android:textColorHint="#000000"
                             android:textSize="13sp" />
                     </LinearLayout>
 
@@ -280,6 +283,8 @@
                             android:gravity="center"
                             android:hint="Largura"
                             android:inputType="numberDecimal"
+                            android:textColor="#000000"
+                            android:textColorHint="#000000"
                             android:textSize="13sp" />
 
                         <EditText
@@ -290,8 +295,9 @@
                             android:layout_weight="1"
                             android:background="@drawable/edittext_background"
                             android:gravity="center"
-                            android:hint="Altura"
                             android:inputType="numberDecimal"
+                            android:textColor="#000000"
+                            android:textColorHint="#000000"
                             android:textSize="13sp" />
                     </LinearLayout>
 
@@ -314,8 +320,9 @@
                         android:layout_marginBottom="12dp"
                         android:background="@drawable/edittext_background"
                         android:gravity="center"
-                        android:hint="0°"
                         android:inputType="numberDecimal"
+                        android:textColor="#000000"
+                        android:textColorHint="#000000"
                         android:textSize="13sp" />
 
                     <!-- Cor -->
@@ -343,7 +350,7 @@
                             android:layout_width="30dp"
                             android:layout_height="30dp"
                             android:layout_marginEnd="6dp"
-                            android:background="#D9D9D9" />
+                            android:background="#F5F5F5" />
 
                         <EditText
                             android:id="@+id/inputHex"
@@ -352,8 +359,9 @@
                             android:layout_weight="2"
                             android:background="@drawable/edittext_background"
                             android:gravity="center"
-                            android:hint="#FFFFFF"
                             android:inputType="text"
+                            android:textColor="#000000"
+                            android:textColorHint="#000000"
                             android:textSize="13sp" />
 
                         <ImageButton
@@ -369,8 +377,6 @@
                 </LinearLayout>
             </ScrollView>
         </androidx.cardview.widget.CardView>
-
-
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

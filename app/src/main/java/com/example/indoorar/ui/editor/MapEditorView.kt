@@ -575,6 +575,16 @@ class MapEditorView @JvmOverloads constructor(
         return ShapeProperties(x = left, y = top, width = w, height = h)
     }
 
+
+    // dentro de MapEditorView
+    fun getSelectedShapeRef(): Action.Shape? {
+        for (i in actions.size - 1 downTo 0) {
+            val a = actions[i]
+            if (a is Action.Shape && a.selected) return a
+        }
+        return null
+    }
+
     private fun getSelectedShape(): Action.Shape? {
         for (i in actions.size - 1 downTo 0) {
             val a = actions[i]

@@ -16,6 +16,7 @@ class ActivityEditor : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editor)
 
+
         mapEditor = findViewById(R.id.mapEditor)
 
         // Função para atualizar qual botão está ativo
@@ -67,5 +68,8 @@ class ActivityEditor : BaseActivity() {
 
         // Define o botão inicial selecionado (cursor)
         updateSelectedButton(R.id.cursor)
+        // depois de setar os listeners dos botões:
+        AttributePanelController(this, mapEditor)
+
     }
 }

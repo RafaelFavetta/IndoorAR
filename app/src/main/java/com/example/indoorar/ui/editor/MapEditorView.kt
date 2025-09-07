@@ -572,8 +572,16 @@ class MapEditorView @JvmOverloads constructor(
         val bottom = max(shape.start.y, shape.end.y)
         val w = right - left
         val h = bottom - top
-        return ShapeProperties(x = left, y = top, width = w, height = h)
+
+        return ShapeProperties(
+            x = left,
+            y = top,
+            width = w,
+            height = h,
+            rotation = shape.rotation // 👈 precisa existir em Action.Shape
+        )
     }
+
 
 
     // dentro de MapEditorView
@@ -603,13 +611,17 @@ class MapEditorView @JvmOverloads constructor(
         val minSize = dp(30f)
         val w = max(props.width, minSize)
         val h = max(props.height, minSize)
+
         s.start.x = props.x
         s.start.y = props.y
         s.end.x = props.x + w
         s.end.y = props.y + h
+        s.rotation = props.rotation // 👈 salva rotação no shape
+
         invalidate()
         selectionListener?.onShapeSelected(shapeToProperties(s))
     }
+
 
     internal fun screenToWorld(x: Float, y: Float): PointF =
         PointF((x - offsetX) / scale, (y - offsetY) / scale)

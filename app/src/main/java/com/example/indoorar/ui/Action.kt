@@ -8,6 +8,7 @@ sealed class Action {
     data class Shape(
         var start: PointF,
         var end: PointF,
-        var selected: Boolean = false
+        var selected: Boolean = false,
+        var rotation: Float = 0f // 👈 novo campo
     ) : Action()
 }

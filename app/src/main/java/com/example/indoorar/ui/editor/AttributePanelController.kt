@@ -38,6 +38,7 @@ class AttributePanelController(
     private val edtHeight = activity.findViewById<EditText>(R.id.inputHeight)
     private val edtRotacao = activity.findViewById<EditText>(R.id.inputRotation)
     private val edtCor = activity.findViewById<EditText>(R.id.inputHex)
+    private val previewCor = activity.findViewById<View>(R.id.colorPreview)
 
     init {
         editor.selectionListener = this
@@ -60,6 +61,8 @@ class AttributePanelController(
         edtWidth.setText(fmt(props.width))
         edtHeight.setText(fmt(props.height))
 
+        updateColorPreview(meta.corHex)
+
         painel.visibility = View.VISIBLE
         isProgrammatic = false
     }
@@ -69,6 +72,7 @@ class AttributePanelController(
     }
 
     // ---- Handlers ----
+// ---- Handlers ----
     private fun setupFieldHandlers() {
         applyOnEdit(edtPosX) { pushPosition() }
         applyOnEdit(edtPosY) { pushPosition() }
@@ -76,19 +80,34 @@ class AttributePanelController(
         applyOnEdit(edtHeight) { pushSize() }
 
         applyOnEdit(edtNome) { saveMeta() }
-        applyOnEdit(edtRotacao) { saveMeta() }
-        applyOnEdit(edtCor) { saveMeta() }
+        applyOnEdit(edtRotacao) { pushRotation() } // ✅ agora aplica rotação de verdade
+        applyOnEdit(edtCor) {
+            saveMeta()
+            updateColorPreview(edtCor.text.toString())
+        }
     }
 
+    private fun pushRotation() {
+        if (isProgrammatic) return
+        val props = editor.getSelectedShapeProperties() ?: return
+
+        val rot = edtRotacao.text.toString().toFloatOrNull()
+        if (rot != null) {
+            editor.applyPropertiesToSelectedShape(
+                props.copy(rotation = rot)
+            )
+            saveMeta() // mantém meta em sincronia
+        }
+    }
+
+
     private fun applyOnEdit(edit: EditText, action: () -> Unit) {
-        // aplica quando sai do campo
         edit.setOnFocusChangeListener { _, hasFocus ->
             if (!hasFocus && !isProgrammatic) {
                 action()
             }
         }
 
-        // aplica quando aperta "Done" ou Enter
         edit.setOnEditorActionListener { _, actionId, event ->
             val imeDone = actionId == EditorInfo.IME_ACTION_DONE ||
                     (event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_UP)
@@ -138,8 +157,18 @@ class AttributePanelController(
         m.rotacaoDeg = edtRotacao.text.toString().toFloatOrNull() ?: 0f
     }
 
+
+
+    private fun updateColorPreview(hex: String) {
+        val color = try {
+            Color.parseColor(hex)
+        } catch (_: Exception) {
+            Color.parseColor("#D9D9D9")
+        }
+        previewCor.setBackgroundColor(color)
+    }
+
     private fun fmt(v: Float): String {
-        // se for inteiro exato -> mostra sem decimal
         return if (v % 1.0 == 0.0) {
             v.toInt().toString()
         } else {

@@ -29,7 +29,6 @@ class AttributePanelController(
 
     private var isProgrammatic = false
 
-    // pega as views do layout (painel e edittexts)
     private val painel = activity.findViewById<View>(R.id.painelAtributos)
 
     private val edtNome = activity.findViewById<EditText>(R.id.inputNome)
@@ -54,7 +53,7 @@ class AttributePanelController(
         isProgrammatic = true
         edtNome.setText(meta.nome)
         edtCor.setText(meta.corHex.uppercase())
-        edtRotacao.setText(meta.rotacaoDeg.roundToInt().toString())
+        edtRotacao.setText(fmt(meta.rotacaoDeg))
 
         edtPosX.setText(fmt(props.x))
         edtPosY.setText(fmt(props.y))
@@ -78,23 +77,22 @@ class AttributePanelController(
 
         applyOnEdit(edtNome) { saveMeta() }
         applyOnEdit(edtRotacao) { saveMeta() }
-        applyOnEdit(edtCor) {
-            saveMeta()
-            val txt = edtCor.text.toString().trim()
-            if (isValidHex(txt)) {
-                // preview de cor pode ser adicionado depois
-            }
-        }
+        applyOnEdit(edtCor) { saveMeta() }
     }
 
     private fun applyOnEdit(edit: EditText, action: () -> Unit) {
+        // aplica quando sai do campo
         edit.setOnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus) action()
+            if (!hasFocus && !isProgrammatic) {
+                action()
+            }
         }
+
+        // aplica quando aperta "Done" ou Enter
         edit.setOnEditorActionListener { _, actionId, event ->
-            val isDone = actionId == EditorInfo.IME_ACTION_DONE ||
+            val imeDone = actionId == EditorInfo.IME_ACTION_DONE ||
                     (event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_UP)
-            if (isDone) {
+            if (imeDone && !isProgrammatic) {
                 action()
                 true
             } else false
@@ -104,21 +102,31 @@ class AttributePanelController(
     private fun pushPosition() {
         if (isProgrammatic) return
         val props = editor.getSelectedShapeProperties() ?: return
+
         val x = edtPosX.text.toString().toFloatOrNull()
         val y = edtPosY.text.toString().toFloatOrNull()
-        if (x != null && y != null) {
-            editor.applyPropertiesToSelectedShape(props.copy(x = x, y = y))
-        }
+
+        editor.applyPropertiesToSelectedShape(
+            props.copy(
+                x = x ?: props.x,
+                y = y ?: props.y
+            )
+        )
     }
 
     private fun pushSize() {
         if (isProgrammatic) return
         val props = editor.getSelectedShapeProperties() ?: return
+
         val w = edtWidth.text.toString().toFloatOrNull()
         val h = edtHeight.text.toString().toFloatOrNull()
-        if (w != null && h != null) {
-            editor.applyPropertiesToSelectedShape(props.copy(width = w, height = h))
-        }
+
+        editor.applyPropertiesToSelectedShape(
+            props.copy(
+                width = w ?: props.width,
+                height = h ?: props.height
+            )
+        )
     }
 
     private fun saveMeta() {
@@ -130,16 +138,12 @@ class AttributePanelController(
         m.rotacaoDeg = edtRotacao.text.toString().toFloatOrNull() ?: 0f
     }
 
-    private fun isValidHex(s: String): Boolean {
-        return try {
-            Color.parseColor(s)
-            true
-        } catch (_: Exception) {
-            false
-        }
-    }
-
     private fun fmt(v: Float): String {
-        return String.format("%.1f", v)
+        // se for inteiro exato -> mostra sem decimal
+        return if (v % 1.0 == 0.0) {
+            v.toInt().toString()
+        } else {
+            String.format("%.1f", v)
+        }
     }
 }

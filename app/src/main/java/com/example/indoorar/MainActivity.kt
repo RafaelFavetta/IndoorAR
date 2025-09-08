@@ -5,10 +5,10 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
-import com.example.indoorar.BaseActivity
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
-
-class MainActivity : BaseActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val baseDelay = 150L
     private val animationDuration = 400L
@@ -17,54 +17,77 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.Theme_IndoorAR_Splash)
         super.onCreate(savedInstanceState)
-
         setTheme(R.style.Theme_IndoorAR)
         setContentView(R.layout.main_activity)
 
-        // Pegando elementos
         val rootView = findViewById<View>(R.id.mainRoot)
         val logo = findViewById<View>(R.id.logo)
         val slogan = findViewById<View>(R.id.txtSlogan)
         val btnCadastrar = findViewById<Button>(R.id.btnCadastro)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
 
-        // Pequena sombra no slogan
         slogan.elevation = 8f
 
-        // Inicializa invisível e mais pro lado
+        // Inicializa invisível e fora da tela
         listOf(rootView, logo, slogan, btnCadastrar, btnLogin).forEach { view ->
             view.alpha = 0f
             view.translationY = offsetY
         }
 
-        // Animações
-        animateView(rootView, 0L)
-        animateView(logo, baseDelay)
-        animateView(slogan, baseDelay * 2)
-        animateViewWithBounce(btnCadastrar, baseDelay * 3)
-        animateViewWithBounce(btnLogin, baseDelay * 4)
+        // Checa usuário logado
+        val auth = FirebaseAuth.getInstance()
+        val currentUser = auth.currentUser
 
-        // Botões
-        btnCadastrar.setOnClickListener {
-            startActivity(Intent(this, ActivityConta::class.java))
-        }
+        if (currentUser != null) {
+            // Usuário logado → pega tipo de conta e manda pra home certa após animação
+            animateView(rootView, 0L)
+            animateView(logo, baseDelay)
+            animateView(slogan, baseDelay * 2) {
+                // Depois da animação do slogan, busca tipo de conta
+                val db = FirebaseFirestore.getInstance()
+                db.collection("usuarios").document(currentUser.uid).get()
+                    .addOnSuccessListener { doc ->
+                        val tipoConta = doc.getString("tipoConta")
+                        when (tipoConta) {
+                            "comum" -> startActivity(Intent(this, ActivityHomeComum::class.java))
+                            "maker" -> startActivity(Intent(this, ActivityHomeMaker::class.java))
+                            else -> startActivity(Intent(this, ActivityLogin::class.java))
+                        }
+                        finish()
+                    }
+                    .addOnFailureListener {
+                        startActivity(Intent(this, ActivityLogin::class.java))
+                        finish()
+                    }
+            }
+        } else {
+            // Não logado → animação normal, depois deixa botões visíveis
+            animateView(rootView, 0L)
+            animateView(logo, baseDelay)
+            animateView(slogan, baseDelay * 2)
+            animateViewWithBounce(btnCadastrar, baseDelay * 3)
+            animateViewWithBounce(btnLogin, baseDelay * 4)
 
-        btnLogin.setOnClickListener {
-            startActivity(Intent(this, ActivityLogin::class.java))
+            btnCadastrar.setOnClickListener {
+                startActivity(Intent(this, ActivityConta::class.java))
+            }
+
+            btnLogin.setOnClickListener {
+                startActivity(Intent(this, ActivityLogin::class.java))
+            }
         }
     }
 
-    // Fade + slide padrão
-    private fun animateView(view: View, delay: Long) {
+    private fun animateView(view: View, delay: Long, endAction: (() -> Unit)? = null) {
         view.animate()
             .alpha(1f)
             .translationY(0f)
             .setStartDelay(delay)
             .setDuration(animationDuration)
+            .withEndAction { endAction?.invoke() }
             .start()
     }
 
-    // Fade + slide + bounce suave
     private fun animateViewWithBounce(view: View, delay: Long) {
         view.animate()
             .alpha(1f)

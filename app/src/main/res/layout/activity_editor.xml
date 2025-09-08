@@ -393,18 +393,29 @@
                         android:textStyle="bold"
                         android:layout_marginBottom="4dp" />
 
-                    <EditText
-                        android:id="@+id/inputRotation"
+                    <LinearLayout
+                        android:id="@+id/rotationContainer"
                         android:layout_width="match_parent"
-                        android:layout_height="40dp"
-                        android:layout_marginBottom="12dp"
-                        android:background="#F5F5F5"
-                        android:gravity="center"
-                        android:hint="0°"
-                        android:inputType="numberDecimal"
-                        android:textColor="#000000"
-                        android:textColorHint="#999999"
-                        android:textSize="13sp" />
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="8dp">
+
+                        <SeekBar
+                            android:id="@+id/rotationSeekBar"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:max="360"
+                            android:progress="0"/>
+
+                        <TextView
+                            android:id="@+id/rotationLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0°"
+                            android:paddingStart="8dp"/>
+                    </LinearLayout>
 
                     <!-- Linha separadora -->
                     <View

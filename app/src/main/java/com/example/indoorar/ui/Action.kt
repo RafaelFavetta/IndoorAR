@@ -13,6 +13,6 @@ sealed class Action {
         var end: PointF,
         var selected: Boolean = false,
         var fillColor: Int = "#D9D9D9".toColorInt(),
-        var rotation: Float = 0f
+        var rotation: Int = 0
     ) : Action()
 }

@@ -19,6 +19,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 import androidx.core.graphics.toColorInt
+import androidx.core.graphics.withSave
 
 
 data class ShapeProps(
@@ -26,8 +27,9 @@ data class ShapeProps(
     var y: Float,
     var width: Float,
     var height: Float,
-    var rotation: Float = 0f,
-    var fillColor: Int? = null
+    var rotation: Int = 0,
+    var fillColor: Int? = null,
+    var selected: Boolean = false
 )
 
 class MapEditorView @JvmOverloads constructor(
@@ -351,15 +353,15 @@ class MapEditorView @JvmOverloads constructor(
 
                     // cor de preenchimento
                     val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = action.fillColor ?: "#D9D9D9".toColorInt()
+                        color = action.fillColor
                         style = Paint.Style.FILL
                     }
 
                     // aplica rotação (se existir)
-                    canvas.save()
-                    canvas.rotate(action.rotation ?: 0f, rect.centerX(), rect.centerY())
-                    canvas.drawRect(rect, fillPaint)
-                    canvas.restore()
+                    canvas.withSave {
+                        rotate(action.rotation.toFloat(), rect.centerX(), rect.centerY())
+                        drawRect(rect, fillPaint)
+                    }
 
                     // borda preta
                     val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -599,7 +601,7 @@ class MapEditorView @JvmOverloads constructor(
             y = top,
             width = w,
             height = h,
-            rotation = shape.rotation // 👈 precisa existir em Action.Shape
+            rotation = shape.rotation
         )
     }
 
@@ -614,7 +616,7 @@ class MapEditorView @JvmOverloads constructor(
         return null
     }
 
-    private fun getSelectedShape(): Action.Shape? {
+    fun getSelectedShape(): Action.Shape? {
         for (i in actions.size - 1 downTo 0) {
             val a = actions[i]
             if (a is Action.Shape && a.selected) return a
@@ -637,11 +639,13 @@ class MapEditorView @JvmOverloads constructor(
         s.start.y = props.y
         s.end.x = props.x + w
         s.end.y = props.y + h
-        s.rotation = props.rotation // 👈 salva rotação no shape
+        s.rotation = props.rotation
+        s.fillColor = props.fillColor
 
         invalidate()
         selectionListener?.onShapeSelected(shapeToProperties(s))
     }
+
 
 
     internal fun screenToWorld(x: Float, y: Float): PointF =

@@ -6,12 +6,14 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
+import androidx.core.graphics.toColorInt
 import com.example.indoorar.R
 import com.example.indoorar.ui.editor.MapEditorView
 import com.example.indoorar.ui.editor.ShapeProperties
 import com.example.indoorar.ui.Action
 import java.util.WeakHashMap
 import kotlin.math.roundToInt
+import java.util.Locale
 
 class AttributePanelController(
     private val activity: Activity,
@@ -22,8 +24,7 @@ class AttributePanelController(
         var nome: String = "",
         var descricao: String = "",
         var tipo: String = "",
-        var corHex: String = "#D9D9D9",
-        var rotacaoDeg: Float = 0f
+        var corHex: String = "#D9D9D9"
     )
     private val metaStore = WeakHashMap<Action.Shape, Meta>()
 
@@ -36,7 +37,6 @@ class AttributePanelController(
     private val edtPosY = activity.findViewById<EditText>(R.id.inputY)
     private val edtWidth = activity.findViewById<EditText>(R.id.inputWidth)
     private val edtHeight = activity.findViewById<EditText>(R.id.inputHeight)
-    private val edtRotacao = activity.findViewById<EditText>(R.id.inputRotation)
     private val edtCor = activity.findViewById<EditText>(R.id.inputHex)
     private val previewCor = activity.findViewById<View>(R.id.colorPreview)
 
@@ -54,7 +54,6 @@ class AttributePanelController(
         isProgrammatic = true
         edtNome.setText(meta.nome)
         edtCor.setText(meta.corHex.uppercase())
-        edtRotacao.setText(fmt(meta.rotacaoDeg))
 
         edtPosX.setText(fmt(props.x))
         edtPosY.setText(fmt(props.y))
@@ -72,7 +71,6 @@ class AttributePanelController(
     }
 
     // ---- Handlers ----
-// ---- Handlers ----
     private fun setupFieldHandlers() {
         applyOnEdit(edtPosX) { pushPosition() }
         applyOnEdit(edtPosY) { pushPosition() }
@@ -80,42 +78,7 @@ class AttributePanelController(
         applyOnEdit(edtHeight) { pushSize() }
 
         applyOnEdit(edtNome) { saveMeta() }
-        applyOnEdit(edtRotacao) { pushRotation() } // ✅ agora aplica rotação de verdade
-        applyOnEdit(edtCor) {
-            saveMeta()
-            updateColorPreview(edtCor.text.toString())
-        }
-    }
-
-    private fun pushRotation() {
-        if (isProgrammatic) return
-        val props = editor.getSelectedShapeProperties() ?: return
-
-        val rot = edtRotacao.text.toString().toFloatOrNull()
-        if (rot != null) {
-            editor.applyPropertiesToSelectedShape(
-                props.copy(rotation = rot)
-            )
-            saveMeta() // mantém meta em sincronia
-        }
-    }
-
-
-    private fun applyOnEdit(edit: EditText, action: () -> Unit) {
-        edit.setOnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus && !isProgrammatic) {
-                action()
-            }
-        }
-
-        edit.setOnEditorActionListener { _, actionId, event ->
-            val imeDone = actionId == EditorInfo.IME_ACTION_DONE ||
-                    (event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_UP)
-            if (imeDone && !isProgrammatic) {
-                action()
-                true
-            } else false
-        }
+        applyOnEdit(edtCor) { pushColor() }
     }
 
     private fun pushPosition() {
@@ -148,31 +111,56 @@ class AttributePanelController(
         )
     }
 
+    private fun pushColor() {
+        if (isProgrammatic) return
+        val hex = edtCor.text.toString().ifBlank { "#D9D9D9" }
+        val color = try {
+            hex.toColorInt()
+        } catch (_: Exception) {
+            "#D9D9D9".toColorInt()
+        }
+
+        editor.getSelectedShapeRef()?.let { shape ->
+            shape.fillColor = color
+            editor.invalidate()
+        }
+
+        updateColorPreview(hex)
+        saveMeta()
+    }
+
     private fun saveMeta() {
         if (isProgrammatic) return
         val shape = editor.getSelectedShapeRef() ?: return
         val m = metaStore.getOrPut(shape) { Meta() }
         m.nome = edtNome.text.toString()
         m.corHex = edtCor.text.toString().ifBlank { "#D9D9D9" }
-        m.rotacaoDeg = edtRotacao.text.toString().toFloatOrNull() ?: 0f
     }
-
-
 
     private fun updateColorPreview(hex: String) {
         val color = try {
-            Color.parseColor(hex)
-        } catch (_: Exception) {
-            Color.parseColor("#D9D9D9")
-        }
+            hex.toColorInt() } catch (_: Exception) {
+            "#D9D9D9".toColorInt() }
         previewCor.setBackgroundColor(color)
     }
 
     private fun fmt(v: Float): String {
-        return if (v % 1.0 == 0.0) {
-            v.toInt().toString()
-        } else {
-            String.format("%.1f", v)
+        return if (v % 1.0 == 0.0) v.toInt().toString()
+        else String.format(Locale.US, "%.1f", v)
+    }
+
+    private fun applyOnEdit(edit: EditText, action: () -> Unit) {
+        edit.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus && !isProgrammatic) action()
+        }
+
+        edit.setOnEditorActionListener { _, actionId, event ->
+            val imeDone = actionId == EditorInfo.IME_ACTION_DONE ||
+                    (event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_UP)
+            if (imeDone && !isProgrammatic) {
+                action()
+                true
+            } else false
         }
     }
 }

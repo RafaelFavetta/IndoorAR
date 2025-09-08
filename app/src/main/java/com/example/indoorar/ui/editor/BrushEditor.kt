@@ -5,7 +5,7 @@ import android.graphics.Path
 import android.graphics.PointF
 import android.view.MotionEvent
 import com.example.indoorar.ui.Action
-import com.example.indoorar.views.MapEditorView
+import com.example.indoorar.ui.editor.MapEditorView
 
 class BrushEditor(private val host: MapEditorView) {
     private var tempStroke: MutableList<PointF>? = null

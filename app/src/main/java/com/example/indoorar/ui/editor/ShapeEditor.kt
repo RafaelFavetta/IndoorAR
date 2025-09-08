@@ -5,7 +5,7 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.view.MotionEvent
 import com.example.indoorar.ui.Action
-import com.example.indoorar.views.MapEditorView
+import com.example.indoorar.ui.editor.MapEditorView
 
 class ShapeEditor(private val host: MapEditorView) {
     private var tempStart: PointF? = null

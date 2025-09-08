@@ -1,4 +1,4 @@
-package com.example.indoorar.ui
+package com.example.indoorar.ui.editor
 
 import android.app.Activity
 import android.graphics.Color
@@ -7,8 +7,8 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import com.example.indoorar.R
-import com.example.indoorar.views.MapEditorView
-import com.example.indoorar.views.ShapeProperties
+import com.example.indoorar.ui.editor.MapEditorView
+import com.example.indoorar.ui.editor.ShapeProperties
 import com.example.indoorar.ui.Action
 import java.util.WeakHashMap
 import kotlin.math.roundToInt

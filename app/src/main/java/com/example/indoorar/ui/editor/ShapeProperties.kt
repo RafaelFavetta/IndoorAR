@@ -7,5 +7,4 @@ data class ShapeProperties(
     var height: Float,
     var rotation: Float = 0f,       // opcional; se não usar, ignore
     var fillColor: Int? = null,     // opcional (ColorInt)
-    var opacity: Float? = null      // opcional (0..1)
 )

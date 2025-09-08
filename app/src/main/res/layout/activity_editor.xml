@@ -8,7 +8,7 @@
     android:background="#F5F5F5"
     tools:context=".ui.ActivityEditor">
 
-    <com.example.indoorar.views.MapEditorView
+    <com.example.indoorar.ui.editor.MapEditorView
         android:id="@+id/mapEditor"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

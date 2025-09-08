@@ -3,7 +3,7 @@ package com.example.indoorar.ui.editor
 import android.graphics.Canvas
 import android.view.MotionEvent
 import com.example.indoorar.ui.Action
-import com.example.indoorar.views.MapEditorView
+import com.example.indoorar.ui.editor.MapEditorView
 
 class PoiEditor(private val host: MapEditorView) {
     fun onTouch(event: MotionEvent): Boolean {

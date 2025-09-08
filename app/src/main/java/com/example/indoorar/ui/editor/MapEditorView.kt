@@ -1,4 +1,4 @@
-package com.example.indoorar.views
+package com.example.indoorar.ui.editor
 
 import android.content.Context
 import android.graphics.*
@@ -18,16 +18,16 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import androidx.core.graphics.toColorInt
 
 
-data class ShapeProperties(
+data class ShapeProps(
     var x: Float,
     var y: Float,
     var width: Float,
     var height: Float,
     var rotation: Float = 0f,
-    var fillColor: Int? = null,
-    var opacity: Float? = null
+    var fillColor: Int? = null
 )
 
 class MapEditorView @JvmOverloads constructor(
@@ -107,12 +107,12 @@ class MapEditorView @JvmOverloads constructor(
         style = Paint.Style.FILL
     }
     private val shapeSelectionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#0D99FF")
+        color = "#0D99FF".toColorInt()
         style = Paint.Style.STROKE
         strokeWidth = dp(2f)
     }
     private val snapPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#FF6A00")
+    color = "#FF6A00".toColorInt()
         strokeWidth = dp(1.5f)
     }
 
@@ -348,13 +348,34 @@ class MapEditorView @JvmOverloads constructor(
                 }
                 is Action.Shape -> {
                     val rect = RectF(action.start.x, action.start.y, action.end.x, action.end.y)
+
+                    // cor de preenchimento
                     val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = Color.parseColor("#D9D9D9")
+                        color = action.fillColor ?: "#D9D9D9".toColorInt()
                         style = Paint.Style.FILL
                     }
+
+                    // aplica rotação (se existir)
+                    canvas.save()
+                    canvas.rotate(action.rotation ?: 0f, rect.centerX(), rect.centerY())
+                    canvas.drawRect(rect, fillPaint)
+                    canvas.restore()
+
+                    // borda preta
+                    val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = Color.BLACK
+                        style = Paint.Style.STROKE
+                        strokeWidth = 2f
+                    }
+                    canvas.drawRect(rect, strokePaint)
+
                     if (action.selected) {
                         selectedShapes.add(action)
-                    } else {
+                    }
+
+                    if (action.selected) {
+                        selectedShapes.add(action)
+                        } else {
                         canvas.drawRect(rect, fillPaint)
                     }
                 }
@@ -363,7 +384,7 @@ class MapEditorView @JvmOverloads constructor(
         selectedShapes.forEach { shape ->
             val rect = RectF(shape.start.x, shape.start.y, shape.end.x, shape.end.y)
             val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.parseColor("#D9D9D9")
+                color = shape.fillColor
                 style = Paint.Style.FILL
             }
             canvas.drawRect(rect, fillPaint)
@@ -390,7 +411,7 @@ class MapEditorView @JvmOverloads constructor(
             style = Paint.Style.FILL
         }
         val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#0D99FF")
+            color = "#0D99FF".toColorInt()
             style = Paint.Style.STROKE
             strokeWidth = dp(2f)
         }

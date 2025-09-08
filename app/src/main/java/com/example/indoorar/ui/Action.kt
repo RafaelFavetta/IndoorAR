@@ -1,6 +1,9 @@
 package com.example.indoorar.ui
 
 import android.graphics.PointF
+import android.graphics.Color
+import androidx.core.graphics.toColorInt
+
 
 sealed class Action {
     data class BrushStroke(val points: List<PointF>) : Action()
@@ -9,6 +12,7 @@ sealed class Action {
         var start: PointF,
         var end: PointF,
         var selected: Boolean = false,
-        var rotation: Float = 0f // 👈 novo campo
+        var fillColor: Int = "#D9D9D9".toColorInt(),
+        var rotation: Float = 0f
     ) : Action()
 }

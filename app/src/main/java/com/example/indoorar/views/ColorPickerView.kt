@@ -1,51 +1,60 @@
 package com.example.indoorar.views
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
+import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.get
 
 class ColorPickerView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
-    private val colors = listOf(
-        Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW,
-        Color.MAGENTA, Color.CYAN, Color.BLACK, Color.WHITE,
-        Color.parseColor("#32357A"), // azul do app
-        Color.parseColor("#FF6F00"), // laranja
-        Color.parseColor("#00C853")  // verde
-    )
-
-    private val paint = Paint()
-    private var cellSize = 0f
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var listener: ((Int) -> Unit)? = null
+
+    private lateinit var shader: LinearGradient
 
     fun setOnColorChangedListener(l: (Int) -> Unit) {
         listener = l
     }
 
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        shader = LinearGradient(
+            0f, 0f, width.toFloat(), 0f,
+            intArrayOf(
+                Color.RED, Color.MAGENTA, Color.BLUE, Color.CYAN,
+                Color.GREEN, Color.YELLOW, Color.RED
+            ),
+            null,
+            Shader.TileMode.CLAMP
+        )
+        paint.shader = shader
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        cellSize = width.toFloat() / colors.size
-        colors.forEachIndexed { index, color ->
-            paint.color = color
-            canvas.drawRect(
-                index * cellSize, 0f,
-                (index + 1) * cellSize, height.toFloat(), paint
-            )
-        }
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.action == MotionEvent.ACTION_DOWN || event.action == MotionEvent.ACTION_MOVE) {
-            val index = (event.x / cellSize).toInt().coerceIn(0, colors.size - 1)
-            listener?.invoke(colors[index])
+            val x = event.x.coerceIn(0f, width.toFloat() - 1)
+            val y = event.y.coerceIn(0f, height.toFloat() - 1)
+            val pixel = getColorAt(x, y)
+            listener?.invoke(pixel)
             return true
         }
         return super.onTouchEvent(event)
+    }
+
+    private fun getColorAt(x: Float, y: Float): Int {
+        val bitmap = createBitmap(width, height)
+        val c = Canvas(bitmap)
+        c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
+        return bitmap[x.toInt(), y.toInt()]
     }
 }

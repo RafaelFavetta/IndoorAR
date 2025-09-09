@@ -13,7 +13,6 @@ import com.example.indoorar.ui.editor.MapEditorView
 import com.example.indoorar.ui.editor.AttributePanelController
 import com.example.indoorar.views.ColorPickerView
 import com.google.firebase.Timestamp
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 class ActivityEditor : BaseActivity() {
@@ -62,7 +61,6 @@ class ActivityEditor : BaseActivity() {
         findViewById<LinearLayout>(R.id.linearpoi).setOnClickListener {
             mapEditor.setTool(Tool.POI)
             updateSelectedButton(R.id.poi)
-
             showPoiPopup(findViewById(R.id.linearpoi))
         }
 
@@ -141,33 +139,14 @@ class ActivityEditor : BaseActivity() {
             elevation = 12f
         }
 
-        val location = IntArray(2)
-        anchor.getLocationOnScreen(location)
-
-        popupView.measure(
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        val popupWidth = popupView.measuredWidth
-        val popupHeight = popupView.measuredHeight
-
-        val xOffset = anchor.width / 2 - popupWidth / 2
-        val yOffset = -popupHeight - 16
-
-        popupWindow.showAsDropDown(anchor, xOffset, yOffset)
-
-        val poiPorta = popupView.findViewById<LinearLayout>(R.id.linearLayout1)
-        val poiEscada = popupView.findViewById<LinearLayout>(R.id.linearLayout2)
-        val poiElevador = popupView.findViewById<LinearLayout>(R.id.linearLayout3)
-        val poiBanheiro = popupView.findViewById<LinearLayout>(R.id.linearLayout4)
-        val poiExtintor = popupView.findViewById<LinearLayout>(R.id.linearLayout5)
+        popupWindow.showAsDropDown(anchor, 0, -20)
 
         val poiItems = listOf(
-            poiPorta to "Porta",
-            poiEscada to "Escada",
-            poiElevador to "Elevador",
-            poiBanheiro to "Banheiro",
-            poiExtintor to "Extintor de incêndio"
+            popupView.findViewById<LinearLayout>(R.id.linearLayout1) to "porta",
+            popupView.findViewById<LinearLayout>(R.id.linearLayout2) to "escada",
+            popupView.findViewById<LinearLayout>(R.id.linearLayout3) to "elevador",
+            popupView.findViewById<LinearLayout>(R.id.linearLayout4) to "banheiro",
+            popupView.findViewById<LinearLayout>(R.id.linearLayout5) to "extintor"
         )
 
         poiItems.forEach { (layout, name) ->
@@ -179,12 +158,11 @@ class ActivityEditor : BaseActivity() {
         }
     }
 
-    fun salvarMapa() {
+    private fun salvarMapa() {
         val db = FirebaseFirestore.getInstance()
-        val userUid = FirebaseAuth.getInstance().currentUser?.uid ?: "anonimo"
 
         val mapaData = hashMapOf(
-            "criadorUid" to userUid,
+            "criadorUid" to "anonimo", // por enquanto fixo
             "dataCriacao" to Timestamp.now(),
             "nome" to "Mapa X",
             "descricao" to "Meu mapa incrível"
@@ -228,70 +206,72 @@ class ActivityEditor : BaseActivity() {
                 }
 
                 println("Mapa salvo com sucesso! ID: $mapaId")
+                carregarMapa(mapaId) // já carrega depois de salvar
             }
             .addOnFailureListener { e ->
                 e.printStackTrace()
             }
+    }
 
-        fun carregarMapa(mapaId: String) {
-            val db = FirebaseFirestore.getInstance()
+    private fun carregarMapa(mapaId: String) {
+        val db = FirebaseFirestore.getInstance()
 
-            db.collection("mapas").document(mapaId)
-                .get()
-                .addOnSuccessListener { mapaDoc ->
-                    if (mapaDoc.exists()) {
-                        // Opcional: pega dados gerais do mapa
-                        val nome = mapaDoc.getString("nome") ?: ""
-                        val descricao = mapaDoc.getString("descricao") ?: ""
+        db.collection("mapas").document(mapaId)
+            .get()
+            .addOnSuccessListener { mapaDoc ->
+                if (mapaDoc.exists()) {
+                    // dados gerais do mapa (opcional)
+                    val nome = mapaDoc.getString("nome") ?: ""
+                    val descricao = mapaDoc.getString("descricao") ?: ""
 
-                        // NÃO limpa o editor, só adiciona
-                        // mapEditor.clearAll() → removido
+                    // Carrega formas
+                    db.collection("mapas").document(mapaId)
+                        .collection("formas")
+                        .get()
+                        .addOnSuccessListener { formasSnapshot ->
+                            for (formaDoc in formasSnapshot) {
+                                val pos = formaDoc.get("posicao") as? Map<*, *>
+                                val tam = formaDoc.get("tamanho") as? Map<*, *>
+                                val cor = (formaDoc.getLong("cor") ?: 0).toInt()
+                                val rotacao = (formaDoc.getDouble("rotacao") ?: 0.0).toFloat()
+                                val tipo = formaDoc.getString("tipo") ?: "retangulo"
 
-                        // Carrega formas
-                        db.collection("mapas").document(mapaId)
-                            .collection("formas")
-                            .get()
-                            .addOnSuccessListener { formasSnapshot ->
-                                for (formaDoc in formasSnapshot) {
-                                    val pos = formaDoc.get("posicao") as Map<String, Double>
-                                    val tam = formaDoc.get("tamanho") as Map<String, Double>
-                                    val cor = (formaDoc.getLong("cor") ?: 0).toInt()
-                                    val rotacao = (formaDoc.getDouble("rotacao") ?: 0.0).toFloat()
-                                    val tipo = formaDoc.getString("tipo") ?: "retangulo"
-
-                                    mapEditor.actions.add(
-                                        Action.Shape(
-                                            start = android.graphics.PointF(pos["x"]?.toFloat() ?: 0f, pos["y"]?.toFloat() ?: 0f),
-                                            end = android.graphics.PointF(
-                                                (pos["x"]?.toFloat() ?: 0f) + (tam["largura"]?.toFloat() ?: 0f),
-                                                (pos["y"]?.toFloat() ?: 0f) + (tam["altura"]?.toFloat() ?: 0f)
-                                            ),
-                                            fillColor = cor,
-                                            rotation = rotacao
-                                        )
+                                mapEditor.actions.add(
+                                    Action.Shape(
+                                        start = android.graphics.PointF(
+                                            (pos?.get("x") as? Number)?.toFloat() ?: 0f,
+                                            (pos?.get("y") as? Number)?.toFloat() ?: 0f
+                                        ),
+                                        end = android.graphics.PointF(
+                                            ((pos?.get("x") as? Number)?.toFloat() ?: 0f) +
+                                                    ((tam?.get("largura") as? Number)?.toFloat() ?: 0f),
+                                            ((pos?.get("y") as? Number)?.toFloat() ?: 0f) +
+                                                    ((tam?.get("altura") as? Number)?.toFloat() ?: 0f)
+                                        ),
+                                        fillColor = cor,
+                                        rotation = rotacao
                                     )
-                                }
-                                mapEditor.invalidate()
+                                )
                             }
+                            mapEditor.invalidate()
+                        }
 
-                        // Carrega POIs
-                        db.collection("mapas").document(mapaId)
-                            .collection("pois")
-                            .get()
-                            .addOnSuccessListener { poisSnapshot ->
-                                for (poiDoc in poisSnapshot) {
-                                    val x = (poiDoc.getDouble("x") ?: 0.0).toFloat()
-                                    val y = (poiDoc.getDouble("y") ?: 0.0).toFloat()
-                                    val name = poiDoc.getString("name") ?: ""
+                    // Carrega POIs
+                    db.collection("mapas").document(mapaId)
+                        .collection("pois")
+                        .get()
+                        .addOnSuccessListener { poisSnapshot ->
+                            for (poiDoc in poisSnapshot) {
+                                val x = (poiDoc.getDouble("x") ?: 0.0).toFloat()
+                                val y = (poiDoc.getDouble("y") ?: 0.0).toFloat()
+                                val name = poiDoc.getString("name") ?: ""
 
-                                    mapEditor.actions.add(Action.Poi(android.graphics.PointF(x, y), name))
-                                }
-                                mapEditor.invalidate()
+                                mapEditor.actions.add(Action.Poi(android.graphics.PointF(x, y), name))
                             }
-                    }
+                            mapEditor.invalidate()
+                        }
                 }
-                .addOnFailureListener { e -> e.printStackTrace() }
-        }
-
+            }
+            .addOnFailureListener { e -> e.printStackTrace() }
     }
 }

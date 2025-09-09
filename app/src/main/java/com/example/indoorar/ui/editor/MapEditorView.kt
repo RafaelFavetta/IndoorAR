@@ -12,13 +12,13 @@ import androidx.core.graphics.withTranslation
 import com.example.indoorar.ui.Action
 import com.example.indoorar.ui.Tool
 import com.example.indoorar.ui.editor.BrushEditor
-import com.example.indoorar.ui.editor.PoiEditor
 import com.example.indoorar.ui.editor.ShapeEditor
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 import androidx.core.graphics.toColorInt
+import androidx.core.graphics.withSave
 
 
 data class ShapeProps(
@@ -66,7 +66,7 @@ class MapEditorView @JvmOverloads constructor(
     private val snapDwellMs = 60L
 
     // ======= DADOS =======
-    private val actions = mutableListOf<Action>()
+    val actions = mutableListOf<Action>()
 
     // ======= SELEÇÃO/DRAG =======
     private var draggingShape: Action.Shape? = null
@@ -79,6 +79,7 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     var selectionListener: OnShapeSelectionListener? = null
+
 
     private enum class Handle {
         TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT,
@@ -119,7 +120,8 @@ class MapEditorView @JvmOverloads constructor(
     // ======= EDITORES =======
     private val brushEditor = BrushEditor(this)
     private val shapeEditor = ShapeEditor(this)
-    private val poiEditor = PoiEditor(this)
+    var onPoiClickListener: ((x: Float, y: Float) -> Unit)? = null
+
 
     // ======= GESTOS =======
     private val scaleDetector = ScaleGestureDetector(
@@ -175,22 +177,35 @@ class MapEditorView @JvmOverloads constructor(
     fun togglePoiLayer() { showPois = !showPois; invalidate() }
 
     internal fun addAction(action: Action) { actions.add(action) }
+    fun addPoi(x: Float, y: Float, name: String) {
+        actions.add(Action.Poi(PointF(x, y), name))
+        invalidate()
+    }
+
 
     // ======= TOUCH =======
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleDetector.onTouchEvent(event)
+        val world = screenToWorld(event.x, event.y)
+
+        if (currentTool == Tool.POI && event.action == MotionEvent.ACTION_DOWN) {
+            onPoiClickListener?.invoke(world.x, world.y)
+            return true
+        }
 
         if (currentTool != Tool.CURSOR) {
             return when (currentTool) {
                 Tool.BRUSH  -> brushEditor.onTouch(event)
                 Tool.FORMAS -> shapeEditor.onTouch(event)
-                Tool.POI    -> poiEditor.onTouch(event)
+                Tool.POI    -> {
+                    false
+                }
                 else        -> true
             }
         }
 
+
         gestureDetector.onTouchEvent(event)
-        val world = screenToWorld(event.x, event.y)
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
@@ -351,15 +366,15 @@ class MapEditorView @JvmOverloads constructor(
 
                     // cor de preenchimento
                     val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = action.fillColor ?: "#D9D9D9".toColorInt()
+                        color = action.fillColor
                         style = Paint.Style.FILL
                     }
 
                     // aplica rotação (se existir)
-                    canvas.save()
-                    canvas.rotate(action.rotation ?: 0f, rect.centerX(), rect.centerY())
-                    canvas.drawRect(rect, fillPaint)
-                    canvas.restore()
+                    canvas.withSave {
+                        rotate(action.rotation, rect.centerX(), rect.centerY())
+                        drawRect(rect, fillPaint)
+                    }
 
                     // borda preta
                     val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {

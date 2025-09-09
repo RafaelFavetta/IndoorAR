@@ -1,11 +1,10 @@
-package com.example.indoorar.views
+package com.example.indoorar
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.example.indoorar.R
 
 class ActivityHistorico : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -139,22 +139,22 @@
 
     <TextView
         android:id="@+id/txtEsqueciSenha"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:text="Esqueceu sua senha?"
+        android:layout_width="165dp"
+        android:layout_height="21dp"
+        android:background="@drawable/ripple_clickable"
         android:clickable="true"
         android:focusable="true"
-        android:background="@drawable/ripple_clickable"
-        android:textColor="#32357A"
         android:letterSpacing="0.02"
+        android:text="Esqueceu sua senha?"
+        android:textColor="#32357A"
         android:textSize="12sp"
         android:textStyle="normal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.845"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.62" />
+        app:layout_constraintTop_toBottomOf="@+id/editSenha"
+        app:layout_constraintVertical_bias="0.025" />
 
     <TextView
         android:id="@+id/txtOpcoesLogin"

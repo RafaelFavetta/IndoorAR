@@ -12,7 +12,7 @@
         android:id="@+id/txtTipoUsuario"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="60dp"
         android:fontFamily="@font/staatliches"
         android:letterSpacing="0.05"
         android:text="ESCOLHA O TIPO \nDE USUÁRIO"
@@ -20,22 +20,113 @@
         android:textSize="48sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintHorizontal_bias="0.495"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardMaker"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginTop="16dp"
+        app:cardBackgroundColor="@color/colorPrimaryDark"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.484"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/lbcadastro">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1.5dp"
+                android:layout_marginVertical="8dp"
+                android:background="@color/colorPrimary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/inter"
+                android:text="Construa mapas internos e rotas acessíveis como:"
+                android:textColor="@color/colorPrimary"
+                android:textSize="13sp"
+                android:textStyle="" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/inter"
+                android:text="• Mapeamento de locais\n• Criação de mapas e rotas acessíveis\n• Sinalização de pontos e obstáculos"
+                android:textColor="@color/colorPrimary"
+                android:textSize="13sp" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnMaker"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/btn_arredondado3_ripple"
+                android:backgroundTint="@color/colorPrimary"
+                android:fontFamily="@font/staatliches"
+                android:text="Quero esse!"
+                android:textAllCaps="true"
+                android:textColor="@color/colorPrimaryDark"
+                android:textSize="20sp" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <TextView
+        android:id="@+id/lbcadastro"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="ou"
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="24dp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cardComum" />
+
+    <TextView
+        android:id="@+id/termsLabel2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:fontFamily="@font/inter"
+        android:gravity="center"
+        android:padding="16dp"
+        android:text="Ao criar uma conta, você aceita os Termos e Condições e a Política de Privacidade."
+        android:textAlignment="center"
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cardMaker" />
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardComum"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="32dp"
-        android:layout_marginTop="24dp"
-        app:cardCornerRadius="16dp"
+        android:layout_marginTop="28dp"
         app:cardBackgroundColor="@color/colorPrimaryDark"
+        app:cardCornerRadius="16dp"
         app:cardElevation="8dp"
-        app:layout_constraintTop_toBottomOf="@id/txtTipoUsuario"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.484"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/txtTipoUsuario">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -46,8 +137,8 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <ImageView
                     android:layout_width="35dp"
@@ -83,11 +174,11 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
                 android:fontFamily="@font/inter"
                 android:text="• Mapas e pontos turísticos atualizados\n• Sugestões de rotas acessíveis\n• Download e uso offline de mapas"
                 android:textColor="@color/colorPrimary"
-                android:textSize="13sp"
-                android:layout_marginTop="4dp" />
+                android:textSize="13sp" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnComum"
@@ -104,115 +195,31 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-
-    <TextView
-        android:id="@+id/lbcadastro"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="ou"
-        android:textColor="@color/colorPrimaryDark"
-        android:textSize="24dp"
-        android:textStyle="bold"
-        app:layout_constraintTop_toBottomOf="@id/cardComum"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="12dp" />
+        android:layout_marginTop="3dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@+id/cardComum"
+        tools:layout_editor_absoluteX="54dp">
 
+        <ImageView
+            android:layout_width="35dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/ic_maker"
+            app:tint="@color/colorOnPrimary" />
 
-    <androidx.cardview.widget.CardView
-        android:id="@+id/cardMaker"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="32dp"
-        android:layout_marginTop="12dp"
-        app:cardCornerRadius="16dp"
-        app:cardBackgroundColor="@color/colorPrimaryDark"
-        app:cardElevation="8dp"
-        app:layout_constraintTop_toBottomOf="@id/lbcadastro"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:fontFamily="@font/staatliches"
+            android:text="Usuário Maker"
+            android:textColor="@color/colorPrimary"
+            android:textSize="27sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <ImageView
-                    android:layout_width="35dp"
-                    android:layout_height="40dp"
-                    android:layout_marginEnd="12dp"
-                    android:src="@drawable/ic_maker"
-                    app:tint="@color/colorOnPrimary" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/staatliches"
-                    android:text="Usuário Maker"
-                    android:textColor="@color/colorPrimary"
-                    android:textSize="27sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1.5dp"
-                android:layout_marginVertical="8dp"
-                android:background="@color/colorPrimary" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/inter"
-                android:textStyle=""
-                android:text="Construa mapas internos e rotas acessíveis como:"
-                android:textColor="@color/colorPrimary"
-                android:textSize="13sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/inter"
-                android:text="• Mapeamento de locais\n• Criação de mapas e rotas acessíveis\n• Sinalização de pontos e obstáculos"
-                android:textColor="@color/colorPrimary"
-                android:textSize="13sp"
-                android:layout_marginTop="4dp" />
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btnMaker"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/btn_arredondado3_ripple"
-                android:backgroundTint="@color/colorPrimary"
-                android:fontFamily="@font/staatliches"
-                android:text="Quero esse!"
-                android:textAllCaps="true"
-                android:textColor="@color/colorPrimaryDark"
-                android:textSize="20sp" />
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
-
-    <TextView
-        android:id="@+id/termsLabel2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/inter"
-        android:gravity="center"
-        android:padding="16dp"
-        android:text="Ao criar uma conta, você aceita os Termos e Condições e a Política de Privacidade."
-        android:textAlignment="center"
-        android:textColor="@color/colorPrimaryDark"
-        android:textSize="12sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cardMaker" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

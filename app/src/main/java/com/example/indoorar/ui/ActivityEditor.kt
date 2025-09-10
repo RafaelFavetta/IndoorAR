@@ -8,6 +8,7 @@ import androidx.core.graphics.toColorInt
 import androidx.core.graphics.drawable.toDrawable
 import com.example.indoorar.BaseActivity
 import com.example.indoorar.R
+import android.graphics.drawable.ColorDrawable
 import com.example.indoorar.ui.Tool
 import com.example.indoorar.ui.editor.MapEditorView
 import com.example.indoorar.ui.editor.AttributePanelController
@@ -135,7 +136,7 @@ class ActivityEditor : BaseActivity() {
             elevation = 12f
         }
 
-        popupWindow.showAsDropDown(anchor, 0, -20)
+        popupWindow.showAsDropDown(anchor, 0, 0)
 
         val poiItems = listOf(
             popupView.findViewById<LinearLayout>(R.id.linearLayout1) to "porta",

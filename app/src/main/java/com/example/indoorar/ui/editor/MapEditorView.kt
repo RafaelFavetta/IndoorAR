@@ -372,12 +372,18 @@ class MapEditorView @JvmOverloads constructor(
 
                     // aplica rotação (se existir)
                     canvas.withSave {
-                        rotate(action.rotation, rect.centerX(), rect.centerY())
+                        rotate(
+                            action.rotation.toFloat(),
+                            rect.centerX().toFloat(),
+                            rect.centerY().toFloat()
+                        )
                         drawRect(rect, fillPaint)
                     }
 
+
                     // borda preta
                     val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = Color.BLACK
                         color = Color.BLACK
                         style = Paint.Style.STROKE
                         strokeWidth = 2f

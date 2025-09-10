@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ivPoi"
+    android:layout_width="64dp"
+    android:layout_height="64dp"
+    android:contentDescription="poi item"
+    android:padding="8dp"
+    android:scaleType="centerInside"
+    android:src="@drawable/ic_poi_default" />

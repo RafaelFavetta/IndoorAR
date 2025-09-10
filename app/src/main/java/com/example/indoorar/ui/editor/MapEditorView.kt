@@ -23,6 +23,7 @@ import com.example.indoorar.R
 import androidx.core.graphics.createBitmap
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import java.util.UUID
 
 
 data class ShapeProps(
@@ -186,7 +187,7 @@ class MapEditorView @JvmOverloads constructor(
     private fun getPoiBitmap(resId: Int): Bitmap {
         return poiBitmapCache.getOrPut(resId) {
             BitmapFactory.decodeResource(resources, resId)
-                ?: Bitmap.createBitmap(32, 32, Bitmap.Config.ARGB_8888)
+                ?: createBitmap(32, 32)
         }
     }
 
@@ -216,21 +217,18 @@ class MapEditorView @JvmOverloads constructor(
 
     internal fun addAction(action: Action) { actions.add(action) }
 
-    fun addPoi(iconRes: Int, atWorldX: Float? = null, atWorldY: Float? = null) {
-        val w = dp(48f)
-        val h = dp(48f)
-        val cx = atWorldX ?: ((width / 2f - offsetX) / scale)
-        val cy = atWorldY ?: ((height / 2f - offsetY) / scale)
-        val poi = Action.Poi(
-            x = cx - w / 2f,
-            y = cy - h / 2f,
-            width = w,
-            height = h,
+    fun addPoi(x: Float, y: Float, iconRes: Int) {
+        actions.add(Action.Poi(
+            id = UUID.randomUUID().toString(),
+            x = x,
+            y = y,
+            width = 100f,
+            height = 100f,
             iconRes = iconRes
-        )
-        actions.add(poi)
+        ))
         invalidate()
     }
+
 
     // ======= TOUCH =======
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -354,7 +352,6 @@ class MapEditorView @JvmOverloads constructor(
 
                         is Action.Poi -> {
                             if (activeHandle != null) {
-                                // resize POI via handles
                                 val minSize = dp(20f)
                                 val rect = RectF(action.x, action.y, action.x + action.width, action.y + action.height)
                                 when (activeHandle!!) {
@@ -501,9 +498,12 @@ class MapEditorView @JvmOverloads constructor(
                 }
 
                 is Action.Poi -> if (showPois) {
-                    val rect = RectF(action.x, action.y, action.x + action.width, action.y + action.height)
-                    val bmp = getPoiBitmap(action.iconRes)
-                    canvas.drawBitmap(bmp, null, rect, null)
+                    // Desenha o bitmap centralizado na posição (x, y)
+                    val bitmap = BitmapFactory.decodeResource(resources, action.iconRes)
+                    val left = action.x - action.width / 2
+                    val top = action.y - action.height / 2
+                    val destRect = RectF(left, top, left + action.width, top + action.height)
+                    canvas.drawBitmap(bitmap, null, destRect, null)
 
                     if (action.selected) selectedObjects.add(action)
                 }
@@ -511,6 +511,7 @@ class MapEditorView @JvmOverloads constructor(
                 is Action.Shape -> {
                     val rect = RectF(action.start.x, action.start.y, action.end.x, action.end.y)
 
+                    // Fill
                     val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         color = action.fillColor
                         style = Paint.Style.FILL
@@ -521,7 +522,7 @@ class MapEditorView @JvmOverloads constructor(
                         drawRect(rect, fillPaint)
                     }
 
-
+                    // Stroke
                     val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         color = Color.BLACK
                         style = Paint.Style.STROKE
@@ -534,22 +535,28 @@ class MapEditorView @JvmOverloads constructor(
             }
         }
 
-        // desenha seleção e handles para todos os objetos selecionados (shapes e pois)
+        // Desenha seleção e handles
         selectedObjects.forEach { obj ->
             val rect = when (obj) {
                 is Action.Shape -> RectF(obj.start.x, obj.start.y, obj.end.x, obj.end.y)
-                is Action.Poi  -> RectF(obj.x, obj.y, obj.x + obj.width, obj.y + obj.height)
+                is Action.Poi -> RectF(
+                    obj.x - obj.width / 2,
+                    obj.y - obj.height / 2,
+                    obj.x + obj.width / 2,
+                    obj.y + obj.height / 2
+                )
                 else -> null
             }
+
             rect?.let {
-                // fundo / preenchimento (opcional)
+                // Fundo (opcional)
                 val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = if (obj is Action.Shape) obj.fillColor else Color.TRANSPARENT
                     style = Paint.Style.FILL
                 }
                 canvas.drawRect(it, fill)
 
-                // contorno de seleção
+                // Contorno
                 canvas.drawRect(it, shapeSelectionPaint)
                 drawHandles(canvas, it)
             }

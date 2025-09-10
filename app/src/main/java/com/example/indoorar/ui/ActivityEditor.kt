@@ -123,7 +123,7 @@ class ActivityEditor : BaseActivity() {
     }
 
     private fun showPoiPopup(anchor: LinearLayout) {
-        val popupView = layoutInflater.inflate(R.layout.popup_pois, findViewById(android.R.id.content), false)
+        val popupView = layoutInflater.inflate(R.layout.popup_pois, findViewById(android.R.id.content), null)
 
         val popupWindow = PopupWindow(
             popupView,
@@ -137,7 +137,7 @@ class ActivityEditor : BaseActivity() {
             elevation = 12f
         }
 
-        popupWindow.showAsDropDown(anchor, 0, 0)
+        popupWindow.showAtLocation(anchor, android.view.Gravity.CENTER, 0, 0)
 
         val poiItems = listOf(
             popupView.findViewById<LinearLayout>(R.id.linearLayout1) to "porta",

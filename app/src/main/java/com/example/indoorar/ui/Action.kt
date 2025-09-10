@@ -5,8 +5,12 @@ import androidx.core.graphics.toColorInt
 
 sealed class Action {
     data class BrushStroke(val points: List<PointF>) : Action()
-
-    data class Poi(val position: PointF, val name: String) : Action()
+    data class Poi(
+        var start: PointF,
+        var end: PointF,
+        val iconName: String,
+        var selected: Boolean = false
+    ) : Action()
 
     data class Shape(
         var start: PointF,

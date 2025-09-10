@@ -10,6 +10,6 @@ data class ShapeProperties(
     var y: Float,
     var width: Float,
     var height: Float,
-    var rotation: Int = 0,
+    var rotation: Float = 0f,
     var fillColor: Int = 0xFFCCCCCC.toInt()
 )

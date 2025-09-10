@@ -21,6 +21,8 @@ import androidx.core.graphics.toColorInt
 import androidx.core.graphics.withSave
 import com.example.indoorar.R
 import androidx.core.graphics.createBitmap
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 
 
 data class ShapeProps(
@@ -42,6 +44,8 @@ class MapEditorView @JvmOverloads constructor(
     private var scale = 1f
     private var offsetX = 0f
     private var offsetY = 0f
+    private var draggingObject: Action? = null
+    private val poiBitmapCache = mutableMapOf<Int, Bitmap>()
 
     // ======= TOOL =======
     var currentTool: Tool = Tool.CURSOR
@@ -74,7 +78,6 @@ class MapEditorView @JvmOverloads constructor(
 
     // ======= SELEÇÃO/DRAG =======
     private var draggingShape: Action? = null
-    private var draggingObject: Action? = null
     private var lastDragPoint: PointF? = null
     private var activeHandle: Handle? = null
 
@@ -180,6 +183,14 @@ class MapEditorView @JvmOverloads constructor(
         }
     }
 
+    private fun getPoiBitmap(resId: Int): Bitmap {
+        return poiBitmapCache.getOrPut(resId) {
+            BitmapFactory.decodeResource(resources, resId)
+                ?: Bitmap.createBitmap(32, 32, Bitmap.Config.ARGB_8888)
+        }
+    }
+
+
 
     // ======= API =======
     fun setTool(tool: Tool) {
@@ -204,11 +215,20 @@ class MapEditorView @JvmOverloads constructor(
     fun togglePoiLayer() { showPois = !showPois; invalidate() }
 
     internal fun addAction(action: Action) { actions.add(action) }
-    fun addPoi(x: Float, y: Float, name: String) {
-        val size = dp(40f)
-        val start = PointF(x, y)
-        val end = PointF(x + size, y + size)
-        actions.add(Action.Poi(start, end, name))
+
+    fun addPoi(iconRes: Int, atWorldX: Float? = null, atWorldY: Float? = null) {
+        val w = dp(48f)
+        val h = dp(48f)
+        val cx = atWorldX ?: ((width / 2f - offsetX) / scale)
+        val cy = atWorldY ?: ((height / 2f - offsetY) / scale)
+        val poi = Action.Poi(
+            x = cx - w / 2f,
+            y = cy - h / 2f,
+            width = w,
+            height = h,
+            iconRes = iconRes
+        )
+        actions.add(poi)
         invalidate()
     }
 
@@ -217,13 +237,11 @@ class MapEditorView @JvmOverloads constructor(
         scaleDetector.onTouchEvent(event)
         val world = screenToWorld(event.x, event.y)
 
-        // Clique rápido para adicionar POI
         if (currentTool == Tool.POI && event.action == MotionEvent.ACTION_DOWN) {
             onPoiClickListener?.invoke(world.x, world.y)
             return true
         }
 
-        // Ferramentas não-cursor
         if (currentTool != Tool.CURSOR) {
             return when (currentTool) {
                 Tool.BRUSH -> brushEditor.onTouch(event)
@@ -238,27 +256,35 @@ class MapEditorView @JvmOverloads constructor(
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 lastDragPoint = world
-                // deseleciona todos shapes
-                actions.forEach { if (it is Action.Shape) it.selected = false }
+                // limpa seleção
+                actions.forEach {
+                    when (it) {
+                        is Action.Shape -> it.selected = false
+                        is Action.Poi -> it.selected = false
+                        else -> {}
+                    }
+                }
 
                 val hit = hitTestObjects(world)
                 if (hit != null) {
-                    // seleciona shape se for shape
-                    if (hit is Action.Shape) hit.selected = true
-                    draggingObject = hit
-                    activeHandle = if (hit is Action.Shape) hitTestHandles(hit, world) else null
-
-                    // chama listener só se for Shape
-                    if (hit is Action.Shape) {
-                        selectionListener?.onShapeSelected(shapeToProperties(hit))
+                    when (hit) {
+                        is Action.Shape -> {
+                            hit.selected = true
+                            selectionListener?.onShapeSelected(shapeToProperties(hit))
+                        }
+                        is Action.Poi -> {
+                            hit.selected = true
+                            selectionListener?.onShapeSelected(poiToProperties(hit))
+                        }
+                        else -> {}
                     }
-
+                    draggingObject = hit
+                    activeHandle = hitTestHandles(hit, world)
                 } else {
                     draggingObject = null
                     activeHandle = null
                     selectionListener?.onShapeDeselected()
                 }
-
                 invalidate()
             }
 
@@ -271,12 +297,9 @@ class MapEditorView @JvmOverloads constructor(
                     when (action) {
                         is Action.Shape -> {
                             selectionListener?.onShapeSelected(shapeToProperties(action))
-
                             val minSize = dp(30f)
                             val rect = RectF(action.start.x, action.start.y, action.end.x, action.end.y)
-
                             if (activeHandle != null) {
-                                // resize Shape
                                 when (activeHandle!!) {
                                     Handle.TOP_LEFT -> {
                                         val newLeft = action.start.x + dx
@@ -321,7 +344,6 @@ class MapEditorView @JvmOverloads constructor(
                                 }
                                 snapToOtherShapes(action)
                             } else {
-                                // drag normal Shape
                                 action.start.x += dx
                                 action.start.y += dy
                                 action.end.x += dx
@@ -331,16 +353,77 @@ class MapEditorView @JvmOverloads constructor(
                         }
 
                         is Action.Poi -> {
-                            // drag normal do POI
-                            val size = dp(30f)
-                            if (action.start == action.end) {
-                                action.end.x = action.start.x + size
-                                action.end.y = action.start.y + size
+                            if (activeHandle != null) {
+                                // resize POI via handles
+                                val minSize = dp(20f)
+                                val rect = RectF(action.x, action.y, action.x + action.width, action.y + action.height)
+                                when (activeHandle!!) {
+                                    Handle.TOP_LEFT -> {
+                                        val newLeft = action.x + dx
+                                        val newTop = action.y + dy
+                                        val newRight = rect.right
+                                        val newBottom = rect.bottom
+                                        val newWidth = newRight - newLeft
+                                        val newHeight = newBottom - newTop
+                                        if (newWidth > minSize) {
+                                            action.x = newLeft
+                                            action.width = newWidth
+                                        }
+                                        if (newHeight > minSize) {
+                                            action.y = newTop
+                                            action.height = newHeight
+                                        }
+                                    }
+                                    Handle.TOP_RIGHT -> {
+                                        val newRight = action.x + action.width + dx
+                                        val newTop = action.y + dy
+                                        val newWidth = newRight - action.x
+                                        val newHeight = (action.y + action.height) - newTop
+                                        if (newWidth > minSize) action.width = newWidth
+                                        if (newHeight > minSize) { action.y = newTop; action.height = (action.y + action.height) - newTop }
+                                    }
+                                    Handle.BOTTOM_LEFT -> {
+                                        val newLeft = action.x + dx
+                                        val newBottom = action.y + action.height + dy
+                                        val newWidth = (action.x + action.width) - newLeft
+                                        val newHeight = newBottom - action.y
+                                        if (newWidth > minSize) { action.x = newLeft; action.width = (action.x + action.width) - newLeft }
+                                        if (newHeight > minSize) action.height = newHeight
+                                    }
+                                    Handle.BOTTOM_RIGHT -> {
+                                        val newRight = action.x + action.width + dx
+                                        val newBottom = action.y + action.height + dy
+                                        val newWidth = newRight - action.x
+                                        val newHeight = newBottom - action.y
+                                        if (newWidth > minSize) action.width = newWidth
+                                        if (newHeight > minSize) action.height = newHeight
+                                    }
+                                    Handle.TOP_CENTER -> {
+                                        val newTop = action.y + dy
+                                        val newHeight = (action.y + action.height) - newTop
+                                        if (newHeight > minSize) { action.y = newTop; action.height = newHeight }
+                                    }
+                                    Handle.BOTTOM_CENTER -> {
+                                        val newBottom = action.y + action.height + dy
+                                        val newHeight = newBottom - action.y
+                                        if (newHeight > minSize) action.height = newHeight
+                                    }
+                                    Handle.LEFT_CENTER -> {
+                                        val newLeft = action.x + dx
+                                        val newWidth = (action.x + action.width) - newLeft
+                                        if (newWidth > minSize) { action.x = newLeft; action.width = newWidth }
+                                    }
+                                    Handle.RIGHT_CENTER -> {
+                                        val newRight = action.x + action.width + dx
+                                        val newWidth = newRight - action.x
+                                        if (newWidth > minSize) action.width = newWidth
+                                    }
+                                }
+                            } else {
+                                // drag normal POI
+                                action.x += dx
+                                action.y += dy
                             }
-                            action.start.x += dx
-                            action.start.y += dy
-                            action.end.x += dx
-                            action.end.y += dy
                         }
                         else -> {}
                     }
@@ -401,7 +484,8 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     private fun drawActions(canvas: Canvas) {
-        val selectedShapes = mutableListOf<Action.Shape>()
+        val selectedObjects = mutableListOf<Action>()
+
         actions.forEach { action ->
             when (action) {
                 is Action.BrushStroke -> if (showBrush) {
@@ -417,68 +501,58 @@ class MapEditorView @JvmOverloads constructor(
                 }
 
                 is Action.Poi -> if (showPois) {
-                    val rect = RectF(action.start.x, action.start.y, action.end.x, action.end.y)
-                    val bmp = getPoiIcon(action.iconName)
+                    val rect = RectF(action.x, action.y, action.x + action.width, action.y + action.height)
+                    val bmp = getPoiBitmap(action.iconRes)
+                    canvas.drawBitmap(bmp, null, rect, null)
 
-                    val dst = RectF(rect.left, rect.top, rect.right, rect.bottom)
-                    canvas.drawBitmap(bmp, null, dst, null)
-
-                    if (action.selected) {
-                        canvas.drawRect(rect, shapeSelectionPaint)
-                        drawHandles(canvas, rect)
-                    }
+                    if (action.selected) selectedObjects.add(action)
                 }
 
                 is Action.Shape -> {
                     val rect = RectF(action.start.x, action.start.y, action.end.x, action.end.y)
 
-                    // cor de preenchimento
                     val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         color = action.fillColor
                         style = Paint.Style.FILL
                     }
 
-                    // aplica rotação (se existir)
                     canvas.withSave {
-                        rotate(
-                            action.rotation.toFloat(),
-                            rect.centerX(),
-                            rect.centerY()
-                        )
+                        rotate(action.rotation, rect.centerX(), rect.centerY())
                         drawRect(rect, fillPaint)
                     }
 
 
-                    // borda preta
                     val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = Color.BLACK
                         color = Color.BLACK
                         style = Paint.Style.STROKE
                         strokeWidth = 2f
                     }
                     canvas.drawRect(rect, strokePaint)
 
-                    if (action.selected) {
-                        selectedShapes.add(action)
-                    }
-
-                    if (action.selected) {
-                        selectedShapes.add(action)
-                        } else {
-                        canvas.drawRect(rect, fillPaint)
-                    }
+                    if (action.selected) selectedObjects.add(action)
                 }
             }
         }
-        selectedShapes.forEach { shape ->
-            val rect = RectF(shape.start.x, shape.start.y, shape.end.x, shape.end.y)
-            val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = shape.fillColor
-                style = Paint.Style.FILL
+
+        // desenha seleção e handles para todos os objetos selecionados (shapes e pois)
+        selectedObjects.forEach { obj ->
+            val rect = when (obj) {
+                is Action.Shape -> RectF(obj.start.x, obj.start.y, obj.end.x, obj.end.y)
+                is Action.Poi  -> RectF(obj.x, obj.y, obj.x + obj.width, obj.y + obj.height)
+                else -> null
             }
-            canvas.drawRect(rect, fillPaint)
-            canvas.drawRect(rect, shapeSelectionPaint)
-            drawHandles(canvas, rect)
+            rect?.let {
+                // fundo / preenchimento (opcional)
+                val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = if (obj is Action.Shape) obj.fillColor else Color.TRANSPARENT
+                    style = Paint.Style.FILL
+                }
+                canvas.drawRect(it, fill)
+
+                // contorno de seleção
+                canvas.drawRect(it, shapeSelectionPaint)
+                drawHandles(canvas, it)
+            }
         }
     }
 
@@ -529,38 +603,36 @@ class MapEditorView @JvmOverloads constructor(
         return null
     }
 
-    private fun hitTestObjects(point: PointF): Action? {
-        actions.forEach { action ->
-            when (action) {
+    private fun hitTestObjects(p: PointF): Action? {
+        for (i in actions.size - 1 downTo 0) {
+            val a = actions[i]
+            when (a) {
                 is Action.Shape -> {
-                    val rect = RectF(
-                        minOf(action.start.x, action.end.x),
-                        minOf(action.start.y, action.end.y),
-                        maxOf(action.start.x, action.end.x),
-                        maxOf(action.start.y, action.end.y)
-                    )
-                    if (rect.contains(point.x, point.y)) return action
+                    val left = minOf(a.start.x, a.end.x)
+                    val right = maxOf(a.start.x, a.end.x)
+                    val top = minOf(a.start.y, a.end.y)
+                    val bottom = maxOf(a.start.y, a.end.y)
+                    if (p.x in left..right && p.y in top..bottom) return a
                 }
                 is Action.Poi -> {
-                    val rect = RectF(
-                        minOf(action.start.x, action.end.x),
-                        minOf(action.start.y, action.end.y),
-                        maxOf(action.start.x, action.end.x),
-                        maxOf(action.start.y, action.end.y)
-                    )
-                    if (rect.contains(point.x, point.y)) return action
+                    val rectLeft = a.x
+                    val rectTop = a.y
+                    val rectRight = a.x + a.width
+                    val rectBottom = a.y + a.height
+                    if (p.x in rectLeft..rectRight && p.y in rectTop..rectBottom) return a
                 }
-                is Action.BrushStroke -> {}
+                else -> { /* ignore others */ }
             }
         }
         return null
     }
 
-
-
-
-    private fun hitTestHandles(shape: Action.Shape, p: PointF, size: Float = dp(50f)): Handle? {
-        val rect = RectF(shape.start.x, shape.start.y, shape.end.x, shape.end.y)
+    private fun hitTestHandles(action: Action, p: PointF, size: Float = dp(50f)): Handle? {
+        val rect = when (action) {
+            is Action.Shape -> RectF(action.start.x, action.start.y, action.end.x, action.end.y)
+            is Action.Poi -> RectF(action.x, action.y, action.x + action.width, action.y + action.height)
+            else -> return null
+        }
         val half = size / 2
         val handles = mapOf(
             Handle.TOP_LEFT to PointF(rect.left, rect.top),
@@ -573,8 +645,7 @@ class MapEditorView @JvmOverloads constructor(
             Handle.RIGHT_CENTER to PointF(rect.right, rect.centerY())
         )
         for ((handle, pos) in handles) {
-            if (p.x in (pos.x - half)..(pos.x + half) &&
-                p.y in (pos.y - half)..(pos.y + half)) {
+            if (p.x in (pos.x - half)..(pos.x + half) && p.y in (pos.y - half)..(pos.y + half)) {
                 return handle
             }
         }
@@ -706,6 +777,16 @@ class MapEditorView @JvmOverloads constructor(
         return bestItem to bestDist
     }
 
+    private fun poiToProperties(poi: Action.Poi): ShapeProperties {
+        return ShapeProperties(
+            x = poi.x,
+            y = poi.y,
+            width = poi.width,
+            height = poi.height,
+            rotation = 0f
+        )
+    }
+
     private fun shapeToProperties(shape: Action.Shape): ShapeProperties {
         val left = min(shape.start.x, shape.end.x)
         val top = min(shape.start.y, shape.end.y)
@@ -757,7 +838,7 @@ class MapEditorView @JvmOverloads constructor(
         s.start.y = props.y
         s.end.x = props.x + w
         s.end.y = props.y + h
-        s.rotation = props.rotation // 👈 salva rotação no shape
+        s.rotation = props.rotation
 
         invalidate()
         selectionListener?.onShapeSelected(shapeToProperties(s))

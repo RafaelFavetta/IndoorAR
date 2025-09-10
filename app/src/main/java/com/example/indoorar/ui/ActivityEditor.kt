@@ -147,10 +147,18 @@ class ActivityEditor : BaseActivity() {
             popupView.findViewById<LinearLayout>(R.id.linearLayout5) to "extintor"
         )
 
+        val nameToRes = mapOf(
+            "porta" to R.drawable.ic_door_azul,
+            "escada" to R.drawable.ic_stairs_azul,
+            "elevador" to R.drawable.ic_elevator_azul,
+            "banheiro" to R.drawable.ic_banheiro_azul,
+            "extintor" to R.drawable.ic_extintor_azul
+        )
 
         poiItems.forEach { (layout, name) ->
             layout.setOnClickListener {
-                mapEditor.addPoi(100f, 100f, name)
+                val res = nameToRes[name] ?: R.drawable.ic_poi_default
+                mapEditor.addPoi(res)
                 popupWindow.dismiss()
             }
             layout.background = AppCompatResources.getDrawable(this, R.drawable.ripple_clickable)

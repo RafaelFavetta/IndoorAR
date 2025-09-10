@@ -10,6 +10,7 @@ import com.example.indoorar.R
 import com.example.indoorar.model.ShapeData
 import androidx.core.graphics.scale
 import androidx.core.graphics.withSave
+import com.example.indoorar.ui.Action
 
 class MapCanvasView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -17,6 +18,9 @@ class MapCanvasView @JvmOverloads constructor(
 
     var shapes = mutableListOf<ShapeData>()
     var selectedShape: ShapeData? = null
+
+    private val pois = mutableListOf<Action.Poi>()
+
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
@@ -62,7 +66,7 @@ class MapCanvasView @JvmOverloads constructor(
                         path.close()
                         drawPath(path, paint)
                     }
-                    // Símbolos especiais como PNG
+
                     "escada", "elevador", "porta", "extintor", "banheiro" -> {
                         val resId = when (shape.tipo) {
                             "escada" -> R.drawable.ic_stairs_branco
@@ -109,6 +113,12 @@ class MapCanvasView @JvmOverloads constructor(
         selectedShape = shape
         invalidate()
     }
+
+    fun addPoi(poi: Action.Poi) {
+        pois.add(poi)
+        invalidate()
+    }
+
 
     fun updateSelectedShape(shape: ShapeData) {
         val index = selectedShape?.let { shapes.indexOf(it) } ?: -1

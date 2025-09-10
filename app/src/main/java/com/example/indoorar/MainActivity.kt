@@ -15,6 +15,8 @@ class MainActivity : BaseActivity() {
         setContentView(R.layout.main_activity)
 
         val rootView = findViewById<View>(R.id.mainRoot)
+        rootView.alpha = 1f
+
         val logo = findViewById<View>(R.id.logo)
         val slogan = findViewById<View>(R.id.txtSlogan)
         val btnCadastrar = findViewById<Button>(R.id.btnCadastro)

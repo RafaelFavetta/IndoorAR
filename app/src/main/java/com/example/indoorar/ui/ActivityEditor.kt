@@ -131,6 +131,7 @@ class ActivityEditor : BaseActivity() {
             LinearLayout.LayoutParams.WRAP_CONTENT,
             true
         ).apply {
+            isFocusable = false
             setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
             isOutsideTouchable = true
             elevation = 12f

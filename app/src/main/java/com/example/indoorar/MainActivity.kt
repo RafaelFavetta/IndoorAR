@@ -4,13 +4,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
-import androidx.appcompat.app.AppCompatActivity
+import com.example.indoorar.BaseActivity
 
 class MainActivity : BaseActivity() {
-
-    private val baseDelay = 150L
-    private val animationDuration = 400L
-    private val offsetY = -40f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.Theme_IndoorAR_Splash)
@@ -25,5 +21,18 @@ class MainActivity : BaseActivity() {
         val btnLogin = findViewById<Button>(R.id.btnLogin)
 
         slogan.elevation = 8f
+        logo.elevation = 8f
+        btnCadastrar.elevation = 8f
+        btnLogin.elevation = 8f
+        rootView.elevation = 8f
+        btnCadastrar.setOnClickListener {
+            val intent = Intent(this, ActivityConta::class.java)
+            startActivity(intent)
+        }
+        btnLogin.setOnClickListener {
+            val intent = Intent(this, ActivityLogin::class.java)
+            startActivity(intent)
+        }
+
     }
 }

@@ -12,7 +12,6 @@ import androidx.core.graphics.withTranslation
 import com.example.indoorar.ui.Action
 import com.example.indoorar.ui.Tool
 import com.example.indoorar.ui.editor.BrushEditor
-import com.example.indoorar.ui.editor.PoiEditor
 import com.example.indoorar.ui.editor.ShapeEditor
 import kotlin.math.abs
 import kotlin.math.max
@@ -27,9 +26,8 @@ data class ShapeProps(
     var y: Float,
     var width: Float,
     var height: Float,
-    var rotation: Int = 0,
-    var fillColor: Int? = null,
-    var selected: Boolean = false
+    var rotation: Float = 0f,
+    var fillColor: Int? = null
 )
 
 class MapEditorView @JvmOverloads constructor(
@@ -68,7 +66,7 @@ class MapEditorView @JvmOverloads constructor(
     private val snapDwellMs = 60L
 
     // ======= DADOS =======
-    private val actions = mutableListOf<Action>()
+    val actions = mutableListOf<Action>()
 
     // ======= SELEÇÃO/DRAG =======
     private var draggingShape: Action.Shape? = null
@@ -81,6 +79,7 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     var selectionListener: OnShapeSelectionListener? = null
+
 
     private enum class Handle {
         TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT,
@@ -121,7 +120,8 @@ class MapEditorView @JvmOverloads constructor(
     // ======= EDITORES =======
     private val brushEditor = BrushEditor(this)
     private val shapeEditor = ShapeEditor(this)
-    private val poiEditor = PoiEditor(this)
+    var onPoiClickListener: ((x: Float, y: Float) -> Unit)? = null
+
 
     // ======= GESTOS =======
     private val scaleDetector = ScaleGestureDetector(
@@ -177,22 +177,35 @@ class MapEditorView @JvmOverloads constructor(
     fun togglePoiLayer() { showPois = !showPois; invalidate() }
 
     internal fun addAction(action: Action) { actions.add(action) }
+    fun addPoi(x: Float, y: Float, name: String) {
+        actions.add(Action.Poi(PointF(x, y), name))
+        invalidate()
+    }
+
 
     // ======= TOUCH =======
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleDetector.onTouchEvent(event)
+        val world = screenToWorld(event.x, event.y)
+
+        if (currentTool == Tool.POI && event.action == MotionEvent.ACTION_DOWN) {
+            onPoiClickListener?.invoke(world.x, world.y)
+            return true
+        }
 
         if (currentTool != Tool.CURSOR) {
             return when (currentTool) {
                 Tool.BRUSH  -> brushEditor.onTouch(event)
                 Tool.FORMAS -> shapeEditor.onTouch(event)
-                Tool.POI    -> poiEditor.onTouch(event)
+                Tool.POI    -> {
+                    false
+                }
                 else        -> true
             }
         }
 
+
         gestureDetector.onTouchEvent(event)
-        val world = screenToWorld(event.x, event.y)
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
@@ -359,7 +372,7 @@ class MapEditorView @JvmOverloads constructor(
 
                     // aplica rotação (se existir)
                     canvas.withSave {
-                        rotate(action.rotation.toFloat(), rect.centerX(), rect.centerY())
+                        rotate(action.rotation, rect.centerX(), rect.centerY())
                         drawRect(rect, fillPaint)
                     }
 
@@ -601,7 +614,7 @@ class MapEditorView @JvmOverloads constructor(
             y = top,
             width = w,
             height = h,
-            rotation = shape.rotation
+            rotation = shape.rotation // 👈 precisa existir em Action.Shape
         )
     }
 
@@ -616,7 +629,7 @@ class MapEditorView @JvmOverloads constructor(
         return null
     }
 
-    fun getSelectedShape(): Action.Shape? {
+    private fun getSelectedShape(): Action.Shape? {
         for (i in actions.size - 1 downTo 0) {
             val a = actions[i]
             if (a is Action.Shape && a.selected) return a
@@ -639,13 +652,11 @@ class MapEditorView @JvmOverloads constructor(
         s.start.y = props.y
         s.end.x = props.x + w
         s.end.y = props.y + h
-        s.rotation = props.rotation
-        s.fillColor = props.fillColor
+        s.rotation = props.rotation // 👈 salva rotação no shape
 
         invalidate()
         selectionListener?.onShapeSelected(shapeToProperties(s))
     }
-
 
 
     internal fun screenToWorld(x: Float, y: Float): PointF =

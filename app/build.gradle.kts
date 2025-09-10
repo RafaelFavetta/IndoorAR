@@ -68,6 +68,12 @@ dependencies {
     implementation("com.google.android.material:material:1.13.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
 
+    //Gson
+    implementation("com.google.code.gson:gson:2.13.1")
+
+    //Google Material
+    implementation("com.google.android.material:material:1.13.0")
+
     //API Google
     implementation("com.google.android.gms:play-services-auth:21.4.0")
 

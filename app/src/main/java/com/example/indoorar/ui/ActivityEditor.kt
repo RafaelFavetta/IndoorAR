@@ -1,20 +1,19 @@
 package com.example.indoorar.ui
 
-import android.content.Context
+import android.graphics.Color
 import android.os.Bundle
-import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputMethodManager
 import android.widget.*
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.graphics.toColorInt
+import androidx.core.graphics.drawable.toDrawable
 import com.example.indoorar.BaseActivity
 import com.example.indoorar.R
-import com.example.indoorar.ui.editor.MapEditorView
 import com.example.indoorar.ui.Tool
+import com.example.indoorar.ui.editor.MapEditorView
 import com.example.indoorar.ui.editor.AttributePanelController
-import com.example.indoorar.ui.editor.ShapeProperties
 import com.example.indoorar.views.ColorPickerView
-import android.app.AlertDialog
-
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FirebaseFirestore
 
 class ActivityEditor : BaseActivity() {
 
@@ -22,9 +21,6 @@ class ActivityEditor : BaseActivity() {
     private lateinit var colorPreview: ImageView
     private lateinit var inputHex: EditText
     private lateinit var btnColorPicker: ImageButton
-    private lateinit var rotationSeekBar: SeekBar
-    private lateinit var rotationLabel: TextView
-    private lateinit var inputShapeName: EditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,141 +30,248 @@ class ActivityEditor : BaseActivity() {
         colorPreview = findViewById(R.id.colorPreview)
         inputHex = findViewById(R.id.inputHex)
         btnColorPicker = findViewById(R.id.btnColorPicker)
-        rotationSeekBar = findViewById(R.id.rotationSeekBar)
-        rotationLabel = findViewById(R.id.rotationLabel)
-        inputShapeName = findViewById(R.id.inputNome)
 
-        // Atualiza botão ativo
+        // Função para atualizar qual botão está ativo
         fun updateSelectedButton(selectedId: Int) {
             val buttons = listOf(R.id.cursor, R.id.formas, R.id.brush, R.id.poi)
-            buttons.forEach { id -> findViewById<ImageView>(id).isSelected = (id == selectedId) }
+            buttons.forEach { id ->
+                findViewById<ImageView>(id).isSelected = (id == selectedId)
+            }
         }
 
-        // Ferramentas
+        // Cursor
         findViewById<LinearLayout>(R.id.linearcursor).setOnClickListener {
             mapEditor.setTool(Tool.CURSOR)
             updateSelectedButton(R.id.cursor)
         }
+
+        // Formas
         findViewById<LinearLayout>(R.id.linearformas).setOnClickListener {
             mapEditor.setTool(Tool.FORMAS)
             updateSelectedButton(R.id.formas)
         }
+
+        // Brush
         findViewById<LinearLayout>(R.id.linearbrush).setOnClickListener {
             mapEditor.setTool(Tool.BRUSH)
             updateSelectedButton(R.id.brush)
         }
+
+        // POI
         findViewById<LinearLayout>(R.id.linearpoi).setOnClickListener {
             mapEditor.setTool(Tool.POI)
             updateSelectedButton(R.id.poi)
+            showPoiPopup(findViewById(R.id.linearpoi))
         }
 
-        // Camadas e desfazer
-        findViewById<LinearLayout>(R.id.linearlayers).setOnClickListener { mapEditor.toggleGrid() }
-        findViewById<LinearLayout>(R.id.lineardesfazer).setOnClickListener { mapEditor.undo() }
+        // Camadas (grid por enquanto)
+        findViewById<LinearLayout>(R.id.linearlayers).setOnClickListener {
+            mapEditor.toggleGrid()
+        }
 
-        // Botão inicial
+        // Desfazer
+        findViewById<LinearLayout>(R.id.lineardesfazer).setOnClickListener {
+            mapEditor.undo()
+        }
+
+        // Botão inicial selecionado (cursor)
         updateSelectedButton(R.id.cursor)
 
-        // Inicializa painel de atributos
+        // Attribute Panel
         AttributePanelController(this, mapEditor)
 
-        // --- Color picker ---
+        // ColorPicker
         btnColorPicker.setOnClickListener {
             val pickerView = ColorPickerView(this)
             pickerView.layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                200
+                LinearLayout.LayoutParams.MATCH_PARENT, 200
             )
-            val dialog = AlertDialog.Builder(this)
+
+            val dialog = android.app.AlertDialog.Builder(this)
                 .setTitle("Escolha uma cor")
                 .setView(pickerView)
-                .setPositiveButton("OK") { dialogInterface: android.content.DialogInterface, _: Int ->
-                    dialogInterface.dismiss()
-                }
+                .setPositiveButton("OK") { d, _ -> d.dismiss() }
                 .create()
 
             pickerView.setOnColorChangedListener { color ->
                 colorPreview.setBackgroundColor(color)
                 inputHex.setText(String.format("#%06X", 0xFFFFFF and color))
-                mapEditor.getSelectedShapeProperties()?.let { props ->
-                    props.fillColor = color
-                    mapEditor.applyPropertiesToSelectedShape(props)
-                }
             }
 
             dialog.show()
         }
 
-        // Hex manual
-        inputHex.setOnEditorActionListener { v, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_DONE) {
-                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.hideSoftInputFromWindow(v.windowToken, 0)
+        // HEX manual
+        inputHex.setOnEditorActionListener { _, _, _ ->
+            val hex = inputHex.text.toString()
+            try {
+                val color = hex.toColorInt()
+                colorPreview.setBackgroundColor(color)
+            } catch (e: IllegalArgumentException) {
+                inputHex.error = "Hex inválido"
+            }
+            true
+        }
 
-                val hex = inputHex.text.toString()
-                try {
-                    val color = hex.toColorInt()
-                    colorPreview.setBackgroundColor(color)
-                    mapEditor.getSelectedShapeProperties()?.let { props ->
-                        props.fillColor = color
-                        mapEditor.applyPropertiesToSelectedShape(props)
+        // Botão de salvar mapa (superior direito)
+        val btnSalvar = Button(this).apply {
+            text = "Salvar"
+            setTextColor("#fdfdfd".toColorInt())
+            setBackgroundColor("#32357A".toColorInt())
+        }
+
+        val layout = findViewById<LinearLayout>(R.id.main)
+        layout.addView(btnSalvar)
+        btnSalvar.setOnClickListener { salvarMapa() }
+    }
+
+    private fun showPoiPopup(anchor: LinearLayout) {
+        val popupView = layoutInflater.inflate(R.layout.popup_pois, findViewById(android.R.id.content), false)
+
+        val popupWindow = PopupWindow(
+            popupView,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            true
+        ).apply {
+            setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+            isOutsideTouchable = true
+            elevation = 12f
+        }
+
+        popupWindow.showAsDropDown(anchor, 0, -20)
+
+        val poiItems = listOf(
+            popupView.findViewById<LinearLayout>(R.id.linearLayout1) to "porta",
+            popupView.findViewById<LinearLayout>(R.id.linearLayout2) to "escada",
+            popupView.findViewById<LinearLayout>(R.id.linearLayout3) to "elevador",
+            popupView.findViewById<LinearLayout>(R.id.linearLayout4) to "banheiro",
+            popupView.findViewById<LinearLayout>(R.id.linearLayout5) to "extintor"
+        )
+
+        poiItems.forEach { (layout, name) ->
+            layout.setOnClickListener {
+                mapEditor.addPoi(100f, 100f, name)
+                popupWindow.dismiss()
+            }
+            layout.background = AppCompatResources.getDrawable(this, R.drawable.ripple_clickable)
+        }
+    }
+
+    private fun salvarMapa() {
+        val db = FirebaseFirestore.getInstance()
+
+        val mapaData = hashMapOf(
+            "criadorUid" to "anonimo", // por enquanto fixo
+            "dataCriacao" to Timestamp.now(),
+            "nome" to "Mapa X",
+            "descricao" to "Meu mapa incrível"
+        )
+
+        db.collection("mapas").add(mapaData)
+            .addOnSuccessListener { mapaDoc ->
+                val mapaId = mapaDoc.id
+
+                mapEditor.actions.forEach { action ->
+                    when (action) {
+                        is Action.Shape -> {
+                            val formaData = hashMapOf(
+                                "cor" to action.fillColor,
+                                "descricao" to "",
+                                "nome" to "",
+                                "posicao" to mapOf("x" to action.start.x, "y" to action.start.y),
+                                "rotacao" to action.rotation,
+                                "tamanho" to mapOf(
+                                    "largura" to (action.end.x - action.start.x),
+                                    "altura" to (action.end.y - action.start.y)
+                                ),
+                                "tipo" to "retangulo"
+                            )
+                            db.collection("mapas").document(mapaId)
+                                .collection("formas")
+                                .add(formaData)
+                        }
+                        is Action.Poi -> {
+                            val poiData = hashMapOf(
+                                "x" to action.position.x,
+                                "y" to action.position.y,
+                                "name" to action.name
+                            )
+                            db.collection("mapas").document(mapaId)
+                                .collection("pois")
+                                .add(poiData)
+                        }
+                        else -> {}
                     }
-                    inputHex.setText(String.format("#%06X", 0xFFFFFF and color))
-                } catch (e: IllegalArgumentException) {
-                    inputHex.error = "Hex inválido"
                 }
-                true
-            } else false
-        }
 
-        // Nome da forma (Enter fecha teclado e salva)
-        inputShapeName.setOnEditorActionListener { v, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_DONE) {
-                val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.hideSoftInputFromWindow(v.windowToken, 0)
+                println("Mapa salvo com sucesso! ID: $mapaId")
+                carregarMapa(mapaId) // já carrega depois de salvar
+            }
+            .addOnFailureListener { e ->
+                e.printStackTrace()
+            }
+    }
 
-                val name = inputShapeName.text.toString().trim()
-                if (name.isNotEmpty()) {
-                    mapEditor.getSelectedShapeProperties()?.let { props ->
-                        props.name = name
-                        mapEditor.applyPropertiesToSelectedShape(props)
-                    }
-                }
-                true
-            } else false
-        }
+    private fun carregarMapa(mapaId: String) {
+        val db = FirebaseFirestore.getInstance()
 
-        // Rotação principal da tela (sempre Int)
-        rotationSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                rotationLabel.text = "$progress°"
-                mapEditor.getSelectedShapeProperties()?.let { props ->
-                    props.rotation = progress // <-- agora é Int
-                    mapEditor.applyPropertiesToSelectedShape(props)
+        db.collection("mapas").document(mapaId)
+            .get()
+            .addOnSuccessListener { mapaDoc ->
+                if (mapaDoc.exists()) {
+                    // dados gerais do mapa (opcional)
+                    val nome = mapaDoc.getString("nome") ?: ""
+                    val descricao = mapaDoc.getString("descricao") ?: ""
+
+                    // Carrega formas
+                    db.collection("mapas").document(mapaId)
+                        .collection("formas")
+                        .get()
+                        .addOnSuccessListener { formasSnapshot ->
+                            for (formaDoc in formasSnapshot) {
+                                val pos = formaDoc.get("posicao") as? Map<*, *>
+                                val tam = formaDoc.get("tamanho") as? Map<*, *>
+                                val cor = (formaDoc.getLong("cor") ?: 0).toInt()
+                                val rotacao = (formaDoc.getDouble("rotacao") ?: 0.0).toFloat()
+                                val tipo = formaDoc.getString("tipo") ?: "retangulo"
+
+                                mapEditor.actions.add(
+                                    Action.Shape(
+                                        start = android.graphics.PointF(
+                                            (pos?.get("x") as? Number)?.toFloat() ?: 0f,
+                                            (pos?.get("y") as? Number)?.toFloat() ?: 0f
+                                        ),
+                                        end = android.graphics.PointF(
+                                            ((pos?.get("x") as? Number)?.toFloat() ?: 0f) +
+                                                    ((tam?.get("largura") as? Number)?.toFloat() ?: 0f),
+                                            ((pos?.get("y") as? Number)?.toFloat() ?: 0f) +
+                                                    ((tam?.get("altura") as? Number)?.toFloat() ?: 0f)
+                                        ),
+                                        fillColor = cor,
+                                        rotation = rotacao
+                                    )
+                                )
+                            }
+                            mapEditor.invalidate()
+                        }
+
+                    // Carrega POIs
+                    db.collection("mapas").document(mapaId)
+                        .collection("pois")
+                        .get()
+                        .addOnSuccessListener { poisSnapshot ->
+                            for (poiDoc in poisSnapshot) {
+                                val x = (poiDoc.getDouble("x") ?: 0.0).toFloat()
+                                val y = (poiDoc.getDouble("y") ?: 0.0).toFloat()
+                                val name = poiDoc.getString("name") ?: ""
+
+                                mapEditor.actions.add(Action.Poi(android.graphics.PointF(x, y), name))
+                            }
+                            mapEditor.invalidate()
+                        }
                 }
             }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
-
-        // Atualiza inputs quando seleciona formas
-        mapEditor.selectionListener = object : MapEditorView.OnShapeSelectionListener {
-            override fun onShapeSelected(props: ShapeProperties) {
-                rotationSeekBar.progress = props.rotation
-                rotationLabel.text = "${props.rotation}°"
-                inputHex.setText(String.format("#%06X", 0xFFFFFF and props.fillColor))
-                inputShapeName.setText(props.name ?: "")
-                colorPreview.setBackgroundColor(props.fillColor)
-            }
-
-            override fun onShapeDeselected() {
-                rotationSeekBar.progress = 0
-                rotationLabel.text = "0°"
-                inputHex.setText("")
-                inputShapeName.setText("")
-                colorPreview.setBackgroundColor(0xFFFFFFFF.toInt())
-            }
-        }
+            .addOnFailureListener { e -> e.printStackTrace() }
     }
 }

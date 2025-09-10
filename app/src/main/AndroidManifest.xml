@@ -21,7 +21,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.IndoorAR">
         <activity
-            android:name=".Activity_historico"
+            android:name=".ui.ARActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ActivityFavoritos"
+            android:exported="false" />
+        <activity
+            android:name=".ActivityHistorico"
             android:exported="false" />
         <activity
             android:name=".Activity_mapas_favoritos"

@@ -30,6 +30,8 @@ data class ShapeProps(
     var fillColor: Int? = null
 )
 
+
+
 class MapEditorView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : View(context, attrs) {

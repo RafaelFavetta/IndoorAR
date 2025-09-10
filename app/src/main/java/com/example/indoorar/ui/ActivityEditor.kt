@@ -123,7 +123,7 @@ class ActivityEditor : BaseActivity() {
     }
 
     private fun showPoiPopup(anchor: LinearLayout) {
-        val popupView = layoutInflater.inflate(R.layout.popup_pois, findViewById(android.R.id.content), null)
+        val popupView = layoutInflater.inflate(R.layout.popup_pois, null, false)
 
         val popupWindow = PopupWindow(
             popupView,
@@ -139,13 +139,14 @@ class ActivityEditor : BaseActivity() {
 
         popupWindow.showAtLocation(anchor, android.view.Gravity.CENTER, 0, 0)
 
-        val poiItems = listOf(
+        val poiItems: List<Pair<LinearLayout, String>> = listOf(
             popupView.findViewById<LinearLayout>(R.id.linearLayout1) to "porta",
             popupView.findViewById<LinearLayout>(R.id.linearLayout2) to "escada",
             popupView.findViewById<LinearLayout>(R.id.linearLayout3) to "elevador",
             popupView.findViewById<LinearLayout>(R.id.linearLayout4) to "banheiro",
             popupView.findViewById<LinearLayout>(R.id.linearLayout5) to "extintor"
         )
+
 
         poiItems.forEach { (layout, name) ->
             layout.setOnClickListener {

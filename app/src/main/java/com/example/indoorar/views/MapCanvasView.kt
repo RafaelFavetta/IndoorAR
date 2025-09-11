@@ -5,11 +5,11 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
-import androidx.core.content.ContextCompat
-import com.example.indoorar.R
-import com.example.indoorar.model.ShapeData
+import android.widget.ImageView
 import androidx.core.graphics.scale
 import androidx.core.graphics.withSave
+import com.example.indoorar.R
+import com.example.indoorar.model.ShapeData
 import com.example.indoorar.ui.Action
 
 class MapCanvasView @JvmOverloads constructor(
@@ -20,12 +20,18 @@ class MapCanvasView @JvmOverloads constructor(
     var selectedShape: ShapeData? = null
 
     private val pois = mutableListOf<Action.Poi>()
+    private var selectedPoi: Action.Poi? = null
 
+    private var touchOffsetX = 0f
+    private var touchOffsetY = 0f
+
+    var dragPreview: ImageView? = null
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+
         shapes.forEach { shape ->
             canvas.withSave {
                 val centerX = shape.posicao.x + shape.tamanho.largura / 2
@@ -46,12 +52,7 @@ class MapCanvasView @JvmOverloads constructor(
 
                     "circulo" -> {
                         paint.color = shape.cor
-                        drawCircle(
-                            centerX,
-                            centerY,
-                            shape.tamanho.largura / 2,
-                            paint
-                        )
+                        drawCircle(centerX, centerY, shape.tamanho.largura / 2, paint)
                     }
 
                     "triangulo" -> {
@@ -59,10 +60,7 @@ class MapCanvasView @JvmOverloads constructor(
                         val path = Path()
                         path.moveTo(centerX, shape.posicao.y)
                         path.lineTo(shape.posicao.x, shape.posicao.y + shape.tamanho.altura)
-                        path.lineTo(
-                            shape.posicao.x + shape.tamanho.largura,
-                            shape.posicao.y + shape.tamanho.altura
-                        )
+                        path.lineTo(shape.posicao.x + shape.tamanho.largura, shape.posicao.y + shape.tamanho.altura)
                         path.close()
                         drawPath(path, paint)
                     }
@@ -78,30 +76,64 @@ class MapCanvasView @JvmOverloads constructor(
                         }
                         if (resId != 0) {
                             val bitmap = BitmapFactory.decodeResource(resources, resId)
-                            val scaledBitmap = bitmap.scale(
-                                shape.tamanho.largura.toInt(),
-                                shape.tamanho.altura.toInt()
-                            )
-                            drawBitmap(
-                                scaledBitmap,
-                                shape.posicao.x,
-                                shape.posicao.y,
-                                paint
-                            )
+                            val scaledBitmap = bitmap.scale(shape.tamanho.largura.toInt(), shape.tamanho.altura.toInt())
+                            drawBitmap(scaledBitmap, shape.posicao.x, shape.posicao.y, paint)
                         }
                     }
                 }
             }
+        }
+        pois.forEach { poi ->
+            val bitmap = BitmapFactory.decodeResource(resources, poi.iconRes)
+            val scaledBitmap = bitmap.scale(poi.width.toInt(), poi.height.toInt())
+            canvas.drawBitmap(scaledBitmap, poi.x, poi.y, paint)
         }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                selectedShape = shapes.findLast { shape ->
-                    event.x in shape.posicao.x..(shape.posicao.x + shape.tamanho.largura) &&
-                            event.y in shape.posicao.y..(shape.posicao.y + shape.tamanho.altura)
+                // verifica se clicou num POI
+                selectedPoi = pois.findLast { event.x in it.x..(it.x + it.width) &&
+                        event.y in it.y..(it.y + it.height) }
+                selectedPoi?.let {
+                    it.selected = true
+                    touchOffsetX = event.x - it.x
+                    touchOffsetY = event.y - it.y
+                    // mostra preview
+                    dragPreview?.let { preview ->
+                        preview.visibility = View.VISIBLE
+                        preview.setImageResource(it.iconRes)
+                        preview.x = it.x
+                        preview.y = it.y
+                    }
                 }
+                if (selectedPoi == null) {
+                    selectedShape = shapes.findLast { event.x in it.posicao.x..(it.posicao.x + it.tamanho.largura) &&
+                            event.y in it.posicao.y..(it.posicao.y + it.tamanho.altura) }
+                }
+
+                invalidate()
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                selectedPoi?.let {
+                    it.x = event.x - touchOffsetX
+                    it.y = event.y - touchOffsetY
+                    // move preview
+                    dragPreview?.let { preview ->
+                        preview.x = it.x
+                        preview.y = it.y
+                    }
+                    invalidate()
+                }
+            }
+
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                // finaliza o drag
+                selectedPoi?.selected = false
+                selectedPoi = null
+                dragPreview?.visibility = View.GONE
                 invalidate()
             }
         }
@@ -116,9 +148,9 @@ class MapCanvasView @JvmOverloads constructor(
 
     fun addPoi(poi: Action.Poi) {
         pois.add(poi)
+        selectedPoi = poi
         invalidate()
     }
-
 
     fun updateSelectedShape(shape: ShapeData) {
         val index = selectedShape?.let { shapes.indexOf(it) } ?: -1

@@ -11,8 +11,6 @@ import android.view.View
 import androidx.core.graphics.withTranslation
 import com.example.indoorar.ui.Action
 import com.example.indoorar.ui.Tool
-import com.example.indoorar.ui.editor.BrushEditor
-import com.example.indoorar.ui.editor.ShapeEditor
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -42,11 +40,12 @@ class MapEditorView @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     // ======= VISUAL (pan/zoom) =======
-    private var scale = 1f
-    private var offsetX = 0f
-    private var offsetY = 0f
+    var scale = 1f
+    var offsetX = 0f
+    var offsetY = 0f
     private var draggingObject: Action? = null
     private val poiBitmapCache = mutableMapOf<Int, Bitmap>()
+    private val objects = mutableListOf<Action>()
 
     // ======= TOOL =======
     var currentTool: Tool = Tool.CURSOR
@@ -178,7 +177,7 @@ class MapEditorView @JvmOverloads constructor(
                 }
                 BitmapFactory.decodeResource(resources, resId)
                     ?: createBitmap(1, 1) // fallback
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 createBitmap(1, 1) // fallback se crashar
             }
         }
@@ -218,19 +217,24 @@ class MapEditorView @JvmOverloads constructor(
     internal fun addAction(action: Action) { actions.add(action) }
 
     fun addPoi(x: Float, y: Float, iconRes: Int) {
-        actions.add(Action.Poi(
-            id = UUID.randomUUID().toString(),
+        val poi = Action.Poi(
             x = x,
             y = y,
-            width = 100f,
-            height = 100f,
             iconRes = iconRes
-        ))
+        )
+        objects.add(poi)
         invalidate()
     }
 
 
+
     // ======= TOUCH =======
+
+    override fun performClick(): Boolean {
+        super.performClick()
+        return true
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleDetector.onTouchEvent(event)
         val world = screenToWorld(event.x, event.y)
@@ -238,6 +242,10 @@ class MapEditorView @JvmOverloads constructor(
         if (currentTool == Tool.POI && event.action == MotionEvent.ACTION_DOWN) {
             onPoiClickListener?.invoke(world.x, world.y)
             return true
+        }
+
+        if (event.action == MotionEvent.ACTION_UP) {
+            performClick()
         }
 
         if (currentTool != Tool.CURSOR) {
@@ -498,12 +506,12 @@ class MapEditorView @JvmOverloads constructor(
                 }
 
                 is Action.Poi -> if (showPois) {
-                    // Desenha o bitmap centralizado na posição (x, y)
                     val bitmap = BitmapFactory.decodeResource(resources, action.iconRes)
-                    val left = action.x - action.width / 2
-                    val top = action.y - action.height / 2
-                    val destRect = RectF(left, top, left + action.width, top + action.height)
-                    canvas.drawBitmap(bitmap, null, destRect, null)
+                    bitmap?.let {
+                        val left = action.x - it.width / 2f
+                        val top = action.y - it.height / 2f
+                        canvas.drawBitmap(it, left, top, null)
+                    }
 
                     if (action.selected) selectedObjects.add(action)
                 }
@@ -539,12 +547,17 @@ class MapEditorView @JvmOverloads constructor(
         selectedObjects.forEach { obj ->
             val rect = when (obj) {
                 is Action.Shape -> RectF(obj.start.x, obj.start.y, obj.end.x, obj.end.y)
-                is Action.Poi -> RectF(
-                    obj.x - obj.width / 2,
-                    obj.y - obj.height / 2,
-                    obj.x + obj.width / 2,
-                    obj.y + obj.height / 2
-                )
+                is Action.Poi -> {
+                    val bitmap = BitmapFactory.decodeResource(resources, obj.iconRes)
+                    if (bitmap != null) {
+                        RectF(
+                            obj.x - bitmap.width / 2f,
+                            obj.y - bitmap.height / 2f,
+                            obj.x + bitmap.width / 2f,
+                            obj.y + bitmap.height / 2f
+                        )
+                    } else null
+                }
                 else -> null
             }
 
@@ -622,10 +635,13 @@ class MapEditorView @JvmOverloads constructor(
                     if (p.x in left..right && p.y in top..bottom) return a
                 }
                 is Action.Poi -> {
-                    val rectLeft = a.x
-                    val rectTop = a.y
-                    val rectRight = a.x + a.width
-                    val rectBottom = a.y + a.height
+                    val bitmap = BitmapFactory.decodeResource(resources, a.iconRes)
+                    val halfW = bitmap.width / 2f
+                    val halfH = bitmap.height / 2f
+                    val rectLeft = a.x - halfW
+                    val rectTop = a.y - halfH
+                    val rectRight = a.x + halfW
+                    val rectBottom = a.y + halfH
                     if (p.x in rectLeft..rectRight && p.y in rectTop..rectBottom) return a
                 }
                 else -> { /* ignore others */ }

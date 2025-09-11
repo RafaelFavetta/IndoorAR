@@ -190,6 +190,7 @@
             android:visibility="gone"
             app:cardCornerRadius="12dp"
             app:cardElevation="6dp"
+            app:cardBackgroundColor="#fdfdfd"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent">
@@ -207,17 +208,26 @@
                     android:text="Escolher POI"
                     android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
-                <LinearLayout
-                    android:id="@+id/linearPoi"
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvPoi"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:layout_marginTop="8dp" />
+                    android:layout_marginTop="8dp"
+                    android:padding="12dp"
+                    android:clipToPadding="false"
+                    android:scrollbars="horizontal" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <ImageView
+            android:id="@+id/ivDragPreview"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:visibility="gone"
+            android:contentDescription="POI Preview"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentStart="true"/>
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/painelAtributos"

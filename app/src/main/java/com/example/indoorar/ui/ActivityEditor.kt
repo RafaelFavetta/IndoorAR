@@ -1,28 +1,46 @@
 package com.example.indoorar.ui
 
-import android.graphics.Color
 import android.os.Bundle
-import android.view.Gravity
-import android.widget.*
-import androidx.appcompat.content.res.AppCompatResources
+import android.view.MotionEvent
+import android.view.View
+import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.LinearLayout
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.toColorInt
-import androidx.core.graphics.drawable.toDrawable
-import com.example.indoorar.BaseActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.indoorar.R
-import com.example.indoorar.ui.Tool
 import com.example.indoorar.ui.editor.MapEditorView
 import com.example.indoorar.ui.editor.AttributePanelController
 import com.example.indoorar.views.ColorPickerView
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.button.MaterialButton
 
-// --- Data class para mapear botão de ferramenta ---
 data class ToolButton(val tool: Tool?, val iconId: Int?)
 
-class ActivityEditor : BaseActivity() {
+class ActivityEditor : AppCompatActivity() {
 
     private lateinit var mapEditor: MapEditorView
     private lateinit var colorPreview: ImageView
     private lateinit var inputHex: EditText
     private lateinit var btnColorPicker: ImageButton
+    private lateinit var btnSalvarMapa: MaterialButton
+    private lateinit var poiCard: MaterialCardView
+    private lateinit var rvPoi: RecyclerView
+
+    private lateinit var poiAdapter: PoiAdapter
+    private var draggingPoi: Action.Poi? = null
+
+    private val poiItems = listOf(
+        PoiItem(R.drawable.ic_door_azul, "porta"),
+        PoiItem(R.drawable.ic_stairs_azul, "escada"),
+        PoiItem(R.drawable.ic_elevator_azul, "elevador"),
+        PoiItem(R.drawable.ic_banheiro_azul, "banheiro"),
+        PoiItem(R.drawable.ic_extintor_azul, "extintor")
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,61 +51,53 @@ class ActivityEditor : BaseActivity() {
         setupAttributePanel()
         setupColorPicker()
         setupHexInput()
+        setupPoiCard()
         setupSaveButton()
+        setupMapEditorTouch()
     }
 
-    /** Liga as views do layout */
     private fun bindViews() {
         mapEditor = findViewById(R.id.mapEditor)
         colorPreview = findViewById(R.id.colorPreview)
         inputHex = findViewById(R.id.inputHex)
         btnColorPicker = findViewById(R.id.btnColorPicker)
+        btnSalvarMapa = findViewById(R.id.btnSalvarMapa)
+        poiCard = findViewById(R.id.cardPoi)
+        rvPoi = findViewById(R.id.rvPoi)
     }
 
-    /** Configura os botões de ferramenta do editor */
     private fun setupToolButtons() {
         val toolButtons = mapOf(
             R.id.linearcursor to ToolButton(Tool.CURSOR, R.id.cursor),
             R.id.linearformas to ToolButton(Tool.FORMAS, R.id.formas),
             R.id.linearbrush to ToolButton(Tool.BRUSH, R.id.brush),
             R.id.linearpoi to ToolButton(Tool.POI, R.id.poi),
-            R.id.linearlayers to ToolButton(null, null),   // grid toggle
-            R.id.lineardesfazer to ToolButton(null, null)  // undo
+            R.id.linearlayers to ToolButton(null, null),
+            R.id.lineardesfazer to ToolButton(null, null)
         )
 
         fun updateSelectedButton(selectedId: Int) {
-            val buttons = listOf(R.id.cursor, R.id.formas, R.id.brush, R.id.poi)
-            buttons.forEach { id -> findViewById<ImageView>(id).isSelected = (id == selectedId) }
+            listOf(R.id.cursor, R.id.formas, R.id.brush, R.id.poi)
+                .forEach { id -> findViewById<ImageView>(id).isSelected = (id == selectedId) }
         }
 
         toolButtons.forEach { (linearId, toolButton) ->
-            val tool = toolButton.tool
-            val iconId = toolButton.iconId
-
             findViewById<LinearLayout>(linearId).setOnClickListener {
-                when (tool) {
-                    Tool.CURSOR, Tool.FORMAS, Tool.BRUSH, Tool.POI -> mapEditor.setTool(tool)
-                    else -> {} // noop
-                }
+                toolButton.tool?.let { mapEditor.setTool(it) }
+                toolButton.iconId?.let { updateSelectedButton(it) }
+                poiCard.visibility = if (toolButton.tool == Tool.POI) View.VISIBLE else View.GONE
 
-                iconId?.let { updateSelectedButton(it) }
-
-                if (tool == Tool.POI) showPoiPopup(findViewById(linearId))
                 if (linearId == R.id.linearlayers) mapEditor.toggleGrid()
                 if (linearId == R.id.lineardesfazer) mapEditor.undo()
             }
         }
-
-        // Botão inicial selecionado
         updateSelectedButton(R.id.cursor)
     }
 
-    /** Inicializa o painel de atributos do editor */
     private fun setupAttributePanel() {
         AttributePanelController(this, mapEditor)
     }
 
-    /** Configura o ColorPicker e atualização do preview */
     private fun setupColorPicker() {
         btnColorPicker.setOnClickListener {
             val pickerView = ColorPickerView(this).apply {
@@ -95,8 +105,7 @@ class ActivityEditor : BaseActivity() {
                     LinearLayout.LayoutParams.MATCH_PARENT, 200
                 )
             }
-
-            val dialog = android.app.AlertDialog.Builder(this)
+            val dialog = AlertDialog.Builder(this)
                 .setTitle("Escolha uma cor")
                 .setView(pickerView)
                 .setPositiveButton("OK") { d, _ -> d.dismiss() }
@@ -111,72 +120,76 @@ class ActivityEditor : BaseActivity() {
         }
     }
 
-    /** Permite inserir cor manualmente via HEX */
     private fun setupHexInput() {
         inputHex.setOnEditorActionListener { _, _, _ ->
             val hex = inputHex.text.toString()
-            try {
-                val color = hex.toColorInt()
-                colorPreview.setBackgroundColor(color)
-            } catch (e: IllegalArgumentException) {
-                inputHex.error = "Hex inválido"
+            try { colorPreview.setBackgroundColor(hex.toColorInt()) }
+            catch (_: IllegalArgumentException) { inputHex.error = "Hex inválido" }
+            true
+        }
+    }
+
+    private fun setupPoiCard() {
+        poiAdapter = PoiAdapter(poiItems) { poi, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> draggingPoi = Action.Poi(
+                    x = 0f, y = 0f, iconRes = poi.iconRes
+                )
             }
-            true
         }
+
+        rvPoi.adapter = poiAdapter
+        rvPoi.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        poiCard.visibility = View.VISIBLE
     }
 
-    /** Botão de salvar mapa (superior direito) */
-    private fun setupSaveButton() {
-        val btnSalvar = Button(this).apply {
-            text = "Salvar"
-            setTextColor("#fdfdfd".toColorInt())
-            setBackgroundColor("#32357A".toColorInt())
-        }
-    }
+    private fun setupMapEditorTouch() {
+        val preview = findViewById<ImageView>(R.id.ivDragPreview)
+        var draggingPoiItem: PoiItem? = null
 
-    private fun showPoiPopup(anchor: LinearLayout) {
-        val popupView = layoutInflater.inflate(R.layout.popup_pois, null, false)
-        val popupWindow = PopupWindow(
-            popupView,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            true
-        ).apply {
-            isFocusable = false
-            setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
-            isOutsideTouchable = true
-            elevation = 12f
-        }
+        mapEditor.setOnTouchListener { _, event ->
+            draggingPoiItem?.let { poiItem ->
+                when (event.action) {
+                    MotionEvent.ACTION_MOVE -> {
+                        preview.x = event.rawX - preview.width / 2
+                        preview.y = event.rawY - preview.height / 2
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        preview.visibility = View.GONE
 
-        val poiItems: List<Pair<LinearLayout, String>> = listOf(
-            popupView.findViewById<LinearLayout>(R.id.linearLayout1) to "porta",
-            popupView.findViewById<LinearLayout>(R.id.linearLayout2) to "escada",
-            popupView.findViewById<LinearLayout>(R.id.linearLayout3) to "elevador",
-            popupView.findViewById<LinearLayout>(R.id.linearLayout4) to "banheiro",
-            popupView.findViewById<LinearLayout>(R.id.linearLayout5) to "extintor"
-        )
+                        val location = IntArray(2)
+                        mapEditor.getLocationOnScreen(location)
+                        val mapX = (event.rawX - location[0]) / mapEditor.scale - mapEditor.offsetX / mapEditor.scale
+                        val mapY = (event.rawY - location[1]) / mapEditor.scale - mapEditor.offsetY / mapEditor.scale
 
-        val nameToRes = mapOf(
-            "porta" to R.drawable.ic_door_azul,
-            "escada" to R.drawable.ic_stairs_azul,
-            "elevador" to R.drawable.ic_elevator_azul,
-            "banheiro" to R.drawable.ic_banheiro_azul,
-            "extintor" to R.drawable.ic_extintor_azul
-        )
-
-        poiItems.forEach { (layout, name) ->
-            layout.setOnClickListener {
-                mapEditor.post {
-                    val x = mapEditor.width / 2f
-                    val y = mapEditor.height / 2f
-                    val iconRes = nameToRes[name] ?: R.drawable.ic_poi_default
-                    mapEditor.addPoi(x, y, iconRes)
+                        mapEditor.addPoi(mapX, mapY, poiItem.iconRes)
+                        draggingPoiItem = null
+                        mapEditor.performClick()
+                    }
                 }
-                popupWindow.dismiss()
-            }
-            layout.background = AppCompatResources.getDrawable(this, R.drawable.ripple_clickable)
+                true
+            } ?: false
         }
 
-        popupWindow.showAtLocation(anchor, Gravity.CENTER, 0, 0)
+        // Conecta o adapter do POI com o preview e drag
+        poiAdapter = PoiAdapter(poiItems) { poi, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    draggingPoiItem = poi
+                    preview.setImageResource(poi.iconRes)
+                    preview.visibility = View.VISIBLE
+                    preview.x = event.rawX - preview.width / 2
+                    preview.y = event.rawY - preview.height / 2
+                }
+            }
+        }
+        rvPoi.adapter = poiAdapter
+        rvPoi.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+    }
+
+    private fun setupSaveButton() {
+        btnSalvarMapa.setOnClickListener {
+            // TODO: Salvar shapes e POIs no Firebase
+        }
     }
 }

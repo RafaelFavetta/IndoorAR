@@ -8,23 +8,6 @@
     android:background="#FDFDFD"
     tools:context=".ui.ActivityEditor">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnSalvarMapa"
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:layout_margin="16dp"
-        android:backgroundTint="#32357A"
-        android:text="Salvar"
-        android:textColor="#fdfdfd"
-        android:textAllCaps="true"
-        android:textStyle="bold"
-        android:paddingHorizontal="16dp"
-        android:layout_gravity="end"
-        app:cornerRadius="8dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-
     <com.example.indoorar.ui.editor.MapEditorView
         android:id="@+id/mapEditor"
         android:layout_width="match_parent"
@@ -40,6 +23,22 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSalvarMapa"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_margin="16dp"
+            android:backgroundTint="#32357A"
+            android:text="Salvar"
+            android:textColor="#fdfdfd"
+            android:textAllCaps="true"
+            android:textStyle="bold"
+            android:paddingHorizontal="16dp"
+            android:layout_gravity="end"
+            app:cornerRadius="8dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="350dp"
@@ -72,6 +71,7 @@
                         android:id="@+id/cursor"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
+                        android:contentDescription="cursor"
                         android:padding="4dp"
                         app:tint="@color/icon_tint_selector"
                         app:srcCompat="@drawable/ic_cursor_azul"
@@ -93,7 +93,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:padding="3dp"
+                        android:contentDescription="formas" android:padding="3dp"
                         app:tint="@color/icon_tint_selector"
                         app:srcCompat="@drawable/ic_square_azul" />
                 </LinearLayout>
@@ -113,6 +113,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
+                        android:contentDescription="brush"
                         android:scaleType="fitCenter"
                         app:tint="@color/icon_tint_selector"
                         app:srcCompat="@drawable/ic_brush" />
@@ -133,7 +134,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        app:srcCompat="@drawable/ic_poi"
+                        android:contentDescription="poi" app:srcCompat="@drawable/ic_poi"
                         app:tint="@color/icon_tint_selector" />
                 </LinearLayout>
 
@@ -152,7 +153,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        app:tint="@color/icon_tint_selector"
+                        android:contentDescription="camadas" app:tint="@color/icon_tint_selector"
                         app:srcCompat="@drawable/ic_layers" />
                 </LinearLayout>
 
@@ -171,7 +172,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        app:tint="@color/icon_tint_selector"
+                        android:contentDescription="desfazer" app:tint="@color/icon_tint_selector"
                         app:srcCompat="@drawable/ic_desfazer" />
                 </LinearLayout>
 
@@ -181,7 +182,44 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardPoi"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:visibility="gone"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="6dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/tvPoiTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Escolher POI"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
+
+                <LinearLayout
+                    android:id="@+id/linearPoi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginTop="8dp" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/painelAtributos"
             android:layout_width="200dp"
             android:layout_height="match_parent"
@@ -207,20 +245,22 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:drawableStart="@drawable/ic_name"
                         android:drawablePadding="6dp"
                         android:text="Nome"
                         android:textColor="#444"
                         android:textSize="12sp"
                         android:textStyle="bold"
-                        android:layout_marginBottom="4dp" />
+                        android:layout_marginBottom="4dp"
+                        app:drawableStartCompat="@drawable/ic_name" />
 
                     <EditText
                         android:id="@+id/inputNome"
                         android:layout_width="match_parent"
                         android:layout_height="40dp"
                         android:layout_marginBottom="12dp"
+                        android:autofillHints=""
                         android:background="#F5F5F5"
+                        android:inputType="textPersonName"
                         android:padding="8dp"
                         android:hint="Insira um nome"
                         android:textColor="#000000"
@@ -249,6 +289,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:baselineAligned="false"
                         android:orientation="horizontal"
                         android:weightSum="2"
                         android:layout_marginBottom="12dp">
@@ -271,6 +312,7 @@
                                 android:id="@+id/inputX"
                                 android:layout_width="match_parent"
                                 android:layout_height="40dp"
+                                android:autofillHints=""
                                 android:background="#F5F5F5"
                                 android:gravity="center"
                                 android:hint="X"
@@ -299,6 +341,7 @@
                                 android:id="@+id/inputY"
                                 android:layout_width="match_parent"
                                 android:layout_height="40dp"
+                                android:autofillHints=""
                                 android:background="#F5F5F5"
                                 android:gravity="center"
                                 android:hint="Y"
@@ -320,18 +363,17 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:drawableStart="@drawable/ic_dimensoes"
                         android:drawablePadding="6dp"
                         android:text="Dimensões"
                         android:textColor="#444"
                         android:textSize="12sp"
                         android:textStyle="bold"
-                        android:layout_marginBottom="6dp" />
+                        android:layout_marginBottom="6dp" app:drawableStartCompat="@drawable/ic_dimensoes" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
+                        android:baselineAligned="false" android:orientation="horizontal"
                         android:weightSum="2"
                         android:layout_marginBottom="12dp">
 
@@ -353,6 +395,7 @@
                                 android:id="@+id/inputWidth"
                                 android:layout_width="match_parent"
                                 android:layout_height="40dp"
+                                android:autofillHints=""
                                 android:background="#F5F5F5"
                                 android:gravity="center"
                                 android:hint="Largura"
@@ -381,6 +424,7 @@
                                 android:id="@+id/inputHeight"
                                 android:layout_width="match_parent"
                                 android:layout_height="40dp"
+                                android:autofillHints=""
                                 android:background="#F5F5F5"
                                 android:gravity="center"
                                 android:hint="Altura"
@@ -402,13 +446,12 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:drawableStart="@drawable/ic_rotate"
                         android:drawablePadding="6dp"
                         android:text="Rotação"
                         android:textColor="#444"
                         android:textSize="12sp"
                         android:textStyle="bold"
-                        android:layout_marginBottom="4dp" />
+                        android:layout_marginBottom="4dp" app:drawableStartCompat="@drawable/ic_rotate" />
 
                     <LinearLayout
                         android:id="@+id/rotationContainer"
@@ -431,7 +474,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="0°"
-                            android:paddingStart="8dp"/>
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"/>
                     </LinearLayout>
 
                     <!-- Linha separadora -->
@@ -466,13 +510,15 @@
                             android:layout_width="30dp"
                             android:layout_height="30dp"
                             android:layout_marginEnd="6dp"
-                            android:background="#F5F5F5" />
+                            android:background="#F5F5F5"
+                            android:contentDescription="paleta" />
 
                         <EditText
                             android:id="@+id/inputHex"
                             android:layout_width="0dp"
                             android:layout_height="40dp"
                             android:layout_weight="2"
+                            android:autofillHints=""
                             android:background="#F5F5F5"
                             android:gravity="center"
                             android:hint="#FFFFFF"
@@ -493,7 +539,7 @@
 
                 </LinearLayout>
             </ScrollView>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
 
 

@@ -21,6 +21,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.IndoorAR">
         <activity
+            android:name=".Activity_login2"
+            android:exported="false" />
+        <activity
             android:name=".ActivityCadastroMaker"
             android:exported="false" />
         <activity

@@ -39,7 +39,7 @@ class ShapeEditor(private val host: MapEditorView) {
         val s = tempStart ?: return
         val e = tempEnd ?: return
         val rect = RectF(s.x, s.y, e.x, e.y)
-        canvas.drawRect(rect, host.getShapeTempPaint())
+        canvas.drawRect(rect, host.shapeTempPaint) // <- Corrigido aqui
     }
 
     fun cancel() {

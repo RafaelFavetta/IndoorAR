@@ -1,12 +1,17 @@
 package com.example.indoorar.ui
 
+import android.content.res.Resources
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.PointF
 import androidx.core.graphics.toColorInt
 import java.util.UUID
 
-
 sealed class Action {
-    data class BrushStroke(val points: List<PointF>) : Action()
+
+    data class BrushStroke(
+        val points: List<PointF>
+    ) : Action()
 
     data class Poi(
         val id: String = UUID.randomUUID().toString(),
@@ -16,7 +21,26 @@ sealed class Action {
         var height: Float = 100f,
         var iconRes: Int,
         var selected: Boolean = false
-    ) : Action()
+    ) : Action() {
+        var bitmap: Bitmap? = null
+
+        fun loadBitmap(resources: Resources) {
+            if (bitmap == null) {
+                try {
+                    val original = BitmapFactory.decodeResource(resources, iconRes)
+                    bitmap = Bitmap.createScaledBitmap(
+                        original,
+                        width.toInt(),
+                        height.toInt(),
+                        true
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    bitmap = null
+                }
+            }
+        }
+    }
 
     data class Shape(
         var start: PointF,

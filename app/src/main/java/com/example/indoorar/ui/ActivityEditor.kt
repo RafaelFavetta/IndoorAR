@@ -10,12 +10,12 @@ import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.toColorInt
-import androidx.cardview.widget.CardView
 import com.example.indoorar.R
 import com.example.indoorar.ui.editor.MapEditorView
 import com.example.indoorar.ui.editor.AttributePanelController
 import com.example.indoorar.views.ColorPickerView
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 
 data class ActionPoi(val x: Float, val y: Float, val iconRes: Int)
 
@@ -26,7 +26,7 @@ class ActivityEditor : AppCompatActivity() {
     private lateinit var inputHex: EditText
     private lateinit var btnColorPicker: ImageButton
     private lateinit var btnSalvarMapa: MaterialButton
-    private lateinit var poiCard: CardView
+    private lateinit var poiCard: MaterialCardView
     private lateinit var preview: ImageView
 
     private var draggingPoi: ActionPoi? = null
@@ -135,15 +135,20 @@ class ActivityEditor : AppCompatActivity() {
         )
 
         poiMap.forEach { (id, iconRes) ->
-            findViewById<LinearLayout>(id).setOnClickListener {
-                draggingPoi = ActionPoi(0f, 0f, iconRes)
-                preview.setImageResource(iconRes)
-                preview.visibility = View.VISIBLE
-                poiCard.visibility = View.GONE  // <<< Esconde o card automaticamente
+            findViewById<LinearLayout>(id).setOnTouchListener { _, event ->
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        draggingPoi = ActionPoi(0f, 0f, iconRes)
+                        preview.setImageResource(iconRes)
+                        preview.visibility = View.VISIBLE
+                        preview.x = event.rawX - preview.width / 2
+                        preview.y = event.rawY - preview.height / 2
+                    }
+                }
+                true
             }
         }
     }
-
 
     private fun setupMapEditorTouch() {
         mapEditor.setOnTouchListener { _, event ->

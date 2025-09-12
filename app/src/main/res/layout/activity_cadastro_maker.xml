@@ -58,7 +58,7 @@
         android:layout_marginTop="8dp"
         android:fontFamily="@font/inter"
         android:gravity="start"
-        android:text="Insira suas informações para \nse tornar um navegador"
+        android:text="Insira suas informações para \nse tornar um Criador"
         android:textColor="#32357A"
         android:textStyle="bold"
         android:textSize="16sp"

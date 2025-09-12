@@ -118,6 +118,7 @@
         android:focusable="true"
         android:fontFamily="@font/inter"
         android:text="Esqueci a senha"
+        android:textStyle="bold"
         android:textColor="#32357A"
         android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="parent"

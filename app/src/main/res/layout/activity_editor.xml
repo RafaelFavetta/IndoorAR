@@ -21,32 +21,35 @@
         android:layout_height="match_parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSalvarMapa"
             android:layout_width="wrap_content"
             android:layout_height="48dp"
+            android:layout_gravity="end"
             android:layout_margin="16dp"
             android:backgroundTint="#32357A"
-            android:text="Salvar"
-            android:textColor="#fdfdfd"
-            android:textAllCaps="true"
-            android:textStyle="bold"
             android:paddingHorizontal="16dp"
-            android:layout_gravity="end"
+            android:text="Salvar"
+            android:textAllCaps="true"
+            android:textColor="#fdfdfd"
+            android:textStyle="bold"
             app:cornerRadius="8dp"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/materialCardView"
             android:layout_width="350dp"
             android:layout_height="35dp"
             android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="#fdfdfd"
             app:cardCornerRadius="8dp"
             app:cardElevation="6dp"
-            app:cardBackgroundColor="#fdfdfd"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent">
@@ -62,9 +65,9 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
-                    android:gravity="center"
                     android:clickable="true"
                     android:focusable="true"
+                    android:gravity="center"
                     android:orientation="vertical">
 
                     <ImageView
@@ -73,9 +76,8 @@
                         android:layout_height="24dp"
                         android:contentDescription="cursor"
                         android:padding="4dp"
-                        app:tint="@color/icon_tint_selector"
                         app:srcCompat="@drawable/ic_cursor_azul"
-                         />
+                        app:tint="@color/icon_tint_selector" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -83,9 +85,9 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
-                    android:gravity="center"
                     android:clickable="true"
                     android:focusable="true"
+                    android:gravity="center"
                     android:orientation="vertical">
 
                     <ImageView
@@ -93,9 +95,10 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:contentDescription="formas" android:padding="3dp"
-                        app:tint="@color/icon_tint_selector"
-                        app:srcCompat="@drawable/ic_square_azul" />
+                        android:contentDescription="formas"
+                        android:padding="3dp"
+                        app:srcCompat="@drawable/ic_square_azul"
+                        app:tint="@color/icon_tint_selector" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -103,9 +106,9 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
-                    android:gravity="center"
                     android:clickable="true"
                     android:focusable="true"
+                    android:gravity="center"
                     android:orientation="vertical">
 
                     <ImageView
@@ -115,8 +118,8 @@
                         android:layout_gravity="center"
                         android:contentDescription="brush"
                         android:scaleType="fitCenter"
-                        app:tint="@color/icon_tint_selector"
-                        app:srcCompat="@drawable/ic_brush" />
+                        app:srcCompat="@drawable/ic_brush"
+                        app:tint="@color/icon_tint_selector" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -124,9 +127,9 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
-                    android:gravity="center"
                     android:clickable="true"
                     android:focusable="true"
+                    android:gravity="center"
                     android:orientation="vertical">
 
                     <ImageView
@@ -134,7 +137,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:contentDescription="poi" app:srcCompat="@drawable/ic_poi"
+                        android:contentDescription="poi"
+                        app:srcCompat="@drawable/ic_poi"
                         app:tint="@color/icon_tint_selector" />
                 </LinearLayout>
 
@@ -143,9 +147,9 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
-                    android:gravity="center"
                     android:clickable="true"
                     android:focusable="true"
+                    android:gravity="center"
                     android:orientation="vertical">
 
                     <ImageView
@@ -153,8 +157,9 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:contentDescription="camadas" app:tint="@color/icon_tint_selector"
-                        app:srcCompat="@drawable/ic_layers" />
+                        android:contentDescription="camadas"
+                        app:srcCompat="@drawable/ic_layers"
+                        app:tint="@color/icon_tint_selector" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -162,9 +167,9 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.25"
-                    android:gravity="center"
                     android:clickable="true"
                     android:focusable="true"
+                    android:gravity="center"
                     android:orientation="vertical">
 
                     <ImageView
@@ -172,62 +177,200 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:contentDescription="desfazer" app:tint="@color/icon_tint_selector"
-                        app:srcCompat="@drawable/ic_desfazer" />
+                        android:contentDescription="desfazer"
+                        app:srcCompat="@drawable/ic_desfazer"
+                        app:tint="@color/icon_tint_selector" />
                 </LinearLayout>
 
             </LinearLayout>
 
 
-
         </com.google.android.material.card.MaterialCardView>
 
-        <com.google.android.material.card.MaterialCardView
+        <androidx.cardview.widget.CardView
             android:id="@+id/cardPoi"
-            android:layout_width="0dp"
+            android:layout_width="150dp"
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginTop="146dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="146dp"
             android:visibility="gone"
+            app:cardBackgroundColor="#2C2C2C"
             app:cardCornerRadius="12dp"
-            app:cardElevation="6dp"
-            app:cardBackgroundColor="#fdfdfd"
-            app:layout_constraintStart_toStartOf="parent"
+            app:cardElevation="12dp"
+            app:layout_constraintBottom_toTopOf="@+id/materialCardView"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintHorizontal_bias="0.55"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1.0">
 
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="12dp">
+                android:paddingVertical="4dp">
 
-                <TextView
-                    android:id="@+id/tvPoiTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Escolher POI"
-                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvPoi"
+                <!-- Item: Porta -->
+                <LinearLayout
+                    android:id="@+id/poiPorta"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:padding="12dp"
-                    android:clipToPadding="false"
-                    android:scrollbars="horizontal" />
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_door_azul"
+                        app:tint="#FFFFFF" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="Porta"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <!-- Divider -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:background="#444" />
+
+                <!-- Item: Escada -->
+                <LinearLayout
+                    android:id="@+id/poiEscada"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_stairs_azul"
+                        app:tint="#FFFFFF" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="Escada"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:background="#444" />
+
+                <!-- Item: Elevador -->
+                <LinearLayout
+                    android:id="@+id/poiElevador"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_elevator_azul"
+                        app:tint="#FFFFFF" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="Elevador"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:background="#444" />
+
+                <!-- Item: Banheiro -->
+                <LinearLayout
+                    android:id="@+id/poiBanheiro"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_banheiro"
+                        app:tint="#FFFFFF" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="Banheiro"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:background="#444" />
+
+                <!-- Item: Extintor -->
+                <LinearLayout
+                    android:id="@+id/poiExtintor"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_extintor"
+                        app:tint="#FFFFFF" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="Extintor"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+                </LinearLayout>
 
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        </androidx.cardview.widget.CardView>
+
 
         <ImageView
             android:id="@+id/ivDragPreview"
             android:layout_width="64dp"
             android:layout_height="64dp"
-            android:visibility="gone"
-            android:contentDescription="POI Preview"
+            android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
-            android:layout_alignParentStart="true"/>
+            android:contentDescription="POI Preview"
+            android:visibility="gone" />
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/painelAtributos"
@@ -255,12 +398,12 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
                         android:drawablePadding="6dp"
                         android:text="Nome"
                         android:textColor="#444"
                         android:textSize="12sp"
                         android:textStyle="bold"
-                        android:layout_marginBottom="4dp"
                         app:drawableStartCompat="@drawable/ic_name" />
 
                     <EditText
@@ -270,9 +413,9 @@
                         android:layout_marginBottom="12dp"
                         android:autofillHints=""
                         android:background="#F5F5F5"
+                        android:hint="Insira um nome"
                         android:inputType="textPersonName"
                         android:padding="8dp"
-                        android:hint="Insira um nome"
                         android:textColor="#000000"
                         android:textColorHint="#999999"
                         android:textSize="13sp" />
@@ -281,28 +424,28 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#E0E0E0"
-                        android:layout_marginBottom="12dp" />
+                        android:layout_marginBottom="12dp"
+                        android:background="#E0E0E0" />
 
                     <!-- Posição -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="6dp"
                         android:drawableStart="@drawable/ic_posicao"
                         android:drawablePadding="6dp"
                         android:text="Posição"
                         android:textColor="#444"
                         android:textSize="12sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="6dp" />
+                        android:textStyle="bold" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
                         android:baselineAligned="false"
                         android:orientation="horizontal"
-                        android:weightSum="2"
-                        android:layout_marginBottom="12dp">
+                        android:weightSum="2">
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -313,10 +456,10 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_marginBottom="2dp"
                                 android:text="X"
                                 android:textColor="#444"
-                                android:textSize="11sp"
-                                android:layout_marginBottom="2dp" />
+                                android:textSize="11sp" />
 
                             <EditText
                                 android:id="@+id/inputX"
@@ -335,17 +478,17 @@
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
                             android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:layout_marginStart="8dp">
+                            android:orientation="vertical">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_marginBottom="2dp"
                                 android:text="Y"
                                 android:textColor="#444"
-                                android:textSize="11sp"
-                                android:layout_marginBottom="2dp" />
+                                android:textSize="11sp" />
 
                             <EditText
                                 android:id="@+id/inputY"
@@ -366,26 +509,28 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#E0E0E0"
-                        android:layout_marginBottom="12dp" />
+                        android:layout_marginBottom="12dp"
+                        android:background="#E0E0E0" />
 
                     <!-- Dimensões -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="6dp"
                         android:drawablePadding="6dp"
                         android:text="Dimensões"
                         android:textColor="#444"
                         android:textSize="12sp"
                         android:textStyle="bold"
-                        android:layout_marginBottom="6dp" app:drawableStartCompat="@drawable/ic_dimensoes" />
+                        app:drawableStartCompat="@drawable/ic_dimensoes" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:baselineAligned="false" android:orientation="horizontal"
-                        android:weightSum="2"
-                        android:layout_marginBottom="12dp">
+                        android:layout_marginBottom="12dp"
+                        android:baselineAligned="false"
+                        android:orientation="horizontal"
+                        android:weightSum="2">
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -396,10 +541,10 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_marginBottom="2dp"
                                 android:text="Largura"
                                 android:textColor="#444"
-                                android:textSize="11sp"
-                                android:layout_marginBottom="2dp" />
+                                android:textSize="11sp" />
 
                             <EditText
                                 android:id="@+id/inputWidth"
@@ -418,17 +563,17 @@
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
                             android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:layout_marginStart="8dp">
+                            android:orientation="vertical">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_marginBottom="2dp"
                                 android:text="Altura"
                                 android:textColor="#444"
-                                android:textSize="11sp"
-                                android:layout_marginBottom="2dp" />
+                                android:textSize="11sp" />
 
                             <EditText
                                 android:id="@+id/inputHeight"
@@ -449,26 +594,27 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#E0E0E0"
-                        android:layout_marginBottom="12dp" />
+                        android:layout_marginBottom="12dp"
+                        android:background="#E0E0E0" />
 
                     <!-- Rotação -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
                         android:drawablePadding="6dp"
                         android:text="Rotação"
                         android:textColor="#444"
                         android:textSize="12sp"
                         android:textStyle="bold"
-                        android:layout_marginBottom="4dp" app:drawableStartCompat="@drawable/ic_rotate" />
+                        app:drawableStartCompat="@drawable/ic_rotate" />
 
                     <LinearLayout
                         android:id="@+id/rotationContainer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
                         android:gravity="center_vertical"
+                        android:orientation="horizontal"
                         android:padding="8dp">
 
                         <SeekBar
@@ -477,35 +623,35 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:max="360"
-                            android:progress="0"/>
+                            android:progress="0" />
 
                         <TextView
                             android:id="@+id/rotationLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0°"
                             android:paddingStart="8dp"
-                            android:paddingEnd="8dp"/>
+                            android:paddingEnd="8dp"
+                            android:text="0°" />
                     </LinearLayout>
 
                     <!-- Linha separadora -->
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#E0E0E0"
-                        android:layout_marginBottom="12dp" />
+                        android:layout_marginBottom="12dp"
+                        android:background="#E0E0E0" />
 
                     <!-- Cor -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
                         android:drawableStart="@drawable/ic_palette2"
                         android:drawablePadding="6dp"
                         android:text="Cor"
                         android:textColor="#444"
                         android:textSize="12sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="4dp" />
+                        android:textStyle="bold" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -550,9 +696,6 @@
                 </LinearLayout>
             </ScrollView>
         </com.google.android.material.card.MaterialCardView>
-
-
-
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

@@ -10,16 +10,14 @@ import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.toColorInt
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.cardview.widget.CardView
 import com.example.indoorar.R
 import com.example.indoorar.ui.editor.MapEditorView
 import com.example.indoorar.ui.editor.AttributePanelController
 import com.example.indoorar.views.ColorPickerView
-import com.google.android.material.card.MaterialCardView
 import com.google.android.material.button.MaterialButton
 
-data class ToolButton(val tool: Tool?, val iconId: Int?)
+data class ActionPoi(val x: Float, val y: Float, val iconRes: Int)
 
 class ActivityEditor : AppCompatActivity() {
 
@@ -28,19 +26,10 @@ class ActivityEditor : AppCompatActivity() {
     private lateinit var inputHex: EditText
     private lateinit var btnColorPicker: ImageButton
     private lateinit var btnSalvarMapa: MaterialButton
-    private lateinit var poiCard: MaterialCardView
-    private lateinit var rvPoi: RecyclerView
+    private lateinit var poiCard: CardView
+    private lateinit var preview: ImageView
 
-    private lateinit var poiAdapter: PoiAdapter
-    private var draggingPoi: Action.Poi? = null
-
-    private val poiItems = listOf(
-        PoiItem(R.drawable.ic_door_azul, "porta"),
-        PoiItem(R.drawable.ic_stairs_azul, "escada"),
-        PoiItem(R.drawable.ic_elevator_azul, "elevador"),
-        PoiItem(R.drawable.ic_banheiro_azul, "banheiro"),
-        PoiItem(R.drawable.ic_extintor_azul, "extintor")
-    )
+    private var draggingPoi: ActionPoi? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,9 +40,9 @@ class ActivityEditor : AppCompatActivity() {
         setupAttributePanel()
         setupColorPicker()
         setupHexInput()
-        setupPoiCard()
-        setupSaveButton()
+        setupPoiClicks()
         setupMapEditorTouch()
+        setupSaveButton()
     }
 
     private fun bindViews() {
@@ -63,17 +52,15 @@ class ActivityEditor : AppCompatActivity() {
         btnColorPicker = findViewById(R.id.btnColorPicker)
         btnSalvarMapa = findViewById(R.id.btnSalvarMapa)
         poiCard = findViewById(R.id.cardPoi)
-        rvPoi = findViewById(R.id.rvPoi)
+        preview = findViewById(R.id.ivDragPreview)
     }
 
     private fun setupToolButtons() {
         val toolButtons = mapOf(
-            R.id.linearcursor to ToolButton(Tool.CURSOR, R.id.cursor),
-            R.id.linearformas to ToolButton(Tool.FORMAS, R.id.formas),
-            R.id.linearbrush to ToolButton(Tool.BRUSH, R.id.brush),
-            R.id.linearpoi to ToolButton(Tool.POI, R.id.poi),
-            R.id.linearlayers to ToolButton(null, null),
-            R.id.lineardesfazer to ToolButton(null, null)
+            R.id.linearcursor to Tool.CURSOR,
+            R.id.linearformas to Tool.FORMAS,
+            R.id.linearbrush to Tool.BRUSH,
+            R.id.linearpoi to Tool.POI
         )
 
         fun updateSelectedButton(selectedId: Int) {
@@ -81,16 +68,25 @@ class ActivityEditor : AppCompatActivity() {
                 .forEach { id -> findViewById<ImageView>(id).isSelected = (id == selectedId) }
         }
 
-        toolButtons.forEach { (linearId, toolButton) ->
+        toolButtons.forEach { (linearId, tool) ->
             findViewById<LinearLayout>(linearId).setOnClickListener {
-                toolButton.tool?.let { mapEditor.setTool(it) }
-                toolButton.iconId?.let { updateSelectedButton(it) }
-                poiCard.visibility = if (toolButton.tool == Tool.POI) View.VISIBLE else View.GONE
-
-                if (linearId == R.id.linearlayers) mapEditor.toggleGrid()
-                if (linearId == R.id.lineardesfazer) mapEditor.undo()
+                mapEditor.setTool(tool)
+                val iconId = when (linearId) {
+                    R.id.linearcursor -> R.id.cursor
+                    R.id.linearformas -> R.id.formas
+                    R.id.linearbrush -> R.id.brush
+                    R.id.linearpoi -> R.id.poi
+                    else -> null
+                }
+                iconId?.let { updateSelectedButton(it) }
+                poiCard.visibility = if (tool == Tool.POI) View.VISIBLE else View.GONE
             }
         }
+
+        // Layers e desfazer
+        findViewById<LinearLayout>(R.id.linearlayers).setOnClickListener { mapEditor.toggleGrid() }
+        findViewById<LinearLayout>(R.id.lineardesfazer).setOnClickListener { mapEditor.undo() }
+
         updateSelectedButton(R.id.cursor)
     }
 
@@ -129,26 +125,29 @@ class ActivityEditor : AppCompatActivity() {
         }
     }
 
-    private fun setupPoiCard() {
-        poiAdapter = PoiAdapter(poiItems) { poi, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> draggingPoi = Action.Poi(
-                    x = 0f, y = 0f, iconRes = poi.iconRes
-                )
+    private fun setupPoiClicks() {
+        val poiMap = mapOf(
+            R.id.poiPorta to R.drawable.ic_door_azul,
+            R.id.poiEscada to R.drawable.ic_stairs_azul,
+            R.id.poiElevador to R.drawable.ic_elevator_azul,
+            R.id.poiBanheiro to R.drawable.ic_banheiro_azul,
+            R.id.poiExtintor to R.drawable.ic_extintor_azul
+        )
+
+        poiMap.forEach { (id, iconRes) ->
+            findViewById<LinearLayout>(id).setOnClickListener {
+                draggingPoi = ActionPoi(0f, 0f, iconRes)
+                preview.setImageResource(iconRes)
+                preview.visibility = View.VISIBLE
+                poiCard.visibility = View.GONE  // <<< Esconde o card automaticamente
             }
         }
-
-        rvPoi.adapter = poiAdapter
-        rvPoi.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        poiCard.visibility = View.VISIBLE
     }
 
-    private fun setupMapEditorTouch() {
-        val preview = findViewById<ImageView>(R.id.ivDragPreview)
-        var draggingPoiItem: PoiItem? = null
 
+    private fun setupMapEditorTouch() {
         mapEditor.setOnTouchListener { _, event ->
-            draggingPoiItem?.let { poiItem ->
+            draggingPoi?.let { poi ->
                 when (event.action) {
                     MotionEvent.ACTION_MOVE -> {
                         preview.x = event.rawX - preview.width / 2
@@ -156,40 +155,23 @@ class ActivityEditor : AppCompatActivity() {
                     }
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                         preview.visibility = View.GONE
-
                         val location = IntArray(2)
                         mapEditor.getLocationOnScreen(location)
                         val mapX = (event.rawX - location[0]) / mapEditor.scale - mapEditor.offsetX / mapEditor.scale
                         val mapY = (event.rawY - location[1]) / mapEditor.scale - mapEditor.offsetY / mapEditor.scale
-
-                        mapEditor.addPoi(mapX, mapY, poiItem.iconRes)
-                        draggingPoiItem = null
+                        mapEditor.addPoi(mapX, mapY, poi.iconRes)
+                        draggingPoi = null
                         mapEditor.performClick()
                     }
                 }
                 true
             } ?: false
         }
-
-        // Conecta o adapter do POI com o preview e drag
-        poiAdapter = PoiAdapter(poiItems) { poi, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    draggingPoiItem = poi
-                    preview.setImageResource(poi.iconRes)
-                    preview.visibility = View.VISIBLE
-                    preview.x = event.rawX - preview.width / 2
-                    preview.y = event.rawY - preview.height / 2
-                }
-            }
-        }
-        rvPoi.adapter = poiAdapter
-        rvPoi.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
     }
 
     private fun setupSaveButton() {
         btnSalvarMapa.setOnClickListener {
-            // TODO: Salvar shapes e POIs no Firebase
+            // TODO: salvar shapes e POIs
         }
     }
 }

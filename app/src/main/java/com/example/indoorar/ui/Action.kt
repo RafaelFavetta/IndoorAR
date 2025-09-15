@@ -13,34 +13,16 @@ sealed class Action {
         val points: List<PointF>
     ) : Action()
 
+    // <<< MUDANÇA: A classe Poi agora só guarda os dados, não a imagem.
     data class Poi(
         val id: String = UUID.randomUUID().toString(),
         var x: Float,
         var y: Float,
         var width: Float = 100f,
         var height: Float = 100f,
-        var iconRes: Int,
+        var iconRes: Int, // A referência do ícone (ex: R.drawable.ic_door)
         var selected: Boolean = false
-    ) : Action() {
-        var bitmap: Bitmap? = null
-
-        fun loadBitmap(resources: Resources) {
-            if (bitmap == null) {
-                try {
-                    val original = BitmapFactory.decodeResource(resources, iconRes)
-                    bitmap = Bitmap.createScaledBitmap(
-                        original,
-                        width.toInt(),
-                        height.toInt(),
-                        true
-                    )
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    bitmap = null
-                }
-            }
-        }
-    }
+    ) : Action() // Não tem mais corpo a classe
 
     data class Shape(
         var start: PointF,

@@ -7,12 +7,14 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
+import androidx.core.graphics.toColorInt
 import androidx.core.graphics.withSave
 import androidx.core.graphics.withTranslation
-import androidx.core.graphics.toColorInt
 import com.example.indoorar.ui.Action
 import com.example.indoorar.ui.Tool
-import kotlin.math.*
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 data class ShapeProps(
     var x: Float,
@@ -27,75 +29,66 @@ class MapEditorView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
-    // ===== VISUAL =====
+    // ===== ESTADO E CONTROLE =====
+    var currentTool: Tool = Tool.CURSOR
+        private set
+    private var draggingObject: Action? = null
+    val actions = mutableListOf<Action>()
+    var onToolChangedListener: ((Tool) -> Unit)? = null
+    private var pendingPoiResId: Int? = null
+
+    // ===== CONTROLE DE CÂMERA E TOQUE =====
     var scale = 1f
     var offsetX = 0f
     var offsetY = 0f
-    private var draggingObject: Action? = null
+    private var touchOffsetX = 0f
+    private var touchOffsetY = 0f
 
-    // ===== TOOL =====
-    var currentTool: Tool = Tool.CURSOR
-        private set
+    // ===== CACHE DE IMAGENS =====
+    private val bitmapCache = mutableMapOf<Int, Bitmap>()
 
-    // ===== LAYERS =====
+    // ===== CONFIGURAÇÕES VISUAIS =====
     var showGrid = true
-    var showBrush = true
-    var showPois = true
+    var showBrush = true // Mantido do seu código original
+    var showPois = true  // Mantido do seu código original
 
-    // ===== DATA =====
-    val actions = mutableListOf<Action>()
-
-    // ===== SELECTION/DRAG =====
+    // ===== SELECTION/DRAG (Mantido do seu código original) =====
     private var lastDragPoint: PointF? = null
     private var activeHandle: Handle? = null
-
     interface OnShapeSelectionListener {
         fun onShapeSelected(props: ShapeProps)
         fun onShapeDeselected()
     }
     var selectionListener: OnShapeSelectionListener? = null
-
     private enum class Handle { }
 
-    // ===== PAINTS =====
-    private val gridDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(210, 210, 210)
-        style = Paint.Style.FILL
-    }
-
+    // ===== PAINTS (Mantido do seu código original) =====
+    private val gridDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(210, 210, 210); style = Paint.Style.FILL }
     private val brushPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val shapeSelectionPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    val shapeTempPaint: Paint by lazy { Paint().apply { color = Color.RED; strokeWidth = 4f; style = Paint.Style.STROKE; isAntiAlias = true } }
 
-    // Tornando o Paint temporário público, sem criar função duplicada
-    val shapeTempPaint: Paint by lazy {
-        Paint().apply {
-            color = Color.RED
-            strokeWidth = 4f
-            style = Paint.Style.STROKE
-            isAntiAlias = true
-        }
-    }
-
-    init {
-        brushPaint.color = Color.rgb(50, 100, 255)
-        brushPaint.style = Paint.Style.STROKE
-        brushPaint.strokeWidth = dp(2f)
-        brushPaint.strokeCap = Paint.Cap.ROUND
-        brushPaint.strokeJoin = Paint.Join.ROUND
-
-        shapeSelectionPaint.color = "#0D99FF".toColorInt()
-        shapeSelectionPaint.style = Paint.Style.STROKE
-        shapeSelectionPaint.strokeWidth = dp(2f)
-    }
-
-    // ===== EDITORS =====
+    // ===== EDITORES E GESTOS =====
     private val brushEditor = BrushEditor(this)
     private val shapeEditor = ShapeEditor(this)
-    var onPoiClickListener: ((x: Float, y: Float) -> Unit)? = null
+    private val scaleDetector: ScaleGestureDetector
+    private val gestureDetector: GestureDetector
 
-    // ===== GESTURES =====
-    private val scaleDetector = ScaleGestureDetector(context,
-        object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+    init {
+        brushPaint.apply {
+            color = Color.rgb(50, 100, 255)
+            style = Paint.Style.STROKE
+            strokeWidth = dp(2f)
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+        }
+        shapeSelectionPaint.apply {
+            color = "#0D99FF".toColorInt()
+            style = Paint.Style.STROKE
+            strokeWidth = dp(2f)
+        }
+
+        scaleDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector): Boolean {
                 val prevScale = scale
                 scale *= detector.scaleFactor
@@ -109,27 +102,36 @@ class MapEditorView @JvmOverloads constructor(
             }
         })
 
-    private val gestureDetector = GestureDetector(context,
-        object : GestureDetector.SimpleOnGestureListener() {
+        gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
             override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean {
-                if (currentTool == Tool.CURSOR && draggingObject == null) {
-                    offsetX -= dx
-                    offsetY -= dy
-                    invalidate()
-                    return true
-                }
-                return false
+                offsetX -= dx
+                offsetY -= dy
+                invalidate()
+                return true
             }
         })
+    }
 
-    // ===== API =====
+    // ===== MÉTODOS PÚBLICOS (API DA VIEW) =====
+
+    /** Prepara a View para criar um POI no próximo toque. Chamado pela Activity. */
+    fun primeForPoiCreation(iconRes: Int) {
+        pendingPoiResId = iconRes
+        setTool(Tool.POI)
+    }
+
+    /** Define a ferramenta ativa e notifica a Activity. */
     fun setTool(tool: Tool) {
+        if (currentTool == tool && tool != Tool.POI) return // Permite re-clicar em POI
+
         currentTool = tool
-        brushEditor.cancel()
-        shapeEditor.cancel()
+        onToolChangedListener?.invoke(tool)
+
+        // Limpa estados para evitar bugs entre ferramentas
         draggingObject = null
-        lastDragPoint = null
-        activeHandle = null
+        if (tool != Tool.POI) {
+            pendingPoiResId = null
+        }
         invalidate()
     }
 
@@ -140,108 +142,174 @@ class MapEditorView @JvmOverloads constructor(
         }
     }
 
-    fun toggleGrid() { showGrid = !showGrid; invalidate() }
-    fun toggleBrushLayer() { showBrush = !showBrush; invalidate() }
-    fun togglePoiLayer() { showPois = !showPois; invalidate() }
-
-    fun getBrushPaint() = brushPaint
-
-    fun addAction(action: Action) {
-        if (action is Action.Poi) action.loadBitmap(resources)
-        actions.add(action)
-        invalidate()
-    }
-
     fun addPoi(x: Float, y: Float, iconRes: Int) {
         val poi = Action.Poi(x = x, y = y, iconRes = iconRes)
-        poi.loadBitmap(resources)
         actions.add(poi)
         invalidate()
     }
 
+    fun addAction(action: Action) {
+        actions.add(action)
+        invalidate()
+    }
+
+    fun toggleGrid() { showGrid = !showGrid; invalidate() }
+    fun toggleBrushLayer() { showBrush = !showBrush; invalidate() }
+    fun togglePoiLayer() { showPois = !showPois; invalidate() }
+    fun getBrushPaint() = brushPaint
+
+
     // ===== TOUCH =====
-    override fun performClick(): Boolean { super.performClick(); return true }
+
+    override fun performClick(): Boolean {
+        super.performClick()
+        return true
+    }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleDetector.onTouchEvent(event)
+        if (scaleDetector.isInProgress) return true
+
         val world = screenToWorld(event.x, event.y)
 
+        // MODO DE CRIAÇÃO DE POI (tem prioridade)
+        if (currentTool == Tool.POI) {
+            if (event.action == MotionEvent.ACTION_UP) {
+                pendingPoiResId?.let { resId -> addPoi(world.x, world.y, resId) }
+                setTool(Tool.CURSOR)
+            }
+            return true
+        }
+
+        // Outras ferramentas que não sejam o cursor
         if (currentTool != Tool.CURSOR) {
             return when (currentTool) {
                 Tool.BRUSH -> brushEditor.onTouch(event)
                 Tool.FORMAS -> shapeEditor.onTouch(event)
-                Tool.POI -> false
-                else -> true
+                else -> super.onTouchEvent(event)
             }
         }
 
-        gestureDetector.onTouchEvent(event)
+        // MODO DE INTERAÇÃO (CURSOR)
+        if (draggingObject == null) {
+            gestureDetector.onTouchEvent(event)
+        }
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                lastDragPoint = world
-                val hit = hitTestObjects(world)
-                draggingObject = hit
-
+                draggingObject = hitTestObjects(world)
                 actions.forEach { action ->
-                    when(action) {
-                        is Action.Shape -> action.selected = (action == hit)
-                        is Action.Poi -> action.selected = (action == hit)
+                    val isSelected = (action == draggingObject)
+                    when (action) {
+                        is Action.Shape -> action.selected = isSelected
+                        is Action.Poi -> action.selected = isSelected
+                        else -> {}
+                    }
+                }
+
+                draggingObject?.let { obj ->
+                    when (obj) {
+                        is Action.Poi -> { touchOffsetX = world.x - obj.x; touchOffsetY = world.y - obj.y }
+                        is Action.Shape -> { touchOffsetX = world.x - obj.start.x; touchOffsetY = world.y - obj.start.y }
                         is Action.BrushStroke -> {}
                     }
                 }
 
-                activeHandle = hit?.let { hitTestHandles(it, world) }
-
-                hit?.let {
+                // Dispara o listener de seleção (mantido do seu código)
+                draggingObject?.let {
                     selectionListener?.onShapeSelected(
                         if (it is Action.Shape) shapeToProperties(it) else poiToProperties(it as Action.Poi)
                     )
                 } ?: selectionListener?.onShapeDeselected()
 
                 invalidate()
+                return true
             }
-
             MotionEvent.ACTION_MOVE -> {
-                draggingObject?.let {
-                    val dx = world.x - (lastDragPoint?.x ?: world.x)
-                    val dy = world.y - (lastDragPoint?.y ?: world.y)
-                    when(it) {
+                draggingObject?.let { obj ->
+                    when (obj) {
+                        is Action.Poi -> { obj.x = world.x - touchOffsetX; obj.y = world.y - touchOffsetY }
                         is Action.Shape -> {
-                            it.start.x += dx; it.start.y += dy
-                            it.end.x += dx; it.end.y += dy
+                            val width = obj.end.x - obj.start.x
+                            val height = obj.end.y - obj.start.y
+                            obj.start.x = world.x - touchOffsetX
+                            obj.start.y = world.y - touchOffsetY
+                            obj.end.x = obj.start.x + width
+                            obj.end.y = obj.start.y + height
                         }
-                        is Action.Poi -> {
-                            it.x += dx; it.y += dy
-                        }
+
                         is Action.BrushStroke -> {}
                     }
-                    lastDragPoint = world
                     invalidate()
                 }
+                return true
             }
-
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 draggingObject = null
-                activeHandle = null
-                lastDragPoint = null
                 invalidate()
+                return true
             }
         }
-
-        return true
+        return super.onTouchEvent(event)
     }
 
-    // ===== DRAW =====
+    // ===== LÓGICA DE DESENHO (Mantido do seu código, com ajustes para o cache) =====
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         canvas.withTranslation(offsetX, offsetY) {
             scale(scale, scale)
             if (showGrid) drawGrid(this)
             drawActions(this)
-            brushEditor.onDrawTemp(this)
-            shapeEditor.onDrawTemp(this)
+            if (currentTool == Tool.BRUSH) brushEditor.onDrawTemp(this)
+            if (currentTool == Tool.FORMAS) shapeEditor.onDrawTemp(this)
         }
+    }
+
+    private fun drawActions(canvas: Canvas) {
+        actions.forEach { action ->
+            when (action) {
+                is Action.BrushStroke -> {
+                    if (!showBrush) return@forEach
+                    val path = Path()
+                    action.points.firstOrNull()?.let { first ->
+                        path.moveTo(first.x, first.y)
+                        for (i in 1 until action.points.size) path.lineTo(action.points[i].x, action.points[i].y)
+                        canvas.drawPath(path, brushPaint)
+                    }
+                }
+                is Action.Poi -> {
+                    if (!showPois) return@forEach
+                    getBitmapForPoi(action)?.let { bmp ->
+                        canvas.drawBitmap(bmp, action.x - bmp.width / 2f, action.y - bmp.height / 2f, null)
+                        if (action.selected) drawSelection(canvas, action)
+                    }
+                }
+                is Action.Shape -> {
+                    val rect = RectF(action.start.x, action.start.y, action.end.x, action.end.y)
+                    val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = action.fillColor }
+                    canvas.withSave {
+                        rotate(action.rotation, rect.centerX(), rect.centerY())
+                        drawRect(rect, fill)
+                    }
+                    val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = 2f }
+                    canvas.drawRect(rect, stroke) // Mantido do seu código original
+                    if (action.selected) drawSelection(canvas, action)
+                }
+            }
+        }
+    }
+
+    private fun drawSelection(canvas: Canvas, action: Action) {
+        val rect = when (action) {
+            is Action.Shape -> RectF(action.start.x, action.start.y, action.end.x, action.end.y)
+            is Action.Poi -> {
+                val bmp = getBitmapForPoi(action) ?: return
+                RectF(action.x - bmp.width / 2f, action.y - bmp.height / 2f, action.x + bmp.width / 2f, action.y + bmp.height / 2f)
+            }
+            else -> return
+        }
+        canvas.drawRect(rect, shapeSelectionPaint)
     }
 
     private fun drawGrid(canvas: Canvas) {
@@ -256,72 +324,30 @@ class MapEditorView @JvmOverloads constructor(
         }
     }
 
-    private fun drawActions(canvas: Canvas) {
-        actions.forEach { action ->
-            when (action) {
-                is Action.BrushStroke -> {
-                    val path = Path()
-                    action.points.firstOrNull()?.let { first ->
-                        path.moveTo(first.x, first.y)
-                        for (i in 1 until action.points.size) path.lineTo(action.points[i].x, action.points[i].y)
-                        canvas.drawPath(path, brushPaint)
-                    }
-                }
-                is Action.Poi -> {
-                    val bmp = action.bitmap ?: return@forEach
-                    val left = action.x - bmp.width / 2f
-                    val top = action.y - bmp.height / 2f
-                    canvas.drawBitmap(bmp, left, top, null)
-                    if (action.selected) drawSelection(canvas, action)
-                }
-                is Action.Shape -> {
-                    val rect = RectF(action.start.x, action.start.y, action.end.x, action.end.y)
-                    val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = action.fillColor ?: Color.TRANSPARENT
-                        style = Paint.Style.FILL
-                    }
-                    canvas.withSave {
-                        rotate(action.rotation, rect.centerX(), rect.centerY())
-                        drawRect(rect, fill)
-                    }
-                    val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = Color.BLACK
-                        style = Paint.Style.STROKE
-                        strokeWidth = 2f
-                    }
-                    canvas.drawRect(rect, stroke)
-                    if (action.selected) drawSelection(canvas, action)
-                }
-            }
+    // ===== MÉTODOS AUXILIARES (Mantidos do seu código, com ajustes para o cache) =====
+
+    private fun getBitmapForPoi(poi: Action.Poi): Bitmap? {
+        return bitmapCache[poi.iconRes] ?: try {
+            val original = BitmapFactory.decodeResource(resources, poi.iconRes)
+            val scaled = Bitmap.createScaledBitmap(original, poi.width.toInt(), poi.height.toInt(), true)
+            bitmapCache[poi.iconRes] = scaled
+            scaled
+        } catch (e: Exception) {
+            null
         }
     }
-
-    private fun drawSelection(canvas: Canvas, action: Action) {
-        val rect = when(action) {
-            is Action.Shape -> RectF(action.start.x, action.start.y, action.end.x, action.end.y)
-            is Action.Poi -> {
-                val bmp = action.bitmap ?: return
-                RectF(action.x - bmp.width / 2f, action.y - bmp.height / 2f,
-                    action.x + bmp.width / 2f, action.y + bmp.height / 2f)
-            }
-            else -> return
-        }
-        canvas.drawRect(rect, shapeSelectionPaint)
-    }
-
-    private fun poiToProperties(poi: Action.Poi) =
-        ShapeProps(poi.x, poi.y, poi.width, poi.height, 0f)
-
-    private fun shapeToProperties(shape: Action.Shape) =
-        ShapeProps(min(shape.start.x, shape.end.x), min(shape.start.y, shape.end.y),
-            abs(shape.end.x - shape.start.x), abs(shape.end.y - shape.start.y), shape.rotation)
-
-    internal fun screenToWorld(x: Float, y: Float) = PointF((x - offsetX)/scale, (y - offsetY)/scale)
-    internal fun dp(v: Float) = v * resources.displayMetrics.density
 
     private fun hitTestObjects(point: PointF): Action? {
-        return actions.reversed().firstOrNull { action ->
-            when(action) {
+        return actions.asReversed().find { action ->
+            when (action) {
+                is Action.Poi -> {
+                    val bmp = getBitmapForPoi(action) ?: return@find false
+                    val left = action.x - bmp.width / 2f
+                    val top = action.y - bmp.height / 2f
+                    val right = left + bmp.width
+                    val bottom = top + bmp.height
+                    point.x in left..right && point.y in top..bottom
+                }
                 is Action.Shape -> {
                     val left = min(action.start.x, action.end.x)
                     val top = min(action.start.y, action.end.y)
@@ -329,15 +355,20 @@ class MapEditorView @JvmOverloads constructor(
                     val bottom = max(action.start.y, action.end.y)
                     point.x in left..right && point.y in top..bottom
                 }
-                is Action.Poi -> {
-                    val bmp = action.bitmap ?: return@firstOrNull false
-                    point.x in (action.x - bmp.width / 2f)..(action.x + bmp.width / 2f) &&
-                            point.y in (action.y - bmp.height / 2f)..(action.y + bmp.height / 2f)
-                }
                 else -> false
             }
         }
     }
 
-    private fun hitTestHandles(hit: Action, point: PointF): Handle? = null
+    private fun poiToProperties(poi: Action.Poi) =
+        ShapeProps(poi.x, poi.y, poi.width, poi.height, 0f, null)
+
+    private fun shapeToProperties(shape: Action.Shape) =
+        ShapeProps(min(shape.start.x, shape.end.x), min(shape.start.y, shape.end.y),
+            abs(shape.end.x - shape.start.x), abs(shape.end.y - shape.start.y), shape.rotation, shape.fillColor)
+
+    private fun hitTestHandles(hit: Action, point: PointF): Handle? = null // Mantido do seu código original
+
+    internal fun screenToWorld(x: Float, y: Float) = PointF((x - offsetX) / scale, (y - offsetY) / scale)
+    internal fun dp(v: Float) = v * resources.displayMetrics.density
 }

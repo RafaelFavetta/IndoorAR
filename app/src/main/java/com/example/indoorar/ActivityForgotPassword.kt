@@ -26,7 +26,7 @@ class ActivityForgotPassword : BaseActivity() {
         auth = FirebaseAuth.getInstance()
 
         // Views
-        etForgotEmail = findViewById(R.id.etForgotEmail)
+        etForgotEmail = findViewById(R.id.editEmailRecuperar)
         btnResetPassword = findViewById(R.id.btnResetPassword)
         tvBackToLogin = findViewById(R.id.tvBackToLogin)
 

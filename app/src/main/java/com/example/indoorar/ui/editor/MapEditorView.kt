@@ -2,11 +2,13 @@ package com.example.indoorar.ui.editor
 
 import android.content.Context
 import android.graphics.*
+import android.graphics.drawable.BitmapDrawable
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.toColorInt
 import androidx.core.graphics.withSave
 import androidx.core.graphics.withTranslation
@@ -328,14 +330,30 @@ class MapEditorView @JvmOverloads constructor(
 
     private fun getBitmapForPoi(poi: Action.Poi): Bitmap? {
         return bitmapCache[poi.iconRes] ?: try {
-            val original = BitmapFactory.decodeResource(resources, poi.iconRes)
-            val scaled = Bitmap.createScaledBitmap(original, poi.width.toInt(), poi.height.toInt(), true)
+            val drawable = ContextCompat.getDrawable(context, poi.iconRes) ?: return null
+
+            val bmp = if (drawable is BitmapDrawable) {
+                drawable.bitmap
+            } else {
+                val bitmap = Bitmap.createBitmap(
+                    drawable.intrinsicWidth,
+                    drawable.intrinsicHeight,
+                    Bitmap.Config.ARGB_8888
+                )
+                val canvas = Canvas(bitmap)
+                drawable.setBounds(0, 0, canvas.width, canvas.height)
+                drawable.draw(canvas)
+                bitmap
+            }
+
+            val scaled = Bitmap.createScaledBitmap(bmp, poi.width.toInt(), poi.height.toInt(), true)
             bitmapCache[poi.iconRes] = scaled
             scaled
         } catch (e: Exception) {
             null
         }
     }
+
 
     private fun hitTestObjects(point: PointF): Action? {
         return actions.asReversed().find { action ->

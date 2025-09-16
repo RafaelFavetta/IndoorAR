@@ -9,6 +9,7 @@
     android:background="@color/colorOnPrimary"
     tools:context=".MainActivity">
 
+    <!-- HEADER COM LOGO, BOTAO DE VOLTAR E ARCO -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/headerLayout"
         android:layout_width="match_parent"
@@ -16,82 +17,115 @@
         android:background="@color/colorPrimaryDark"
         app:layout_constraintTop_toTopOf="parent">
 
+        <!-- ARCO DE FUNDO -->
+        <!-- ARCO DE FUNDO -->
+
+
+        <!-- IMAGEM DO USUARIO -->
         <ImageView
             android:id="@+id/imageViewBackground"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1.0"
             app:srcCompat="@drawable/arc_3" />
 
+        <!-- TEXTO PERFIL -->
         <ImageView
             android:id="@+id/imageViewUser"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintBottom_toTopOf="@id/imageViewBackground"
-            app:layout_constraintEnd_toEndOf="@id/imageViewBackground"
-            app:layout_constraintStart_toStartOf="@id/imageViewBackground"
-            app:layout_constraintTop_toTopOf="@id/imageViewBackground"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginTop="152dp"
+            android:scaleType="centerCrop"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.498"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/user_2" />
 
+        <!-- BOTAO VOLTAR -->
         <TextView
             android:id="@+id/textViewPerfil"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="20dp"
+            android:fontFamily="@font/staatliches"
             android:text="Perfil"
             android:textColor="@color/colorPrimary"
             android:textSize="30sp"
+            android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/backButtonLayout"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="32dp"
-            android:contentDescription="voltar"
+            android:layout_marginTop="16dp"
             android:background="@drawable/ripple_clickable"
             android:clickable="true"
             android:focusable="true"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
 
             <ImageView
                 android:id="@+id/imageViewBack"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:contentDescription="Voltar"
+                android:scaleType="centerInside"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:srcCompat="@drawable/back" />
+                app:srcCompat="@drawable/ic_voltar_branco" />
         </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- LOGO DO APP NO CANTO DIREITO -->
+        <ImageView
+            android:id="@+id/logoTopo"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginTop="18dp"
+            android:layout_marginEnd="18dp"
+            android:contentDescription="Logo"
+            android:scaleType="fitCenter"
+            android:src="@drawable/logo_branca"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <!-- SCROLL COM ITENS -->
     <ScrollView
         android:id="@+id/scrollViewContent"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:fillViewport="true"
         app:layout_constraintTop_toBottomOf="@id/headerLayout"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:fillViewport="true">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Nome e Email -->
             <TextView
                 android:id="@+id/textViewName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="8dp"
+                android:layout_marginTop="16dp"
                 android:text="Fernando Pires"
                 android:textAlignment="center"
                 android:textColor="@color/colorPrimaryDark"
@@ -102,9 +136,12 @@
                 android:id="@+id/textViewEmail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:text="fernando.pires@gmail.com"
                 android:textAlignment="center"
-                android:text="fernado.pires@gmail.com" />
+                android:layout_marginBottom="16dp" />
 
+            <!-- ITENS DO MENU -->
+            <!-- itemNotificacoes -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/itemNotificacoes"
                 android:layout_width="match_parent"
@@ -149,6 +186,7 @@
                     app:srcCompat="@drawable/arrow" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
+            <!-- itemCalendario -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/itemCalendario"
                 android:layout_width="match_parent"
@@ -175,7 +213,7 @@
                     android:layout_marginStart="32dp"
                     android:layout_marginTop="16dp"
                     android:layout_marginBottom="16dp"
-                    android:text="Calendario"
+                    android:text="Calendário"
                     android:textColor="@color/colorPrimaryDark"
                     android:textSize="20sp"
                     android:textStyle="bold"
@@ -193,184 +231,9 @@
                     app:srcCompat="@drawable/arrow" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/itemGaleria"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
-                android:background="@drawable/ripple_clickable"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginEnd="32dp">
-
-                <ImageView
-                    android:id="@+id/imageViewBtn3"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srcCompat="@drawable/btn_3" />
-
-                <TextView
-                    android:id="@+id/textViewBtn3"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="32dp"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginBottom="16dp"
-                    android:text="Galeria"
-                    android:textColor="@color/colorPrimaryDark"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    app:layout_constraintBottom_toBottomOf="@+id/imageViewBtn3"
-                    app:layout_constraintStart_toEndOf="@+id/imageViewBtn3"
-                    app:layout_constraintTop_toTopOf="@+id/imageViewBtn3" />
-
-                <ImageView
-                    android:id="@+id/imageViewArrow3"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srcCompat="@drawable/arrow" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/itemPlaylist"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
-                android:background="@drawable/ripple_clickable"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginEnd="32dp">
-
-                <ImageView
-                    android:id="@+id/imageViewBtn4"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srcCompat="@drawable/btn_4" />
-
-                <TextView
-                    android:id="@+id/textViewBtn4"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="32dp"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginBottom="16dp"
-                    android:text="Minha Playlist"
-                    android:textColor="@color/colorPrimaryDark"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    app:layout_constraintBottom_toBottomOf="@+id/imageViewBtn4"
-                    app:layout_constraintStart_toEndOf="@+id/imageViewBtn4"
-                    app:layout_constraintTop_toTopOf="@+id/imageViewBtn4" />
-
-                <ImageView
-                    android:id="@+id/imageViewArrow4"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srcCompat="@drawable/arrow" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/itemCompartilhar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
-                android:background="@drawable/ripple_clickable"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginEnd="32dp">
-
-                <ImageView
-                    android:id="@+id/imageViewBtn5"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srcCompat="@drawable/btn_5" />
-
-                <TextView
-                    android:id="@+id/textViewBtn5"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="32dp"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginBottom="16dp"
-                    android:text="Compartilhar"
-                    android:textColor="@color/colorPrimaryDark"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    app:layout_constraintBottom_toBottomOf="@+id/imageViewBtn5"
-                    app:layout_constraintStart_toEndOf="@+id/imageViewBtn5"
-                    app:layout_constraintTop_toTopOf="@+id/imageViewBtn5" />
-
-                <ImageView
-                    android:id="@+id/imageViewArrow5"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srcCompat="@drawable/arrow" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/itemLogout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
-                android:background="@drawable/ripple_clickable"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginEnd="32dp">
-
-                <ImageView
-                    android:id="@+id/imageViewBtn6"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srcCompat="@drawable/btn_6" />
-
-                <TextView
-                    android:id="@+id/textViewBtn6"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="32dp"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginBottom="16dp"
-                    android:text="Logout"
-                    android:textColor="@color/colorPrimaryDark"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    app:layout_constraintBottom_toBottomOf="@+id/imageViewBtn6"
-                    app:layout_constraintStart_toEndOf="@+id/imageViewBtn6"
-                    app:layout_constraintTop_toTopOf="@+id/imageViewBtn6" />
-
-                <ImageView
-                    android:id="@+id/imageViewArrow6"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srcCompat="@drawable/arrow" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
+            <!-- Repita os demais itens (Galeria, Playlist, Compartilhar, Logout) exatamente como você tinha -->
 
         </LinearLayout>
     </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-

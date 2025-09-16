@@ -20,15 +20,16 @@ sealed class Action {
         var y: Float,
         var width: Float = 100f,
         var height: Float = 100f,
-        var iconRes: Int, // A referência do ícone (ex: R.drawable.ic_door)
+        var iconRes: Int,
         var selected: Boolean = false
-    ) : Action() // Não tem mais corpo a classe
+    ) : Action()
 
     data class Shape(
         var start: PointF,
         var end: PointF,
         var selected: Boolean = false,
         var fillColor: Int = "#D9D9D9".toColorInt(),
-        var rotation: Float = 0f
+        var rotation: Float = 0f,
+        var isWalkable: Boolean = true
     ) : Action()
 }

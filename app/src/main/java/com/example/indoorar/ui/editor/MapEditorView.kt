@@ -31,6 +31,13 @@ class MapEditorView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
+    // ===== ESCALA PARA CONVERSÃO =====
+    val PX_PER_METER = 12f // 12 pixels = 1 metro
+
+    // Funções auxiliares
+    fun pxToMeters(px: Float) = px / PX_PER_METER
+    fun metersToPx(m: Float) = m * PX_PER_METER
+
     // ===== ESTADO E CONTROLE =====
     var currentTool: Tool = Tool.CURSOR
         private set
@@ -389,4 +396,17 @@ class MapEditorView @JvmOverloads constructor(
 
     internal fun screenToWorld(x: Float, y: Float) = PointF((x - offsetX) / scale, (y - offsetY) / scale)
     internal fun dp(v: Float) = v * resources.displayMetrics.density
+
+
+    // Converte pixels do Canvas para metros
+    fun pxToMeters(px: Float, scaleFactor: Float = 0.05f): Float {
+        // scaleFactor: 1 px = 0.05 m, ajuste conforme o seu mapa
+        return px * scaleFactor
+    }
+
+    // Converte posição PointF
+    fun pointPxToMeters(point: PointF, scaleFactor: Float = 0.05f): Pair<Float, Float> {
+        return Pair(pxToMeters(point.x, scaleFactor), pxToMeters(point.y, scaleFactor))
+    }
+
 }

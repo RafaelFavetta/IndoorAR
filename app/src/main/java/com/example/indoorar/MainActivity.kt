@@ -17,13 +17,10 @@ class MainActivity : BaseActivity() {
         val rootView = findViewById<View>(R.id.mainRoot)
         rootView.alpha = 1f
 
-        val logo = findViewById<View>(R.id.logo)
-        val slogan = findViewById<View>(R.id.txtSlogan)
+
         val btnCadastrar = findViewById<Button>(R.id.btnCadastro)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
 
-        slogan.elevation = 8f
-        logo.elevation = 8f
         btnCadastrar.elevation = 8f
         btnLogin.elevation = 8f
         rootView.elevation = 8f

@@ -362,16 +362,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-
-        <ImageView
-            android:id="@+id/ivDragPreview"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:contentDescription="POI Preview"
-            android:visibility="gone" />
-
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/painelAtributos"
             android:layout_width="200dp"
@@ -394,6 +384,94 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
+                    <!-- separador -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="#E0E0E0" />
+
+                    <LinearLayout
+                        android:id="@+id/layoutIsWalkable"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <!-- Seção Shape: Caminhável -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingVertical="4dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Caminhável"
+                                android:textColor="#444"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+
+                            <CheckBox
+                                android:id="@+id/checkboxIsWalkable"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- separador -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="#E0E0E0" />
+
+                    <LinearLayout
+                        android:id="@+id/layoutStartQR"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <!-- separador -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginBottom="12dp"
+                            android:background="#E0E0E0" />
+
+                        <!-- Seção POI: Início via QR -->
+                        <LinearLayout
+                            android:id="@+id/rowIsStartQR"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingVertical="4dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="QR Code inicial"
+                                android:textColor="#444"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+
+                            <com.google.android.material.switchmaterial.SwitchMaterial
+                                android:id="@+id/switchIsStartQR"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content" />
+                        </LinearLayout>
+                    </LinearLayout>
+
                     <!-- Nome -->
                     <TextView
                         android:layout_width="wrap_content"
@@ -410,14 +488,35 @@
                         android:id="@+id/inputNome"
                         android:layout_width="match_parent"
                         android:layout_height="40dp"
-                        android:layout_marginBottom="12dp"
-                        android:autofillHints=""
+                        android:layout_marginBottom="8dp"
                         android:background="#F5F5F5"
-                        android:hint="Insira um nome"
-                        android:inputType="textPersonName"
+                        android:hint="Nome"
+                        android:inputType="text"
                         android:padding="8dp"
-                        android:textColor="#000000"
-                        android:textColorHint="#999999"
+                        android:textColor="#000"
+                        android:textSize="13sp" />
+
+                    <!-- Descrição -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="Descrição"
+                        android:textColor="#444"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/inputDescricao"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="#F5F5F5"
+                        android:gravity="top|start"
+                        android:hint="Descrição"
+                        android:inputType="textMultiLine"
+                        android:padding="8dp"
+                        android:textColor="#000"
                         android:textSize="13sp" />
 
                     <!-- Linha separadora -->
@@ -692,7 +791,6 @@
                             android:contentDescription="Selecionar cor"
                             app:srcCompat="@drawable/ic_fill" />
                     </LinearLayout>
-
                 </LinearLayout>
             </ScrollView>
         </com.google.android.material.card.MaterialCardView>

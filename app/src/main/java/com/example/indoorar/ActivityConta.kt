@@ -22,13 +22,17 @@ class ActivityConta : BaseActivity() {
             insets
         }
 
-        // Botão para ir para Cadastro Maker (ActivityCriar2)
-
-
-        // Botão para ir para Cadastro Comum (ActivityCriar)
+// Botão para ir para Cadastro Comum (ActivityCriar)
         val btnComum = findViewById<Button>(R.id.btnComum)
         btnComum.setOnClickListener {
             val intent = Intent(this, ActivityCriar::class.java)
+            startActivity(intent)
+        }
+
+// Botão para ir para Cadastro Maker (ActivityCriar2)
+        val btnMaker = findViewById<Button>(R.id.btnMaker)
+        btnMaker.setOnClickListener {
+            val intent = Intent(this, ActivityCriar2::class.java)
             startActivity(intent)
         }
     }

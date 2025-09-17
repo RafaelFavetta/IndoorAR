@@ -29,7 +29,7 @@ class MainActivity : BaseActivity() {
             startActivity(intent)
         }
         btnLogin.setOnClickListener {
-            val intent = Intent(this, ActivityLogin::class.java)
+            val intent = Intent(this, Activity_login2::class.java)
             startActivity(intent)
         }
 

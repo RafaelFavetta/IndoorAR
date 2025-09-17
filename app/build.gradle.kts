@@ -54,12 +54,6 @@ android {
         compose = true
     }
 
-    java {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(20))
-        }
-    }
-
     lint {
         abortOnError = false
         warningsAsErrors = false

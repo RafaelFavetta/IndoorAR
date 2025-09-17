@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.ProgressBar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -31,6 +32,15 @@ class ActivityLogin : BaseActivity() {
         val txtEsqueciSenha = findViewById<View>(R.id.txtEsqueciSenha)
         txtEsqueciSenha.setOnClickListener {
             startActivity(Intent(this, ActivityForgotPassword::class.java))
+        }
+
+        val btnVoltar = findViewById<ImageView>(R.id.btnVoltar)
+        btnVoltar.setOnClickListener {
+            auth.signOut()
+            val intent = Intent(this, MainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
         }
 
         btnEntrar.setOnClickListener {

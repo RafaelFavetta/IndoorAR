@@ -11,6 +11,7 @@ import com.example.indoorar.R
 import com.example.indoorar.ui.Action
 import java.util.Locale
 import java.util.WeakHashMap
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 class AttributePanelController(
     private val activity: Activity,
@@ -29,6 +30,7 @@ class AttributePanelController(
 
     private val painel = activity.findViewById<View>(R.id.painelAtributos)
     private val edtNome = activity.findViewById<EditText>(R.id.inputNome)
+    private val edtDescricao = activity.findViewById<EditText>(R.id.inputDescricao)
     private val edtPosX = activity.findViewById<EditText>(R.id.inputX)
     private val edtPosY = activity.findViewById<EditText>(R.id.inputY)
     private val edtWidth = activity.findViewById<EditText>(R.id.inputWidth)
@@ -36,25 +38,80 @@ class AttributePanelController(
     private val edtCor = activity.findViewById<EditText>(R.id.inputHex)
     private val previewCor = activity.findViewById<View>(R.id.colorPreview)
 
+    private val layoutStartQR = activity.findViewById<View>(R.id.layoutStartQR)
+    private val rowIsStartQR = activity.findViewById<View>(R.id.rowIsStartQR)
+    private val switchIsStartQR = activity.findViewById<SwitchMaterial>(R.id.switchIsStartQR)
+    private val layoutIsWalkable = activity.findViewById<View>(R.id.layoutIsWalkable)
+    private val checkboxIsWalkable = activity.findViewById<android.widget.CheckBox>(R.id.checkboxIsWalkable)
+
     init {
         editor.selectionListener = this
         painel.visibility = View.GONE
+        layoutStartQR?.visibility = View.GONE
+        layoutIsWalkable?.visibility = View.GONE
         setupFieldHandlers()
+        setupSwitch()
+        setupWalkableCheckbox()
+    }
+
+    private fun setupSwitch() {
+        switchIsStartQR?.setOnCheckedChangeListener { _, isChecked ->
+            if (isProgrammatic) return@setOnCheckedChangeListener
+            val poi = editor.actions.firstOrNull { it is Action.Poi && it.selected } as? Action.Poi
+            poi?.isStartQR = isChecked
+        }
+    }
+
+    private fun setupWalkableCheckbox() {
+        checkboxIsWalkable?.setOnCheckedChangeListener { _, isChecked ->
+            if (isProgrammatic) return@setOnCheckedChangeListener
+            val shape = editor.actions.firstOrNull { it is Action.Shape && it.selected } as? Action.Shape
+            shape?.isWalkable = isChecked
+        }
     }
 
     // ===== MapEditorView callbacks =====
     override fun onShapeSelected(props: ShapeProps) {
         val obj = editor.actions.firstOrNull { (it is Action.Shape && it.selected) || (it is Action.Poi && it.selected) }
             ?: return
-        val meta = metaStore.getOrPut(obj) { Meta() }
+        val meta = metaStore.getOrPut(obj) {
+            Meta(
+                nome = when (obj) {
+                    is Action.Shape -> obj.nome
+                    is Action.Poi -> obj.nome
+                    else -> ""
+                },
+                descricao = when (obj) {
+                    is Action.Shape -> obj.descricao
+                    is Action.Poi -> obj.descricao
+                    else -> ""
+                },
+                corHex = if (obj is Action.Shape) String.format("#%06X", (0xFFFFFF and obj.fillColor)) else "#D9D9D9"
+            )
+        }
 
         isProgrammatic = true
         edtNome.setText(meta.nome)
+        edtDescricao.setText(meta.descricao)
         edtCor.setText(meta.corHex.uppercase())
         edtPosX.setText(fmt(props.x))
         edtPosY.setText(fmt(props.y))
         edtWidth.setText(fmt(props.width))
         edtHeight.setText(fmt(props.height))
+
+        // Mostrar/ocultar seção isStartQR conforme o tipo selecionado
+        if (obj is Action.Poi) {
+            layoutStartQR?.visibility = View.VISIBLE
+            switchIsStartQR?.isChecked = obj.isStartQR
+            layoutIsWalkable?.visibility = View.GONE
+        } else if (obj is Action.Shape) {
+            layoutIsWalkable?.visibility = View.VISIBLE
+            checkboxIsWalkable?.isChecked = obj.isWalkable
+            layoutStartQR?.visibility = View.GONE
+        } else {
+            layoutStartQR?.visibility = View.GONE
+            layoutIsWalkable?.visibility = View.GONE
+        }
 
         updateColorPreview(meta.corHex)
         painel.visibility = View.VISIBLE
@@ -63,6 +120,8 @@ class AttributePanelController(
 
     override fun onShapeDeselected() {
         painel.visibility = View.GONE
+        layoutStartQR?.visibility = View.GONE
+        layoutIsWalkable?.visibility = View.GONE
     }
 
     // ===== Field handlers =====
@@ -72,6 +131,7 @@ class AttributePanelController(
         applyOnEdit(edtWidth) { pushSize() }
         applyOnEdit(edtHeight) { pushSize() }
         applyOnEdit(edtNome) { saveMeta() }
+        applyOnEdit(edtDescricao) { saveMeta() }
         applyOnEdit(edtCor) { pushColor() }
     }
 
@@ -138,7 +198,14 @@ class AttributePanelController(
         val obj = editor.actions.firstOrNull { (it is Action.Shape && it.selected) || (it is Action.Poi && it.selected) } ?: return
         val m = metaStore.getOrPut(obj) { Meta() }
         m.nome = edtNome.text.toString()
+        m.descricao = edtDescricao.text.toString()
         m.corHex = edtCor.text.toString().ifBlank { "#D9D9D9" }
+        // propaga direto para o objeto para garantir persistência no salvar
+        when (obj) {
+            is Action.Shape -> { obj.nome = m.nome; obj.descricao = m.descricao }
+            is Action.Poi -> { obj.nome = m.nome; obj.descricao = m.descricao }
+            else -> {}
+        }
     }
 
     private fun updateColorPreview(hex: String) {

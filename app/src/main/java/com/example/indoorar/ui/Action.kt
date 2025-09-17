@@ -21,7 +21,10 @@ sealed class Action {
         var width: Float = 100f,
         var height: Float = 100f,
         var iconRes: Int,
-        var selected: Boolean = false
+        var selected: Boolean = false,
+        var isStartQR: Boolean = false,
+        var nome: String = "",
+        var descricao: String = ""
     ) : Action()
 
     data class Shape(
@@ -30,6 +33,8 @@ sealed class Action {
         var selected: Boolean = false,
         var fillColor: Int = "#D9D9D9".toColorInt(),
         var rotation: Float = 0f,
-        var isWalkable: Boolean = true
+        var isWalkable: Boolean = true,
+        var nome: String = "",
+        var descricao: String = ""
     ) : Action()
 }

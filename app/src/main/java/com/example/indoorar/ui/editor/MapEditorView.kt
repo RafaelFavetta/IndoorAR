@@ -32,11 +32,11 @@ class MapEditorView @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     // ===== ESCALA PARA CONVERSÃO =====
-    val PX_PER_METER = 12f // 12 pixels = 1 metro
+    val pxPerMeter = 12f // 12 pixels = 1 metro
 
     // Funções auxiliares
-    fun pxToMeters(px: Float) = px / PX_PER_METER
-    fun metersToPx(m: Float) = m * PX_PER_METER
+    fun pxToMeters(px: Float) = px / pxPerMeter
+    fun metersToPx(m: Float) = m * pxPerMeter
 
     // ===== ESTADO E CONTROLE =====
     var currentTool: Tool = Tool.CURSOR
@@ -71,7 +71,7 @@ class MapEditorView @JvmOverloads constructor(
     var selectionListener: OnShapeSelectionListener? = null
     private enum class Handle { }
 
-    // ===== PAINTS (Mantido do seu código original) =====
+    // ===== PAINTS =====
     private val gridDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(210, 210, 210); style = Paint.Style.FILL }
     private val brushPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val shapeSelectionPaint = Paint(Paint.ANTI_ALIAS_FLAG)

@@ -2,53 +2,59 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorPrimary">
 
 
+    <ImageView
+        android:id="@+id/logoTopo2"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="20dp"
+        android:contentDescription="Logo"
+        android:scaleType="fitCenter"
+        android:src="@drawable/logo_azul"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.023" />
+
     <ImageButton
-        android:id="@+id/btnVoltar"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
+        android:id="@+id/btnVoltar2"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="20dp"
         android:background="@android:color/transparent"
         android:contentDescription="Voltar"
         android:scaleType="centerInside"
         android:src="@drawable/ic_voltar_azul"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <ImageView
-        android:id="@+id/logoTopo"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:layout_marginTop="18dp"
-        android:layout_marginEnd="18dp"
-        android:contentDescription="Logo"
-        android:scaleType="fitCenter"
-        android:src="@drawable/logo_azul"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.023" />
 
     <TextView
         android:id="@+id/txtUsuarioComum"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
         android:fontFamily="@font/staatliches"
+        android:gravity="start"
         android:letterSpacing="0.05"
         android:text="Registre-se"
         android:textColor="#32357A"
         android:textSize="42sp"
         android:textStyle="bold"
-        android:gravity="start"
-        app:layout_constraintTop_toBottomOf="@id/btnVoltar"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="16dp"/>
+        app:layout_constraintStart_toStartOf="parent"
+        tools:layout_editor_absoluteY="80dp" />
 
     <TextView
         android:id="@+id/txtInsiraInfos"
@@ -58,7 +64,7 @@
         android:layout_marginTop="8dp"
         android:fontFamily="@font/inter"
         android:gravity="start"
-        android:text="Insira suas informações para \nse tornar um Criador."
+        android:text="Insira suas informações para \nse tornar um Maker."
         android:textColor="#32357A"
         android:textStyle="bold"
         android:textSize="16sp"

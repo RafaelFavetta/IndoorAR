@@ -22,6 +22,7 @@ import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
+import com.google.firebase.auth.FirebaseAuth
 
 
 class ActivityEditor : BaseActivity() {
@@ -59,66 +60,113 @@ class ActivityEditor : BaseActivity() {
     }
 
     private fun salvarMapa() {
+        val auth = FirebaseAuth.getInstance()
+        val user = auth.currentUser
+        if (user == null) {
+            Toast.makeText(this, "Faça login para salvar", Toast.LENGTH_SHORT).show()
+            return
+        }
+        btnSalvarMapa.isEnabled = false
+        Toast.makeText(this, "Verificando permissões...", Toast.LENGTH_SHORT).show()
         val db = FirebaseFirestore.getInstance()
-        val mapaDoc = db.collection("mapas").document("mapaTeste")
+        db.collection("usuarios").document(user.uid).get()
+            .addOnSuccessListener { doc ->
+                val tipo = doc.getString("tipoConta")
+                if (tipo != "maker") {
+                    btnSalvarMapa.isEnabled = true
+                    Toast.makeText(this, "Apenas maker pode criar mapas", Toast.LENGTH_LONG).show()
+                    return@addOnSuccessListener
+                }
+                // Prossegue com salvar
+                executarSalvamento(user.uid)
+            }
+            .addOnFailureListener { e ->
+                btnSalvarMapa.isEnabled = true
+                Toast.makeText(this, "Falha ao verificar usuário: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
 
-        // ===== FORMAS =====
-        val formasFirebase = mapEditor.actions.filterIsInstance<Action.Shape>().map { shape ->
-            mapOf(
-                "x" to mapEditor.pxToMeters(min(shape.start.x, shape.end.x)),
-                "y" to mapEditor.pxToMeters(min(shape.start.y, shape.end.y)),
-                "width" to mapEditor.pxToMeters(abs(shape.end.x - shape.start.x)),
-                "height" to mapEditor.pxToMeters(abs(shape.end.y - shape.start.y)),
-                "rotation" to shape.rotation,
-                "fillColor" to shape.fillColor,
-                "isWalkable" to true // por enquanto fixo, depois vai selecionar no panel
+    private fun executarSalvamento(uid: String) {
+        val db = FirebaseFirestore.getInstance()
+        val mapaRef = db.collection("mapas").document()
+
+        val mapaData = mapOf(
+            "criadorUid" to uid,
+            "dataCriacao" to com.google.firebase.Timestamp.now(),
+            // Futuro: inputs de nome/descricao do mapa (atualmente fixos)
+            "nome" to "Mapa Teste",
+            "descricao" to "Exemplo de mapa"
+        )
+
+        val batch = db.batch()
+        batch.set(mapaRef, mapaData)
+
+        // FORMAS
+        mapEditor.actions.filterIsInstance<Action.Shape>().forEach { shape ->
+            val xPx = min(shape.start.x, shape.end.x)
+            val yPx = min(shape.start.y, shape.end.y)
+            val wPx = abs(shape.end.x - shape.start.x)
+            val hPx = abs(shape.end.y - shape.start.y)
+            val formaDoc = mapaRef.collection("formas").document()
+            val dataForma = mapOf(
+                "cor" to String.format("#%06X", (0xFFFFFF and shape.fillColor)),
+                "descricao" to shape.descricao,
+                "nome" to shape.nome,
+                "posicao" to listOf(mapEditor.pxToMeters(xPx), mapEditor.pxToMeters(yPx)),
+                "rotacao" to shape.rotation,
+                "tamanho" to listOf(mapEditor.pxToMeters(hPx), mapEditor.pxToMeters(wPx)),
+                "tipo" to "retangulo",
+                "isWalkable" to shape.isWalkable
             )
+            batch.set(formaDoc, dataForma)
         }
 
-        // ===== POIs =====
-        val poisFirebase = mapEditor.actions.filterIsInstance<Action.Poi>().map { poi ->
-            mapOf(
+        // POIS
+        val pois = mapEditor.actions.filterIsInstance<Action.Poi>()
+        pois.forEach { poi ->
+            val poiDoc = mapaRef.collection("pois").document(poi.id)
+            val dataPoi = mapOf(
                 "id" to poi.id,
-                "name" to "POI",
+                "name" to (poi.nome.ifBlank { "POI" }),
                 "x" to mapEditor.pxToMeters(poi.x),
                 "y" to mapEditor.pxToMeters(poi.y),
-                "iconRes" to poi.iconRes
+                "iconRes" to poi.iconRes,
+                "isStartQR" to poi.isStartQR
             )
+            batch.set(poiDoc, dataPoi)
         }
 
-        // ===== NODES =====
-        val nodesFirebase = mapEditor.actions.filterIsInstance<Action.Poi>().map { poi ->
-            mapOf(
+        // NODES (baseado em POIs)
+        pois.forEach { poi ->
+            val nodeDoc = mapaRef.collection("nodes").document(poi.id)
+            val dataNode = mapOf(
                 "id" to poi.id,
                 "tipo" to "POI",
                 "x" to mapEditor.pxToMeters(poi.x),
                 "y" to mapEditor.pxToMeters(poi.y),
                 "poiIds" to listOf(poi.id)
             )
+            batch.set(nodeDoc, dataNode)
         }
 
-        // ===== EDGES =====
-        val edgesFirebase = gerarEdgesAuto()
+        // EDGES
+        gerarEdgesAuto().forEach { edge ->
+            val edgeId = edge["id"] as String
+            val edgeDoc = mapaRef.collection("edges").document(edgeId)
+            batch.set(edgeDoc, edge)
+        }
 
-        // ===== MONTANDO O MAPA =====
-        val mapaData = mapOf(
-            "criadorUid" to "usuarioTeste",
-            "dataCriacao" to com.google.firebase.Timestamp.now(),
-            "nome" to "Mapa Teste",
-            "descricao" to "Exemplo de mapa",
-            "formas" to formasFirebase,
-            "pois" to poisFirebase,
-            "nodes" to nodesFirebase,
-            "edges" to edgesFirebase
-        )
-
-        // ===== SALVANDO =====
-        mapaDoc.set(mapaData)
+        Toast.makeText(this, "Salvando mapa...", Toast.LENGTH_SHORT).show()
+        batch.commit()
             .addOnSuccessListener {
+                btnSalvarMapa.isEnabled = true
                 Toast.makeText(this, "Mapa salvo com sucesso!", Toast.LENGTH_SHORT).show()
+                startActivity(android.content.Intent(this, com.example.indoorar.ActivityMeusMapas::class.java))
+                finish()
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Erro ao salvar: ${e.message}", Toast.LENGTH_SHORT).show()
+                btnSalvarMapa.isEnabled = true
+                Toast.makeText(this, "Erro ao salvar: ${e.message}", Toast.LENGTH_LONG).show()
             }
     }
 

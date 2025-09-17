@@ -28,6 +28,12 @@ class ActivityHomeMaker : BaseActivity() {
             startActivity(Intent(this, ActivityEditor::class.java))
         }
 
+        // Botão Meus Mapas
+        val btnMeusMapas = findViewById<ImageView>(R.id.btnMeusMapas)
+        btnMeusMapas.setOnClickListener {
+            startActivity(Intent(this, ActivityMeusMapas::class.java))
+        }
+
         // Botão Logout
         val btnSignOut = findViewById<ImageView>(R.id.btnSignOut)
         btnSignOut.setOnClickListener {

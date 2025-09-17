@@ -83,6 +83,15 @@ class MapEditorView @JvmOverloads constructor(
     private val scaleDetector: ScaleGestureDetector
     private val gestureDetector: GestureDetector
 
+    // ===== GUIDES DE ALINHAMENTO =====
+    private val alignmentGuides = mutableListOf<Pair<PointF, PointF>>()
+    private val guidePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#FF9800")
+        strokeWidth = dp(2f)
+        style = Paint.Style.STROKE
+        pathEffect = DashPathEffect(floatArrayOf(10f, 10f), 0f)
+    }
+
     init {
         brushPaint.apply {
             color = Color.rgb(50, 100, 255)
@@ -135,6 +144,9 @@ class MapEditorView @JvmOverloads constructor(
 
         currentTool = tool
         onToolChangedListener?.invoke(tool)
+
+        // Ativa o grid apenas para o cursor
+        showGrid = (tool == Tool.CURSOR)
 
         // Limpa estados para evitar bugs entre ferramentas
         draggingObject = null
@@ -231,6 +243,9 @@ class MapEditorView @JvmOverloads constructor(
                     )
                 } ?: selectionListener?.onShapeDeselected()
 
+                // Limpa as guides ao iniciar um novo toque
+                alignmentGuides.clear()
+
                 invalidate()
                 return true
             }
@@ -249,11 +264,96 @@ class MapEditorView @JvmOverloads constructor(
 
                         is Action.BrushStroke -> {}
                     }
+
+                    // Lógica de alinhamento
+                    alignmentGuides.clear()
+                    val snapThreshold = 8f
+                    val draggedBounds = when (obj) {
+                        is Action.Poi -> RectF(obj.x - obj.width/2, obj.y - obj.height/2, obj.x + obj.width/2, obj.y + obj.height/2)
+                        is Action.Shape -> RectF(obj.start.x, obj.start.y, obj.end.x, obj.end.y)
+                        else -> null
+                    }
+                    val draggedCenterX = draggedBounds?.centerX() ?: 0f
+                    val draggedCenterY = draggedBounds?.centerY() ?: 0f
+                    actions.filter { it != obj }.forEach { other ->
+                        val otherBounds = when (other) {
+                            is Action.Poi -> RectF(other.x - other.width/2, other.y - other.height/2, other.x + other.width/2, other.y + other.height/2)
+                            is Action.Shape -> RectF(other.start.x, other.start.y, other.end.x, other.end.y)
+                            else -> null
+                        }
+                        if (otherBounds != null) {
+                            val otherCenterX = otherBounds.centerX()
+                            val otherCenterY = otherBounds.centerY()
+                            // Alinhamento vertical (centro X)
+                            if (abs(draggedCenterX - otherCenterX) < snapThreshold) {
+                                alignmentGuides.add(Pair(PointF(otherCenterX, 0f), PointF(otherCenterX, height.toFloat())))
+                                obj.apply {
+                                    if (this is Action.Poi) x = otherCenterX
+                                    if (this is Action.Shape) {
+                                        val dx = otherCenterX - draggedCenterX
+                                        start.x += dx; end.x += dx
+                                    }
+                                }
+                            }
+                            // Alinhamento horizontal (centro Y)
+                            if (abs(draggedCenterY - otherCenterY) < snapThreshold) {
+                                alignmentGuides.add(Pair(PointF(0f, otherCenterY), PointF(width.toFloat(), otherCenterY)))
+                                obj.apply {
+                                    if (this is Action.Poi) y = otherCenterY
+                                    if (this is Action.Shape) {
+                                        val dy = otherCenterY - draggedCenterY
+                                        start.y += dy; end.y += dy
+                                    }
+                                }
+                            }
+                            // Bordas esquerda/direita
+                            val edges = listOf(otherBounds.left, otherBounds.right)
+                            edges.forEach { edgeX ->
+                                if (abs(draggedBounds!!.left - edgeX) < snapThreshold) {
+                                    alignmentGuides.add(Pair(PointF(edgeX, 0f), PointF(edgeX, height.toFloat())))
+                                    val dx = edgeX - draggedBounds.left
+                                    obj.apply {
+                                        if (this is Action.Poi) x += dx
+                                        if (this is Action.Shape) { start.x += dx; end.x += dx }
+                                    }
+                                }
+                                if (abs(draggedBounds.right - edgeX) < snapThreshold) {
+                                    alignmentGuides.add(Pair(PointF(edgeX, 0f), PointF(edgeX, height.toFloat())))
+                                    val dx = edgeX - draggedBounds.right
+                                    obj.apply {
+                                        if (this is Action.Poi) x += dx
+                                        if (this is Action.Shape) { start.x += dx; end.x += dx }
+                                    }
+                                }
+                            }
+                            // Bordas superior/inferior
+                            val edgesY = listOf(otherBounds.top, otherBounds.bottom)
+                            edgesY.forEach { edgeY ->
+                                if (abs(draggedBounds!!.top - edgeY) < snapThreshold) {
+                                    alignmentGuides.add(Pair(PointF(0f, edgeY), PointF(width.toFloat(), edgeY)))
+                                    val dy = edgeY - draggedBounds.top
+                                    obj.apply {
+                                        if (this is Action.Poi) y += dy
+                                        if (this is Action.Shape) { start.y += dy; end.y += dy }
+                                    }
+                                }
+                                if (abs(draggedBounds.bottom - edgeY) < snapThreshold) {
+                                    alignmentGuides.add(Pair(PointF(0f, edgeY), PointF(width.toFloat(), edgeY)))
+                                    val dy = edgeY - draggedBounds.bottom
+                                    obj.apply {
+                                        if (this is Action.Poi) y += dy
+                                        if (this is Action.Shape) { start.y += dy; end.y += dy }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     invalidate()
                 }
                 return true
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                alignmentGuides.clear()
                 draggingObject = null
                 invalidate()
                 return true
@@ -269,6 +369,10 @@ class MapEditorView @JvmOverloads constructor(
         canvas.withTranslation(offsetX, offsetY) {
             scale(scale, scale)
             if (showGrid) drawGrid(this)
+            // Desenha guides de alinhamento
+            alignmentGuides.forEach { (p1, p2) ->
+                drawLine(p1.x, p1.y, p2.x, p2.y, guidePaint)
+            }
             drawActions(this)
             if (currentTool == Tool.BRUSH) brushEditor.onDrawTemp(this)
             if (currentTool == Tool.FORMAS) shapeEditor.onDrawTemp(this)

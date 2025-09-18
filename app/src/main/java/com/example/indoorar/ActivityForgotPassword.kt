@@ -61,8 +61,10 @@ class ActivityForgotPassword : BaseActivity() {
 
         // Voltar para Login
         tvBackToLogin.setOnClickListener {
-            startActivity(Intent(this, ActivityLogin::class.java))
+            startActivity(Intent(this, Activity_login2::class.java))
             finish()
         }
     }
 }
+
+

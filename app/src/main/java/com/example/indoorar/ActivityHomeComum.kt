@@ -35,5 +35,11 @@ class ActivityHomeComum : BaseActivity() {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             })
         }
+
+        // Botão Mapas Existentes
+        val btnMapasExistentes = findViewById<ImageView>(R.id.btnMapasExistentes)
+        btnMapasExistentes.setOnClickListener {
+            startActivity(Intent(this, ActivityMapasExistentes::class.java))
+        }
     }
 }

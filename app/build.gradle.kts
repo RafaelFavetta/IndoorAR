@@ -41,12 +41,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_20
-        targetCompatibility = JavaVersion.VERSION_20
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "20"
+        jvmTarget = "17"
     }
 
     buildFeatures {
@@ -76,6 +76,7 @@ dependencies {
 
     //API Google
     implementation("com.google.android.gms:play-services-auth:21.4.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 
     // ZXing
     implementation("com.google.zxing:core:3.5.3")
@@ -118,6 +119,9 @@ dependencies {
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
+
+    // iTextPDF para geração de PDF
+    implementation("com.itextpdf:itextg:5.5.10")
 
     testImplementation("junit:junit:4.13.2")
 }

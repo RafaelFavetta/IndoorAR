@@ -29,6 +29,7 @@ class Activity_login2: BaseActivity() {  // estendendo BaseActivity para manter 
         val editNome = findViewById<EditText>(R.id.editNome)  // equivalente ao editEmail antigo
         val editSenha = findViewById<EditText>(R.id.editSenha)
         btnEntrar = findViewById(R.id.btnEntrar)
+        progressBar = findViewById(R.id.progressBar)
 
         val btnVoltar = findViewById<ImageView>(R.id.btnVoltar)
         btnVoltar.setOnClickListener {

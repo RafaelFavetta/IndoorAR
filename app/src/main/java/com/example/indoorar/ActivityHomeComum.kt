@@ -31,7 +31,7 @@ class ActivityHomeComum : BaseActivity() {
         val btnSignOut = findViewById<ImageView>(R.id.btnSignOut)
         btnSignOut.setOnClickListener {
             FirebaseAuth.getInstance().signOut()
-            startActivity(Intent(this, ActivityLogin::class.java).apply {
+            startActivity(Intent(this, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             })
         }

@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.ProgressBar
 import androidx.core.content.getSystemService
 import com.google.firebase.auth.FirebaseAuth
@@ -47,6 +48,14 @@ class ActivityCriar : BaseActivity() {
                 }
             }
         )
+
+        val btnVoltar = findViewById<ImageView>(R.id.btnVoltar)
+        btnVoltar.setOnClickListener {
+            val intent = Intent(this, ActivityConta::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+        }
 
         btnCadastrar.setOnClickListener {
             closeKeyboard()
@@ -91,6 +100,14 @@ class ActivityCriar : BaseActivity() {
                         "mapasCriados" to emptyList<String>()
                     )
 
+                    val btnVoltar = findViewById<ImageView>(R.id.btnVoltar)
+                    btnVoltar.setOnClickListener {
+                        val intent = Intent(this, ActivityConta::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        startActivity(intent)
+                        finish()
+                    }
+
                     db.collection("usuarios").document(uid)
                         .set(dadosUsuario)
                         .addOnSuccessListener {
@@ -121,3 +138,4 @@ class ActivityCriar : BaseActivity() {
         imm?.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
     }
 }
+

@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.ProgressBar
 import androidx.core.content.getSystemService
 import com.google.firebase.auth.FirebaseAuth
@@ -37,6 +38,14 @@ class ActivityCriar2 : BaseActivity() {
         btnCadastrar = findViewById(R.id.btnCadastro)
         progressBar = findViewById(R.id.progressBar)
 
+        val btnVoltar = findViewById<ImageView>(R.id.btnVoltar)
+        btnVoltar.setOnClickListener {
+            val intent = Intent(this, ActivityConta::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+        }
+
         // Máscara de telefone
         MaskedTextChangedListener.installOn(
             editText = telefoneField,
@@ -63,6 +72,8 @@ class ActivityCriar2 : BaseActivity() {
             criarContaMaker(nome, email, telefone, senha)
         }
     }
+
+
 
     private fun validarCampos(nome: String, email: String, telefone: String, senha: String): Boolean {
         return when {

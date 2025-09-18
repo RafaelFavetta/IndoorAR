@@ -77,8 +77,8 @@ class ActivityEditor : BaseActivity() {
                     Toast.makeText(this, "Apenas maker pode criar mapas", Toast.LENGTH_LONG).show()
                     return@addOnSuccessListener
                 }
-                // Prossegue com salvar
-                executarSalvamento(user.uid)
+                val nomeAutor = doc.getString("nome") ?: user.uid
+                executarSalvamento(user.uid, nomeAutor)
             }
             .addOnFailureListener { e ->
                 btnSalvarMapa.isEnabled = true
@@ -86,12 +86,13 @@ class ActivityEditor : BaseActivity() {
             }
     }
 
-    private fun executarSalvamento(uid: String) {
+    private fun executarSalvamento(uid: String, autorNome: String) {
         val db = FirebaseFirestore.getInstance()
         val mapaRef = db.collection("mapas").document()
 
         val mapaData = mapOf(
             "criadorUid" to uid,
+            "autorNome" to autorNome,
             "dataCriacao" to com.google.firebase.Timestamp.now(),
             // Futuro: inputs de nome/descricao do mapa (atualmente fixos)
             "nome" to "Mapa Teste",

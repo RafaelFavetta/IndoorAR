@@ -1,5 +1,6 @@
 package com.example.indoorar
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.inputmethod.InputMethodManager
@@ -21,9 +22,10 @@ class ActivityCriar : BaseActivity() {
     private lateinit var btnCadastrar: Button
     private var telefoneBruto: String = ""
 
+    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_criar)
+        setContentView(R.layout.activity_cadastro_comum)
 
         auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()

@@ -117,9 +117,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.491"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.513" />
-
+        app:layout_constraintTop_toBottomOf="@+id/editNome"
+        app:layout_constraintVertical_bias="0.035" />
 
     <EditText
         android:id="@+id/editNome"
@@ -187,7 +186,7 @@
         android:id="@+id/btnFacebook"
         android:layout_width="350dp"
         android:layout_height="50dp"
-        android:background="@drawable/btn_arredondado"
+
         android:backgroundTint="#E0E0E0"
         android:fontFamily="@font/staatliches"
         android:gravity="center"
@@ -212,7 +211,8 @@
         android:id="@+id/btnGoogle"
         android:layout_width="350dp"
         android:layout_height="50dp"
-        android:background="@drawable/btn_arredondado"
+        android:layout_marginTop="5dp"
+
         android:backgroundTint="#E0E0E0"
         android:fontFamily="@font/staatliches"
         android:gravity="center"
@@ -231,7 +231,7 @@
         app:layout_constraintHorizontal_bias="0.508"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.975" />
+        app:layout_constraintVertical_bias="0.987" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -48,7 +48,7 @@
         android:id="@+id/btnLogin"
         android:layout_width="350dp"
         android:layout_height="60dp"
-        android:background="@drawable/btn_arredondado"
+        android:background="@drawable/btn_arredondado2"
         android:contentDescription="btn para login comum"
         android:elevation="5dp"
         android:fontFamily="@font/staatliches"

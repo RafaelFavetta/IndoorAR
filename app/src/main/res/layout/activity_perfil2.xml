@@ -134,7 +134,7 @@
                     <ImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:src="drawable/ic_notificacao_azul"/>
+/>
 
                     <TextView
                         android:layout_width="0dp"
@@ -178,7 +178,7 @@
                     <ImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:src="drawable/ic_calendario_azul"
+
                         android:contentDescription="Ícone de Calendário" />
 
                     <TextView

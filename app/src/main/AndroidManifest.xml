@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" >
-    <!-- Permissão de câmera -->
+
+    <!-- Permissões -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <uses-feature
         android:name="android.hardware.camera.any"
@@ -24,7 +27,7 @@
             android:name=".ActivityHomeComum"
             android:exported="false" />
         <activity
-            android:name=".Activity_login2"
+            android:name=".ActivityLogin"
             android:exported="false" />
         <activity
             android:name=".ActivityCadastroMaker"
@@ -33,19 +36,7 @@
             android:name=".Activity_cadastro_comum"
             android:exported="false" />
         <activity
-            android:name=".Activity_Conta2"
-            android:exported="false" />
-        <activity
             android:name=".ui.ARActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ActivityFavoritos"
-            android:exported="false" />
-        <activity
-            android:name=".ActivityHistorico"
-            android:exported="false" />
-        <activity
-            android:name=".Activity_mapas_favoritos"
             android:exported="false" />
         <activity
             android:name=".Activity_perfil2"
@@ -66,9 +57,6 @@
             android:exported="false" />
         <activity
             android:name=".ActivityScanQR"
-            android:exported="false" />
-        <activity
-            android:name=".ActivityLogin"
             android:exported="false" />
         <activity
             android:name=".MainActivity"
@@ -100,6 +88,20 @@
         <activity
             android:name=".ActivityMeusMapas"
             android:exported="false" />
+        <activity
+            android:name=".ActivityMapasExistentes"
+            android:exported="false" />
+
+        <!-- Provider para compartilhar o QR Code -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/filepaths" />
+        </provider>
     </application>
 
 </manifest>

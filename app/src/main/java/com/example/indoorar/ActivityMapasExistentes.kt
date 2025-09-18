@@ -2,140 +2,106 @@ package com.example.indoorar
 
 import android.content.Intent
 import android.graphics.Bitmap
+import android.os.Bundle
 import android.os.Environment
-import android.provider.MediaStore
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
 import androidx.core.content.FileProvider
 import androidx.core.graphics.toColorInt
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
-import com.google.firebase.Timestamp
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.itextpdf.text.Document
-import com.itextpdf.text.Image
-import com.itextpdf.text.pdf.PdfWriter
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import java.io.File
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.Locale
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
-import android.view.ViewGroup
-import android.view.LayoutInflater
 
-class ActivityMeusMapas : BaseActivity() {
-
+class ActivityMapasExistentes : BaseActivity() {
     private lateinit var recycler: RecyclerView
     private val adapter = MapasAdapter { mapa -> onMapaClicked(mapa) }
-    private var mapaSelecionado: MapaResumo? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_meus_mapas)
+        setContentView(R.layout.activity_mapas_existentes)
+        val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
+        toolbar.setNavigationIcon(R.drawable.ic_voltar_branco)
+        toolbar.setNavigationOnClickListener {
+            startActivity(Intent(this, ActivityHomeComum::class.java).apply { flags = Intent.FLAG_ACTIVITY_CLEAR_TOP })
+            finish()
+        }
         recycler = findViewById(R.id.recyclerMapas)
         recycler.layoutManager = LinearLayoutManager(this)
         recycler.adapter = adapter
-        carregarMapas()
+        carregarMapasExistentes()
     }
 
-    private fun carregarMapas() {
-        val uid = getUidMaker()
-        if (uid.isBlank()) {
-            Toast.makeText(this, "Usuário não logado", Toast.LENGTH_SHORT).show()
-            adapter.submit(emptyList())
-            return
-        }
-        val db = FirebaseFirestore.getInstance()
-        db.collection("mapas")
-            .whereEqualTo("criadorUid", uid)
+    private fun carregarMapasExistentes() {
+        FirebaseFirestore.getInstance()
+            .collection("mapas")
             .orderBy("dataCriacao", Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener { snap ->
-                val mapas = snap.documents
-                val listaResumo = mutableListOf<MapaResumo>()
-                if (mapas.isEmpty()) {
-                    adapter.submit(emptyList())
-                    return@addOnSuccessListener
+                val itens = snap.documents.map { doc ->
+                    MapaResumo(
+                        id = doc.id,
+                        nome = doc.getString("nome") ?: "Mapa sem nome",
+                        descricao = doc.getString("descricao") ?: "Sem descrição",
+                        autorUid = doc.getString("criadorUid") ?: "Desconhecido",
+                        autorNome = doc.getString("nome") ?: "Desconhecido",
+                        dataCriacao = doc.getTimestamp("dataCriacao")
+                    )
                 }
-                var count = 0
-                mapas.forEach { doc ->
-                    val autorUid = doc.getString("criadorUid") ?: ""
-                    db.collection("usuarios").document(autorUid).get().addOnSuccessListener { userDoc ->
-                        val nomeAutor = userDoc.getString("nome") ?: autorUid
-                        listaResumo.add(
-                            MapaResumo(
-                                id = doc.id,
-                                nome = doc.getString("nome") ?: "FATEC Araras Antonio Brambilla",
-                                descricao = doc.getString("descricao") ?: "Mapa da FATEC Araras 2025",
-                                autorUid = autorUid,
-                                autorNome = nomeAutor,
-                                dataCriacao = doc.getTimestamp("dataCriacao")
-                            )
-                        )
-                        count++
-                        if (count == mapas.size) {
-                            adapter.submit(listaResumo)
-                        }
-                    }
-                }
+                adapter.submit(itens)
             }
             .addOnFailureListener {
-                adapter.submit(emptyList())
+                Toast.makeText(this, "Erro ao carregar mapas", Toast.LENGTH_SHORT).show()
             }
     }
 
     private fun onMapaClicked(m: MapaResumo) {
-        mapaSelecionado = m
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.bottomsheet_mapa_preview, null, false)
-
-        view.findViewById<TextView>(R.id.txtTituloMapa).text = m.nome
-        view.findViewById<TextView>(R.id.txtDescricaoMapa).text = m.descricao
+        val txtTitulo = view.findViewById<TextView>(R.id.txtTituloMapa)
+        val txtDesc = view.findViewById<TextView>(R.id.txtDescricaoMapa)
         val ivPreview = view.findViewById<ImageView>(R.id.ivPreview)
+        txtTitulo.text = m.nome
+        txtDesc.text = m.descricao
         ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
 
-        // Carregar formas e pois do Firestore
         val db = FirebaseFirestore.getInstance()
         val mapaRef = db.collection("mapas").document(m.id)
-        mapaRef.collection("formas").get().addOnSuccessListener { formasSnap ->
-            mapaRef.collection("pois").get().addOnSuccessListener { poisSnap ->
-                val formas = formasSnap.documents
-                val pois = poisSnap.documents
-                ivPreview.setImageBitmap(gerarMinimapaBitmap(formas, pois, ivPreview.width, ivPreview.height))
+        ivPreview.post {
+            val w = ivPreview.width
+            val h = ivPreview.height
+            mapaRef.collection("formas").get().addOnSuccessListener { formasSnap ->
+                mapaRef.collection("pois").get().addOnSuccessListener { poisSnap ->
+                    ivPreview.setImageBitmap(gerarMinimapaBitmap(formasSnap.documents, poisSnap.documents, w, h))
+                }
             }
         }
 
-        // Botão de navegação
         view.findViewById<Button>(R.id.btnIniciarNavegacao).setOnClickListener {
             dialog.dismiss()
-            val itn = android.content.Intent(this, ActivityMap::class.java)
-            itn.putExtra("MAP_ID", m.id)
-            startActivity(itn)
+            startActivity(Intent(this, ActivityMap::class.java).putExtra("MAP_ID", m.id))
         }
 
-        // Botão de baixar QR Code e card/modal
         val btnBaixarQRCode = view.findViewById<Button>(R.id.btnBaixarQRCode)
         val cardDownloadQRCode = view.findViewById<MaterialCardView>(R.id.cardDownloadQRCode)
         val btnDownloadPDF = view.findViewById<Button>(R.id.btnDownloadPDF)
         val btnDownloadPNG = view.findViewById<Button>(R.id.btnDownloadPNG)
         cardDownloadQRCode.visibility = View.GONE
-        btnBaixarQRCode.setOnClickListener {
-            cardDownloadQRCode.visibility = View.VISIBLE
-        }
+        btnBaixarQRCode.setOnClickListener { cardDownloadQRCode.visibility = View.VISIBLE }
         btnDownloadPDF.setOnClickListener {
             gerarQRCode(m, true)
             cardDownloadQRCode.visibility = View.GONE
@@ -162,7 +128,6 @@ class ActivityMeusMapas : BaseActivity() {
         canvas.drawColor(0xFFF5F5F5.toInt())
         val paint = Paint()
 
-        // Calcular bounding box
         var minX = Float.MAX_VALUE
         var minY = Float.MAX_VALUE
         var maxX = Float.MIN_VALUE
@@ -193,7 +158,6 @@ class ActivityMeusMapas : BaseActivity() {
         val scaleX = if (maxX - minX > 0) bmpW / (maxX - minX) else 1f
         val scaleY = if (maxY - minY > 0) bmpH / (maxY - minY) else 1f
 
-        // Desenhar formas
         formas.forEach { f ->
             val pos = f.get("posicao") as? List<*> ?: return@forEach
             val tam = f.get("tamanho") as? List<*> ?: return@forEach
@@ -210,7 +174,6 @@ class ActivityMeusMapas : BaseActivity() {
             val bottom = top + h * scaleY
             canvas.drawRect(RectF(left, top, right, bottom), paint)
         }
-        // Desenhar POIs
         paint.style = Paint.Style.FILL
         paint.color = 0xFF32357A.toInt()
         pois.forEach { p ->
@@ -226,6 +189,7 @@ class ActivityMeusMapas : BaseActivity() {
     private fun gerarQRCode(mapa: MapaResumo, pdf: Boolean) {
         val mapId = mapa.id
         val nomeMapa = mapa.nome
+        val descricao = mapa.descricao.ifBlank { "Sem descrição" }
         val frase = "Me escaneie para ter o seu próprio guia!"
         val writer = QRCodeWriter()
         val qrSize = 512
@@ -242,19 +206,17 @@ class ActivityMeusMapas : BaseActivity() {
                 val document = com.itextpdf.text.Document()
                 val writerPdf = com.itextpdf.text.pdf.PdfWriter.getInstance(document, FileOutputStream(file))
                 document.open()
-                val azul = com.itextpdf.text.BaseColor(0x32,0x35,0x7A)
-                val fonteTitulo = com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 16f, com.itextpdf.text.Font.BOLD, azul)
-                val fonteNormal = com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 12f, com.itextpdf.text.Font.NORMAL)
-                // Título antes do QR
-                document.add(com.itextpdf.text.Paragraph(nomeMapa, fonteTitulo))
-                // QR
                 val stream = java.io.ByteArrayOutputStream()
                 qrBmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
                 val img = com.itextpdf.text.Image.getInstance(stream.toByteArray())
                 img.alignment = com.itextpdf.text.Element.ALIGN_CENTER
                 document.add(img)
-                // Frase após o QR
-                document.add(com.itextpdf.text.Paragraph("\n$frase", fonteNormal))
+                val azul = com.itextpdf.text.BaseColor(0x32,0x35,0x7A)
+                val fonteTitulo = com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 16f, com.itextpdf.text.Font.BOLD, azul)
+                val fonteNormal = com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 12f, com.itextpdf.text.Font.NORMAL)
+                document.add(com.itextpdf.text.Paragraph("\n$nomeMapa", fonteTitulo))
+                document.add(com.itextpdf.text.Paragraph(descricao, fonteNormal))
+                document.add(com.itextpdf.text.Paragraph(frase, fonteNormal))
                 document.close(); writerPdf.close()
                 abrirShareSheet(file, "application/pdf")
             } catch (e: Exception) {
@@ -264,29 +226,30 @@ class ActivityMeusMapas : BaseActivity() {
             try {
                 val padding = 24
                 val lineSpacing = 16
-                val tituloSize = 42f
-                val fraseSize = 30f
-                val topSectionHeight = (padding + tituloSize + lineSpacing)
-                val phraseBlockHeight = (lineSpacing + fraseSize + padding)
-                val totalHeight = (topSectionHeight + qrSize + phraseBlockHeight).toInt()
-                val outBmp = Bitmap.createBitmap(qrSize, totalHeight, Bitmap.Config.ARGB_8888)
+                val paintText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = android.graphics.Color.BLACK
+                    textAlign = Paint.Align.CENTER
+                }
+                val tituloSize = 40f
+                val descSize = 30f
+                val fraseSize = 28f
+                val extraHeight = (tituloSize + descSize + fraseSize + lineSpacing * 3 + padding * 2).toInt()
+                val outBmp = Bitmap.createBitmap(qrSize, qrSize + extraHeight, Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(outBmp)
                 canvas.drawColor(android.graphics.Color.WHITE)
+                canvas.drawBitmap(qrBmp, 0f, 0f, null)
                 val centerX = qrSize / 2f
-                val paintText = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
-                // Título
+                var curY = qrSize + padding + tituloSize
                 paintText.textSize = tituloSize
                 paintText.color = 0xFF32357A.toInt()
-                val tituloBaseline = padding + tituloSize
-                canvas.drawText(nomeMapa, centerX, tituloBaseline, paintText)
-                // QR
-                val qrTop = (topSectionHeight).toInt()
-                canvas.drawBitmap(qrBmp, 0f, qrTop.toFloat(), null)
-                // Frase
-                paintText.textSize = fraseSize
+                canvas.drawText(nomeMapa, centerX, curY, paintText)
+                curY += lineSpacing + descSize
+                paintText.textSize = descSize
                 paintText.color = android.graphics.Color.BLACK
-                val fraseBaseline = qrTop + qrSize + lineSpacing + fraseSize
-                canvas.drawText(frase, centerX, fraseBaseline, paintText)
+                canvas.drawText(descricao, centerX, curY, paintText)
+                curY += lineSpacing + fraseSize
+                paintText.textSize = fraseSize
+                canvas.drawText(frase, centerX, curY, paintText)
                 val file = File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "qrcode_${mapId}.png")
                 val stream = FileOutputStream(file)
                 outBmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
@@ -305,51 +268,5 @@ class ActivityMeusMapas : BaseActivity() {
         shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
         shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         startActivity(Intent.createChooser(shareIntent, "Compartilhar QR Code"))
-    }
-
-    private fun getUidMaker(): String {
-        return FirebaseAuth.getInstance().currentUser?.uid ?: ""
-    }
-}
-
-data class MapaResumo(
-    val id: String,
-    val nome: String,
-    val descricao: String,
-    val autorUid: String,
-    val autorNome: String,
-    val dataCriacao: Timestamp?
-)
-
-class MapasAdapter(
-    private val onClick: (MapaResumo) -> Unit
-) : RecyclerView.Adapter<MapasAdapter.VH>() {
-    private val itens = mutableListOf<MapaResumo>()
-    fun submit(novos: List<MapaResumo>) {
-        itens.clear()
-        itens.addAll(novos)
-        notifyDataSetChanged()
-    }
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        val v = LayoutInflater.from(parent.context).inflate(R.layout.item_mapa, parent, false)
-        return VH(v)
-    }
-    override fun getItemCount() = itens.size
-    override fun onBindViewHolder(holder: VH, position: Int) {
-        holder.bind(itens[position], onClick)
-    }
-    class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val card = itemView.findViewById<MaterialCardView>(R.id.cardMapa)
-        private val txtNome = itemView.findViewById<TextView>(R.id.txtNome)
-        private val txtDescricao = itemView.findViewById<TextView>(R.id.txtDescricao)
-        private val txtData = itemView.findViewById<TextView>(R.id.txtData)
-        fun bind(m: MapaResumo, onClick: (MapaResumo) -> Unit) {
-            txtNome.text = m.nome
-            txtDescricao.text = m.descricao
-            val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-            val dataFmt = m.dataCriacao?.let { sdf.format(it.toDate()) } ?: "data desconhecida"
-            txtData.text = "Data: $dataFmt"
-            card.setOnClickListener { onClick(m) }
-        }
     }
 }

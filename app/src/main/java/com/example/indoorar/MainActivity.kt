@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
-import com.example.indoorar.BaseActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -49,7 +48,7 @@ class MainActivity : BaseActivity() {
             startActivity(intent)
         }
         btnLogin.setOnClickListener {
-            val intent = Intent(this, Activity_login2::class.java)
+            val intent = Intent(this, ActivityLogin::class.java)
             startActivity(intent)
         }
 

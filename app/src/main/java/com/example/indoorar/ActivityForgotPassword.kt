@@ -6,9 +6,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
-import com.example.indoorar.BaseActivity
 
 
 class ActivityForgotPassword : BaseActivity() {
@@ -61,7 +59,7 @@ class ActivityForgotPassword : BaseActivity() {
 
         // Voltar para Login
         tvBackToLogin.setOnClickListener {
-            startActivity(Intent(this, Activity_login2::class.java))
+            startActivity(Intent(this, ActivityLogin::class.java))
             finish()
         }
     }

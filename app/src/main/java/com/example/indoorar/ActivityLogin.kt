@@ -10,7 +10,7 @@ import android.widget.ProgressBar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
-class Activity_login2: BaseActivity() {  // estendendo BaseActivity para manter as funções iguais
+class ActivityLogin: BaseActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore

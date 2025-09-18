@@ -33,8 +33,94 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
+    <!-- Botão escolher destino -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnEscolherDestino"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ESCOLHER DESTINO"
+        android:textAllCaps="true"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:layout_margin="16dp"
+        app:cornerRadius="12dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Botão limpar rota -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnLimparRota"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="LIMPAR ROTA"
+        android:textAllCaps="true"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="4dp"
+        app:cornerRadius="12dp"
+        app:layout_constraintTop_toBottomOf="@id/btnEscolherDestino"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Texto da distância restante -->
+    <TextView
+        android:id="@+id/tvDistancia"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Distância: --"
+        android:textColor="#32357A"
+        android:textSize="14sp"
+        android:padding="8dp"
+        android:background="#80000000"
+        app:layout_constraintTop_toBottomOf="@id/btnLimparRota"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="4dp"/>
+
+    <!-- Card lista de destinos -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardDestino"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="8dp"
+        app:cardElevation="8dp"
+        app:cardCornerRadius="16dp"
+        app:layout_constraintTop_toBottomOf="@id/tvDistancia"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/tvTituloDestino"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Escolha o destino"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:paddingBottom="4dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerDestino"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:overScrollMode="ifContentScrolls"/>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
     <!-- Minimap será uma View customizada no canto inferior direito -->
-    <View
+    <com.example.indoorar.ui.MinimapView
         android:id="@+id/minimap"
         android:layout_width="150dp"
         android:layout_height="150dp"

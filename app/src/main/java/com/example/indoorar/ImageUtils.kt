@@ -35,7 +35,7 @@ object ImageUtils {
         val rowStride = yPlane.rowStride
         val pixelStride = yPlane.pixelStride // geralmente 1, mas tratamos genericamente
 
-        // Copia todo Y para um array
+        // Copia qualquer Y para um array
         val ySize = yBuffer.remaining()
         val yBytes = ByteArray(ySize)
         yBuffer.get(yBytes, 0, ySize)

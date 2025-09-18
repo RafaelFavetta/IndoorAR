@@ -107,8 +107,8 @@ class ActivityScanQR : BaseActivity() {
                         if (result.text != lastScanned) {
                             lastScanned = result.text
                             btnResult.isEnabled = true
-                            btnResult.text = "Abrir: ${result.text.take(24)}" +
-                                    if (result.text.length > 24) "..." else ""
+                            btnResult.text = "Usar: ${result.text.take(24)}" + if (result.text.length > 24) "..." else ""
+                            btnResult.setOnClickListener { handleResult(result.text) }
                         }
                     } catch (_: NotFoundException) {
                         // nada encontrado no frame
@@ -132,5 +132,12 @@ class ActivityScanQR : BaseActivity() {
                 Toast.makeText(this, "Erro iniciando câmera: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun handleResult(value: String) {
+        val intent = Intent()
+        intent.putExtra("QR_VALUE", value)
+        setResult(RESULT_OK, intent)
+        finish()
     }
 }

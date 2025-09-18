@@ -33,11 +33,11 @@
             android:textSize="14sp" />
 
         <TextView
-            android:id="@+id/txtAutorData"
+            android:id="@+id/txtData"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Autor e data"
+            android:text="Data"
             android:textColor="#666666"
             android:textSize="12sp" />
 

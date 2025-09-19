@@ -1,8 +1,5 @@
 package com.example.indoorar.ui
 
-import android.content.res.Resources
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.PointF
 import androidx.core.graphics.toColorInt
 import java.util.UUID
@@ -13,7 +10,7 @@ sealed class Action {
         val points: List<PointF>
     ) : Action()
 
-    // <<< MUDANÇA: A classe Poi agora só guarda os dados, não a imagem.
+    // POI sem 'nome' e 'descricao'
     data class Poi(
         val id: String = UUID.randomUUID().toString(),
         var x: Float,
@@ -22,11 +19,13 @@ sealed class Action {
         var height: Float = 100f,
         var iconRes: Int,
         var selected: Boolean = false,
-        var isStartQR: Boolean = false,
-        var nome: String = "",
-        var descricao: String = ""
+        var isStartQR: Boolean = false
     ) : Action()
 
+    // Tipos de formas suportadas
+    enum class ShapeType { RECTANGLE, SQUARE, CIRCLE, TRIANGLE, LINE }
+
+    // Shape sem 'descricao'; mantém 'nome'
     data class Shape(
         var start: PointF,
         var end: PointF,
@@ -35,6 +34,6 @@ sealed class Action {
         var rotation: Float = 0f,
         var isWalkable: Boolean = true,
         var nome: String = "",
-        var descricao: String = ""
+        var type: ShapeType = ShapeType.RECTANGLE
     ) : Action()
 }

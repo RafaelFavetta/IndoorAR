@@ -1,7 +1,6 @@
 package com.example.indoorar.ui.editor
 
 import android.app.Activity
-import android.graphics.Color
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -14,13 +13,12 @@ import java.util.WeakHashMap
 import com.google.android.material.switchmaterial.SwitchMaterial
 
 class AttributePanelController(
-    private val activity: Activity,
+    activity: Activity,
     private val editor: MapEditorView
 ) : MapEditorView.OnShapeSelectionListener {
 
     private data class Meta(
         var nome: String = "",
-        var descricao: String = "",
         var tipo: String = "",
         var corHex: String = "#D9D9D9"
     )
@@ -30,7 +28,6 @@ class AttributePanelController(
 
     private val painel = activity.findViewById<View>(R.id.painelAtributos)
     private val edtNome = activity.findViewById<EditText>(R.id.inputNome)
-    private val edtDescricao = activity.findViewById<EditText>(R.id.inputDescricao)
     private val edtPosX = activity.findViewById<EditText>(R.id.inputX)
     private val edtPosY = activity.findViewById<EditText>(R.id.inputY)
     private val edtWidth = activity.findViewById<EditText>(R.id.inputWidth)
@@ -39,7 +36,6 @@ class AttributePanelController(
     private val previewCor = activity.findViewById<View>(R.id.colorPreview)
 
     private val layoutStartQR = activity.findViewById<View>(R.id.layoutStartQR)
-    private val rowIsStartQR = activity.findViewById<View>(R.id.rowIsStartQR)
     private val switchIsStartQR = activity.findViewById<SwitchMaterial>(R.id.switchIsStartQR)
     private val layoutIsWalkable = activity.findViewById<View>(R.id.layoutIsWalkable)
     private val checkboxIsWalkable = activity.findViewById<android.widget.CheckBox>(R.id.checkboxIsWalkable)
@@ -78,12 +74,6 @@ class AttributePanelController(
             Meta(
                 nome = when (obj) {
                     is Action.Shape -> obj.nome
-                    is Action.Poi -> obj.nome
-                    else -> ""
-                },
-                descricao = when (obj) {
-                    is Action.Shape -> obj.descricao
-                    is Action.Poi -> obj.descricao
                     else -> ""
                 },
                 corHex = if (obj is Action.Shape) String.format("#%06X", (0xFFFFFF and obj.fillColor)) else "#D9D9D9"
@@ -92,25 +82,35 @@ class AttributePanelController(
 
         isProgrammatic = true
         edtNome.setText(meta.nome)
-        edtDescricao.setText(meta.descricao)
         edtCor.setText(meta.corHex.uppercase())
-        edtPosX.setText(fmt(props.x))
-        edtPosY.setText(fmt(props.y))
-        edtWidth.setText(fmt(props.width))
-        edtHeight.setText(fmt(props.height))
+        // Posição agora exibida em metros
+        edtPosX.setText(fmt(editor.pxToMeters(props.x)))
+        edtPosY.setText(fmt(editor.pxToMeters(props.y)))
+        // Largura/altura exibidas em metros
+        edtWidth.setText(fmt(editor.pxToMeters(props.width)))
+        edtHeight.setText(fmt(editor.pxToMeters(props.height)))
 
-        // Mostrar/ocultar seção isStartQR conforme o tipo selecionado
-        if (obj is Action.Poi) {
-            layoutStartQR?.visibility = View.VISIBLE
-            switchIsStartQR?.isChecked = obj.isStartQR
-            layoutIsWalkable?.visibility = View.GONE
-        } else if (obj is Action.Shape) {
-            layoutIsWalkable?.visibility = View.VISIBLE
-            checkboxIsWalkable?.isChecked = obj.isWalkable
-            layoutStartQR?.visibility = View.GONE
-        } else {
-            layoutStartQR?.visibility = View.GONE
-            layoutIsWalkable?.visibility = View.GONE
+        // Mostrar/ocultar seções conforme o tipo selecionado
+        when (obj) {
+            is Action.Poi -> {
+                layoutStartQR?.visibility = View.VISIBLE
+                switchIsStartQR?.isChecked = obj.isStartQR
+                layoutIsWalkable?.visibility = View.GONE
+                // Oculta campo de nome para POI
+                edtNome?.visibility = View.GONE
+            }
+            is Action.Shape -> {
+                layoutIsWalkable?.visibility = View.VISIBLE
+                checkboxIsWalkable?.isChecked = obj.isWalkable
+                layoutStartQR?.visibility = View.GONE
+                // Exibe nome para Shape
+                edtNome?.visibility = View.VISIBLE
+            }
+            else -> {
+                layoutStartQR?.visibility = View.GONE
+                layoutIsWalkable?.visibility = View.GONE
+                edtNome?.visibility = View.GONE
+            }
         }
 
         updateColorPreview(meta.corHex)
@@ -131,7 +131,6 @@ class AttributePanelController(
         applyOnEdit(edtWidth) { pushSize() }
         applyOnEdit(edtHeight) { pushSize() }
         applyOnEdit(edtNome) { saveMeta() }
-        applyOnEdit(edtDescricao) { saveMeta() }
         applyOnEdit(edtCor) { pushColor() }
     }
 
@@ -139,23 +138,26 @@ class AttributePanelController(
         if (isProgrammatic) return
         val obj = editor.actions.firstOrNull { (it is Action.Shape && it.selected) || (it is Action.Poi && it.selected) } ?: return
 
-        val x = edtPosX.text.toString().toFloatOrNull()
-        val y = edtPosY.text.toString().toFloatOrNull()
+        // Entradas em metros -> converter para pixels
+        val xMeters = edtPosX.text.toString().toFloatOrNull()
+        val yMeters = edtPosY.text.toString().toFloatOrNull()
+        val xPx = xMeters?.let { editor.metersToPx(it) }
+        val yPx = yMeters?.let { editor.metersToPx(it) }
 
         when(obj) {
             is Action.Shape -> {
                 val width = obj.end.x - obj.start.x
                 val height = obj.end.y - obj.start.y
-                obj.start.x = x ?: obj.start.x
-                obj.start.y = y ?: obj.start.y
+                if (xPx != null) obj.start.x = xPx
+                if (yPx != null) obj.start.y = yPx
                 obj.end.x = obj.start.x + width
                 obj.end.y = obj.start.y + height
             }
             is Action.Poi -> {
-                obj.x = x ?: obj.x
-                obj.y = y ?: obj.y
+                if (xPx != null) obj.x = xPx
+                if (yPx != null) obj.y = yPx
             }
-            is Action.BrushStroke -> {} // nada
+            is Action.BrushStroke -> {}
         }
         editor.invalidate()
     }
@@ -164,17 +166,20 @@ class AttributePanelController(
         if (isProgrammatic) return
         val obj = editor.actions.firstOrNull { (it is Action.Shape && it.selected) || (it is Action.Poi && it.selected) } ?: return
 
-        val w = edtWidth.text.toString().toFloatOrNull()
-        val h = edtHeight.text.toString().toFloatOrNull()
+        // Entradas são em metros; converter para pixels
+        val wMeters = edtWidth.text.toString().toFloatOrNull()
+        val hMeters = edtHeight.text.toString().toFloatOrNull()
+        val wPx = wMeters?.let { editor.metersToPx(it) }
+        val hPx = hMeters?.let { editor.metersToPx(it) }
 
         when(obj) {
             is Action.Shape -> {
-                obj.end.x = obj.start.x + (w ?: obj.end.x - obj.start.x)
-                obj.end.y = obj.start.y + (h ?: obj.end.y - obj.start.y)
+                obj.end.x = obj.start.x + (wPx ?: (obj.end.x - obj.start.x))
+                obj.end.y = obj.start.y + (hPx ?: (obj.end.y - obj.start.y))
             }
             is Action.Poi -> {
-                obj.width = w ?: obj.width
-                obj.height = h ?: obj.height
+                obj.width = wPx ?: obj.width
+                obj.height = hPx ?: obj.height
             }
             is Action.BrushStroke -> {} // nada
         }
@@ -198,12 +203,11 @@ class AttributePanelController(
         val obj = editor.actions.firstOrNull { (it is Action.Shape && it.selected) || (it is Action.Poi && it.selected) } ?: return
         val m = metaStore.getOrPut(obj) { Meta() }
         m.nome = edtNome.text.toString()
-        m.descricao = edtDescricao.text.toString()
         m.corHex = edtCor.text.toString().ifBlank { "#D9D9D9" }
         // propaga direto para o objeto para garantir persistência no salvar
         when (obj) {
-            is Action.Shape -> { obj.nome = m.nome; obj.descricao = m.descricao }
-            is Action.Poi -> { obj.nome = m.nome; obj.descricao = m.descricao }
+            is Action.Shape -> { obj.nome = m.nome }
+            is Action.Poi -> { /* POI não possui nome/descrição */ }
             else -> {}
         }
     }
@@ -215,7 +219,7 @@ class AttributePanelController(
 
     private fun fmt(v: Float): String {
         return if (v % 1.0 == 0.0) v.toInt().toString()
-        else String.format(Locale.US, "%.1f", v)
+        else String.format(Locale.US, "%.2f", v)
     }
 
     private fun applyOnEdit(edit: EditText, action: () -> Unit) {

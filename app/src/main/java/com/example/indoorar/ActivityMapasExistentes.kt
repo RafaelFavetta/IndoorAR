@@ -58,7 +58,7 @@ class ActivityMapasExistentes : BaseActivity() {
                         nome = doc.getString("nome") ?: "Mapa sem nome",
                         descricao = doc.getString("descricao") ?: "Sem descrição",
                         autorUid = doc.getString("criadorUid") ?: "Desconhecido",
-                        autorNome = doc.getString("nome") ?: "Desconhecido",
+                        autorNome = doc.getString("nomeAutor") ?: "Desconhecido",
                         dataCriacao = doc.getTimestamp("dataCriacao")
                     )
                 }

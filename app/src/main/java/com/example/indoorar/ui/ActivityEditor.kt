@@ -9,13 +9,10 @@ import com.google.firebase.firestore.FirebaseFirestore
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.graphics.toColorInt
 import com.example.indoorar.BaseActivity
 import com.example.indoorar.R
 import com.example.indoorar.ui.editor.AttributePanelController
 import com.example.indoorar.ui.editor.MapEditorView
-import com.example.indoorar.views.ColorPickerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import kotlin.math.abs
@@ -23,11 +20,12 @@ import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
 import com.google.firebase.auth.FirebaseAuth
+import android.text.InputType
+import android.view.ViewGroup
+import android.widget.FrameLayout
 
 
 class ActivityEditor : BaseActivity() {
-
-    private val db = FirebaseFirestore.getInstance()
 
     private lateinit var mapEditor: MapEditorView
     private lateinit var colorPreview: ImageView
@@ -35,6 +33,7 @@ class ActivityEditor : BaseActivity() {
     private lateinit var btnColorPicker: ImageButton
     private lateinit var btnSalvarMapa: MaterialButton
     private lateinit var poiCard: MaterialCardView
+    private lateinit var formasCard: MaterialCardView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,14 +43,14 @@ class ActivityEditor : BaseActivity() {
         setupToolButtons()
         setupAttributePanel()
         setupPoiClicks()
+        setupFormasClicks()
 
         // Listener para a View avisar a Activity quando a ferramenta mudar
         mapEditor.onToolChangedListener = { newTool ->
             updateSelectedButtonUI(newTool)
-            // Se a ferramenta não for mais POI, esconde o card
-            if (newTool != Tool.POI) {
-                poiCard.visibility = View.GONE
-            }
+            // Esconde/mostra cards conforme ferramenta
+            poiCard.visibility = if (newTool == Tool.POI) View.VISIBLE else View.GONE
+            formasCard.visibility = if (newTool == Tool.FORMAS) View.VISIBLE else View.GONE
         }
 
         btnSalvarMapa.setOnClickListener {
@@ -78,7 +77,15 @@ class ActivityEditor : BaseActivity() {
                     return@addOnSuccessListener
                 }
                 val nomeAutor = doc.getString("nome") ?: user.uid
-                executarSalvamento(user.uid, nomeAutor)
+                // Abrir card para inserir o nome do mapa
+                solicitarNomeMapa { nomeMapa ->
+                    if (nomeMapa.isBlank()) {
+                        btnSalvarMapa.isEnabled = true
+                        Toast.makeText(this, "Informe um nome para o mapa", Toast.LENGTH_SHORT).show()
+                    } else {
+                        executarSalvamento(user.uid, nomeAutor, nomeMapa.trim())
+                    }
+                }
             }
             .addOnFailureListener { e ->
                 btnSalvarMapa.isEnabled = true
@@ -86,17 +93,52 @@ class ActivityEditor : BaseActivity() {
             }
     }
 
-    private fun executarSalvamento(uid: String, autorNome: String) {
+    private fun solicitarNomeMapa(onConfirm: (String) -> Unit) {
+        val input = EditText(this).apply {
+            hint = "Nome do mapa"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_WORDS
+            maxLines = 1
+        }
+        val container = FrameLayout(this).apply {
+            val padding = (16 * resources.displayMetrics.density).toInt()
+            setPadding(padding, padding, padding, 0)
+            addView(input, FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ))
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Salvar mapa")
+            .setMessage("Digite o nome do mapa")
+            .setView(container)
+            .setPositiveButton("Salvar") { dialog, _ ->
+                onConfirm(input.text?.toString() ?: "")
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancelar") { dialog, _ ->
+                btnSalvarMapa.isEnabled = true
+                dialog.dismiss()
+            }
+            .setOnCancelListener {
+                btnSalvarMapa.isEnabled = true
+            }
+            .show()
+    }
+
+    private fun executarSalvamento(uid: String, autorNome: String, nomeMapa: String) {
         val db = FirebaseFirestore.getInstance()
         val mapaRef = db.collection("mapas").document()
 
         val mapaData = mapOf(
             "criadorUid" to uid,
-            "autorNome" to autorNome,
+            // Somente 'nomeAutor' será persistido
+            "nomeAutor" to autorNome,
             "dataCriacao" to com.google.firebase.Timestamp.now(),
-            // Futuro: inputs de nome/descricao do mapa (atualmente fixos)
-            "nome" to "Mapa Teste",
-            "descricao" to "Exemplo de mapa"
+            "nome" to nomeMapa,
+            // Mantém descrição vazia por enquanto (poderá ter outro diálogo futuramente)
+            "descricao" to "",
+            // Escala para conversão px <-> m (fundamental para ZXing/ARCore/A*)
+            "pxPerMeter" to mapEditor.pxPerMeter
         )
 
         val batch = db.batch()
@@ -109,14 +151,21 @@ class ActivityEditor : BaseActivity() {
             val wPx = abs(shape.end.x - shape.start.x)
             val hPx = abs(shape.end.y - shape.start.y)
             val formaDoc = mapaRef.collection("formas").document()
+            val tipoStr = when (shape.type) {
+                Action.ShapeType.RECTANGLE -> "retangulo"
+                Action.ShapeType.SQUARE -> "quadrado"
+                Action.ShapeType.CIRCLE -> "circulo"
+                Action.ShapeType.TRIANGLE -> "triangulo"
+                Action.ShapeType.LINE -> "linha"
+            }
             val dataForma = mapOf(
                 "cor" to String.format("#%06X", (0xFFFFFF and shape.fillColor)),
-                "descricao" to shape.descricao,
+                // remove descricao, mantém somente nome
                 "nome" to shape.nome,
                 "posicao" to listOf(mapEditor.pxToMeters(xPx), mapEditor.pxToMeters(yPx)),
                 "rotacao" to shape.rotation,
                 "tamanho" to listOf(mapEditor.pxToMeters(hPx), mapEditor.pxToMeters(wPx)),
-                "tipo" to "retangulo",
+                "tipo" to tipoStr,
                 "isWalkable" to shape.isWalkable
             )
             batch.set(formaDoc, dataForma)
@@ -128,7 +177,7 @@ class ActivityEditor : BaseActivity() {
             val poiDoc = mapaRef.collection("pois").document(poi.id)
             val dataPoi = mapOf(
                 "id" to poi.id,
-                "name" to (poi.nome.ifBlank { "POI" }),
+                // não persistir nome/descricao para POI
                 "x" to mapEditor.pxToMeters(poi.x),
                 "y" to mapEditor.pxToMeters(poi.y),
                 "iconRes" to poi.iconRes,
@@ -150,7 +199,7 @@ class ActivityEditor : BaseActivity() {
             batch.set(nodeDoc, dataNode)
         }
 
-        // EDGES
+        // EDGES (peso em metros)
         gerarEdgesAuto().forEach { edge ->
             val edgeId = edge["id"] as String
             val edgeDoc = mapaRef.collection("edges").document(edgeId)
@@ -203,13 +252,16 @@ class ActivityEditor : BaseActivity() {
                 // verifica colisão com shapes que não são caminháveis
                 val colidiu = shapes.any { shape -> linhaColideComShape(n1.x, n1.y, n2.x, n2.y, shape) }
                 if (!colidiu) {
-                    val peso = hypot((n2.x - n1.x).toDouble(), (n2.y - n1.y).toDouble())
+                    val dx = (n2.x - n1.x)
+                    val dy = (n2.y - n1.y)
+                    val distPx = kotlin.math.hypot(dx.toDouble(), dy.toDouble()).toFloat()
+                    val pesoMetros = mapEditor.pxToMeters(distPx)
                     edges.add(
                         mapOf(
                             "id" to "${n1.id}_${n2.id}",
                             "fromNodeId" to n1.id,
                             "toNodeId" to n2.id,
-                            "peso" to peso
+                            "peso" to pesoMetros
                         )
                     )
                 }
@@ -228,6 +280,7 @@ class ActivityEditor : BaseActivity() {
         btnColorPicker = findViewById(R.id.btnColorPicker)
         btnSalvarMapa = findViewById(R.id.btnSalvarMapa)
         poiCard = findViewById(R.id.cardPoi)
+        formasCard = findViewById(R.id.cardFormas)
     }
 
 
@@ -252,9 +305,36 @@ class ActivityEditor : BaseActivity() {
 
         toolButtons.forEach { (linearId, tool) ->
             findViewById<LinearLayout>(linearId).setOnClickListener {
-                mapEditor.setTool(tool)
-                if (tool == Tool.POI) {
-                    poiCard.visibility = View.VISIBLE
+                when (tool) {
+                    Tool.FORMAS -> {
+                        if (mapEditor.currentTool == Tool.FORMAS) {
+                            // Toggle o card se já estiver na ferramenta
+                            val visible = formasCard.visibility == View.VISIBLE
+                            formasCard.visibility = if (visible) View.GONE else View.VISIBLE
+                            poiCard.visibility = View.GONE
+                        } else {
+                            mapEditor.setTool(Tool.FORMAS)
+                            formasCard.visibility = View.VISIBLE
+                            poiCard.visibility = View.GONE
+                        }
+                    }
+                    Tool.POI -> {
+                        if (mapEditor.currentTool == Tool.POI) {
+                            val visible = poiCard.visibility == View.VISIBLE
+                            poiCard.visibility = if (visible) View.GONE else View.VISIBLE
+                            formasCard.visibility = View.GONE
+                        } else {
+                            mapEditor.setTool(Tool.POI)
+                            poiCard.visibility = View.VISIBLE
+                            formasCard.visibility = View.GONE
+                        }
+                    }
+                    else -> {
+                        mapEditor.setTool(tool)
+                        // Oculta quaisquer cards quando mudar para outras ferramentas
+                        poiCard.visibility = View.GONE
+                        formasCard.visibility = View.GONE
+                    }
                 }
             }
         }
@@ -279,6 +359,24 @@ class ActivityEditor : BaseActivity() {
                 // Avisa o MapEditor para entrar no modo de posicionamento
                 mapEditor.primeForPoiCreation(iconRes)
                 Toast.makeText(this, "Toque no mapa para posicionar", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun setupFormasClicks() {
+        val map = mapOf(
+            R.id.formasRetangulo to Action.ShapeType.RECTANGLE,
+            R.id.formasQuadrado to Action.ShapeType.SQUARE,
+            R.id.formasCirculo to Action.ShapeType.CIRCLE,
+            R.id.formasTriangulo to Action.ShapeType.TRIANGLE,
+            R.id.formasLinha to Action.ShapeType.LINE,
+        )
+        map.forEach { (viewId, type) ->
+            findViewById<LinearLayout>(viewId).setOnClickListener {
+                mapEditor.setShapeType(type)
+                mapEditor.setTool(Tool.FORMAS)
+                formasCard.visibility = View.GONE
+                Toast.makeText(this, "Toque e arraste no mapa para desenhar", Toast.LENGTH_SHORT).show()
             }
         }
     }

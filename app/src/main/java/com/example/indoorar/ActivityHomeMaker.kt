@@ -3,10 +3,10 @@ package com.example.indoorar
 import android.content.Intent
 import android.os.Bundle
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.example.indoorar.BaseActivity
 import com.example.indoorar.ui.ActivityEditor
 import com.google.firebase.auth.FirebaseAuth
 
@@ -22,6 +22,24 @@ class ActivityHomeMaker : BaseActivity() {
             insets
         }
 
+        // Define dinamicamente o texto de boas-vindas com o nome do usuário logado
+        val txtBemVindo = findViewById<TextView>(R.id.txtBemVindo)
+        val user = FirebaseAuth.getInstance().currentUser
+        val nome = user?.let { u ->
+            when {
+                !u.displayName.isNullOrBlank() -> u.displayName
+                !u.email.isNullOrBlank() -> u.email!!.substringBefore("@")
+                else -> null
+            }
+        }
+        txtBemVindo.text = buildString {
+            append("BEM-VINDO")
+            if (!nome.isNullOrBlank()) {
+                append(" ")
+                append(nome)
+            }
+        }
+
         // Botão Criar mapa
         val btnCriarMapa = findViewById<ImageView>(R.id.btnCriarMapa)
         btnCriarMapa.setOnClickListener {
@@ -34,13 +52,6 @@ class ActivityHomeMaker : BaseActivity() {
             startActivity(Intent(this, ActivityMeusMapas::class.java))
         }
 
-        // Botão Logout
-        val btnSignOut = findViewById<ImageView>(R.id.btnSignOut)
-        btnSignOut.setOnClickListener {
-            FirebaseAuth.getInstance().signOut()
-            startActivity(Intent(this, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            })
-        }
+        // Removido: botão Logout inexistente no layout activity_home_maker
     }
 }

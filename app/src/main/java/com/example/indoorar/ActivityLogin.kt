@@ -19,7 +19,7 @@ class ActivityLogin: BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_login2)
+        setContentView(R.layout.activity_login)
 
         // Firebase
         auth = FirebaseAuth.getInstance()

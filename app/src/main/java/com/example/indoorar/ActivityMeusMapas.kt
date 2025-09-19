@@ -36,6 +36,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.view.ViewGroup
 import android.view.LayoutInflater
+import com.google.firebase.firestore.FieldValue
 
 class ActivityMeusMapas : BaseActivity() {
 
@@ -49,7 +50,38 @@ class ActivityMeusMapas : BaseActivity() {
         recycler = findViewById(R.id.recyclerMapas)
         recycler.layoutManager = LinearLayoutManager(this)
         recycler.adapter = adapter
-        carregarMapas()
+        // Executa migração antes de carregar a lista
+        migrarNomeAutorDoUsuarioAtual {
+            carregarMapas()
+        }
+    }
+
+    private fun migrarNomeAutorDoUsuarioAtual(onDone: () -> Unit) {
+        val uid = getUidMaker()
+        if (uid.isBlank()) { onDone(); return }
+        val db = FirebaseFirestore.getInstance()
+        db.collection("usuarios").document(uid).get()
+            .addOnSuccessListener { userDoc ->
+                val nomeAutor = userDoc.getString("nome") ?: uid
+                db.collection("mapas").whereEqualTo("criadorUid", uid).get()
+                    .addOnSuccessListener { snap ->
+                        if (snap.isEmpty) { onDone(); return@addOnSuccessListener }
+                        val batch = db.batch()
+                        snap.documents.forEach { doc ->
+                            val hasNomeAutor = doc.contains("nomeAutor") && !doc.getString("nomeAutor").isNullOrBlank()
+                            val hadAutorNome = doc.contains("autorNome")
+                            if (!hasNomeAutor || hadAutorNome) {
+                                val ref = doc.reference
+                                val updates = mutableMapOf<String, Any>("nomeAutor" to nomeAutor)
+                                if (hadAutorNome) updates["autorNome"] = FieldValue.delete()
+                                batch.update(ref, updates)
+                            }
+                        }
+                        batch.commit().addOnCompleteListener { onDone() }
+                    }
+                    .addOnFailureListener { onDone() }
+            }
+            .addOnFailureListener { onDone() }
     }
 
     private fun carregarMapas() {

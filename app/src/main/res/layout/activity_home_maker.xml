@@ -152,7 +152,7 @@
                     android:background="@drawable/background_oval_2">
 
                     <ImageView
-                        android:id="@+id/btnFavoritos"
+                        android:id="@+id/btnMeusMapas"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:background="@drawable/ripple_clickable"
@@ -197,7 +197,7 @@
                     android:background="@drawable/background_oval_2">
 
                     <ImageView
-                        android:id="@+id/btnEscanear"
+                        android:id="@+id/btnCriarMapa"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:background="@drawable/ripple_clickable"
@@ -242,7 +242,7 @@
                     android:background="@drawable/background_oval_2">
 
                     <ImageView
-                        android:id="@+id/btnHistorico"
+                        android:id="@+id/btnEstatisticas"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:background="@drawable/ripple_clickable"

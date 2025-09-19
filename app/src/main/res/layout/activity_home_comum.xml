@@ -63,7 +63,7 @@
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
                     <TextView
-                        android:id="@+id/textView2"
+                        android:id="@+id/txtBemVindo"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="32dp"
@@ -73,7 +73,7 @@
                         android:textColor="#fdfdfd"
                         android:textSize="28sp"
                         android:textStyle="bold"
-                        tools:text="Bem-vindo ao Wander,\no seu guia." />
+                        tools:text="Bem-vindo ao Vigari,\no seu guia." />
 
                     <EditText
                         android:id="@+id/editTextText"

@@ -152,7 +152,12 @@ class ActivityMap : BaseActivity() {
     }
 
     private fun ensureMapLoadedOrScan() {
-        if (mapId.isNullOrBlank()) scanLauncher.launch(Intent(this, ActivityScanQR::class.java)) else carregarMapa()
+        if (mapId.isNullOrBlank()) {
+            val intentScan = Intent(this, ActivityScanQR::class.java).apply {
+                putExtra("RETURN_RESULT", true)
+            }
+            scanLauncher.launch(intentScan)
+        } else carregarMapa()
     }
 
     private fun carregarMapa() {
@@ -461,7 +466,7 @@ class ActivityMap : BaseActivity() {
         val startRec = Rec(startId, 0.0, h(startNode, goalNode), null)
         all[startId] = startRec; open.add(startRec)
         while (open.isNotEmpty()) {
-            val cur = open.poll()
+            val cur = open.poll()!!
             if (cur.id == goalId) {
                 val path = mutableListOf<String>()
                 var c: Rec? = cur

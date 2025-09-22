@@ -50,7 +50,8 @@
             android:contentDescription="Perfil"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/user_1" />
+            app:srcCompat="@drawable/account_circle"
+            app:tint="@color/colorPrimary" />
 
         <TextView
             android:id="@+id/txtBemVindo"
@@ -114,7 +115,7 @@
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
                 android:layout_marginStart="16dp"
-                android:src="@drawable/ic_triangle_azul" />
+                android:src="@drawable/search2" />
 
         </RelativeLayout>
 
@@ -332,7 +333,7 @@
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
                         android:contentDescription="Ícone"
-                        android:src="@drawable/ic_home" />
+                        android:src="@drawable/school" />
 
                     <ImageView
                         android:id="@+id/imageDireita1"
@@ -341,7 +342,7 @@
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
                         android:contentDescription="Ícone Direito"
-                        android:src="@drawable/favoriteblue" />
+                        android:src="@drawable/ic_favoritos" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -396,7 +397,7 @@
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
                         android:contentDescription="Ícone"
-                        android:src="@drawable/ic_home" />
+                        android:src="@drawable/travel" />
 
                     <ImageView
                         android:id="@+id/imageDireita2"
@@ -405,7 +406,7 @@
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
                         android:contentDescription="Ícone Direito"
-                        android:src="@drawable/favoriteblue" />
+                        android:src="@drawable/ic_favoritos" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -422,7 +423,7 @@
                             android:layout_height="wrap_content"
                             android:ellipsize="end"
                             android:singleLine="true"
-                            android:text="Fatec Pref. Antonio Brambila"
+                            android:text="Aeroporto Internacional de Viracopos"
                             android:textSize="18sp"
                             android:textStyle="bold" />
 
@@ -431,7 +432,7 @@
                             android:layout_height="wrap_content"
                             android:ellipsize="end"
                             android:singleLine="true"
-                            android:text="Faculdade"
+                            android:text="Aeroporto"
                             android:textColor="#888888"
                             android:textSize="14sp" />
                     </LinearLayout>
@@ -465,24 +466,6 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:contentDescription="perfil"
-                android:src="@drawable/user"
-                app:tint="@color/colorPrimary" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="@drawable/ripple_clickable">
-
-            <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:contentDescription="favoritos"
                 android:src="@drawable/ic_favoritos"
                 app:tint="@color/colorPrimary" />
         </LinearLayout>
@@ -498,10 +481,10 @@
             android:background="@drawable/ripple_clickable">
 
             <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:contentDescription="ler_qr"
-                android:src="@drawable/ic_scanner_branco"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:contentDescription="favoritos"
+                android:src="@drawable/ic_historico_branco"
                 app:tint="@color/colorPrimary" />
         </LinearLayout>
 
@@ -516,10 +499,28 @@
             android:background="@drawable/ripple_clickable">
 
             <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:contentDescription="ler_qr"
+                android:src="@drawable/ic_home"
+                app:tint="@color/colorPrimary" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="@drawable/ripple_clickable">
+
+            <ImageView
+                android:layout_width="38dp"
+                android:layout_height="38dp"
                 android:contentDescription="historico"
-                android:src="@drawable/ic_historico_branco"
+                android:src="@drawable/qrcode2"
                 app:tint="@color/colorPrimary" />
         </LinearLayout>
 
@@ -537,7 +538,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:contentDescription="Configurações"
-                android:src="@drawable/ic_settings_branco"
+                android:src="@drawable/account_circle"
                 app:tint="@color/colorPrimary" />
         </LinearLayout>
 

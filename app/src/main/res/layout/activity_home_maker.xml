@@ -50,7 +50,8 @@
             android:contentDescription="Perfil"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/user_1" />
+            app:srcCompat="@drawable/account_circle"
+            app:tint="@color/colorPrimary" />
 
         <TextView
             android:id="@+id/txtBemVindo"
@@ -114,7 +115,7 @@
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
                 android:layout_marginStart="16dp"
-                android:src="@drawable/ic_triangle_azul" />
+                android:src="@drawable/search2" />
 
         </RelativeLayout>
 
@@ -208,7 +209,7 @@
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
-                        app:srcCompat="@drawable/ic_addmapa" />
+                        app:srcCompat="@drawable/stylus_note_azul" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <TextView
@@ -253,7 +254,7 @@
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
-                        app:srcCompat="@drawable/ic_estatisticas_azul" />
+                        app:srcCompat="@drawable/bar_chart" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <TextView
@@ -332,7 +333,7 @@
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
                         android:contentDescription="Ícone"
-                        android:src="@drawable/ic_home" />
+                        android:src="@drawable/school" />
 
                     <ImageView
                         android:id="@+id/imageDireita1"
@@ -396,7 +397,7 @@
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
                         android:contentDescription="Ícone"
-                        android:src="@drawable/ic_home" />
+                        android:src="@drawable/travel" />
 
                     <ImageView
                         android:id="@+id/imageDireita2"
@@ -422,7 +423,7 @@
                             android:layout_height="wrap_content"
                             android:ellipsize="end"
                             android:singleLine="true"
-                            android:text="Fatec Pref. Antonio Brambila"
+                            android:text="Aeroporto Internacional de Viracopos"
                             android:textSize="18sp"
                             android:textStyle="bold" />
 
@@ -431,7 +432,7 @@
                             android:layout_height="wrap_content"
                             android:ellipsize="end"
                             android:singleLine="true"
-                            android:text="Faculdade"
+                            android:text="Aeroporto"
                             android:textColor="#888888"
                             android:textSize="14sp" />
                     </LinearLayout>
@@ -465,7 +466,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:contentDescription="perfil"
-                android:src="@drawable/user"
+                android:src="@drawable/stylus_note"
                 app:tint="@color/colorPrimary" />
         </LinearLayout>
 
@@ -501,7 +502,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:contentDescription="ler_qr"
-                android:src="@drawable/ic_maker"
+                android:src="@drawable/ic_home"
                 app:tint="@color/colorPrimary" />
         </LinearLayout>
 
@@ -537,7 +538,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:contentDescription="Configurações"
-                android:src="@drawable/ic_settings_branco"
+                android:src="@drawable/account_circle"
                 app:tint="@color/colorPrimary" />
         </LinearLayout>
 

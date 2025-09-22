@@ -30,6 +30,9 @@ import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.math.max
 
+// Add ARCore availability import
+import com.google.ar.core.ArCoreApk
+
 class ActivityMap : BaseActivity() {
 
     private lateinit var arFragment: ArFragment
@@ -66,6 +69,9 @@ class ActivityMap : BaseActivity() {
     private var nearSphereMaterial: com.google.ar.sceneform.rendering.Material? = null
     private val sphereHighlightDistance = 1.0
 
+    // Track ARCore install prompt state
+    private var userRequestedInstall: Boolean = true
+
     private val requestPermissions = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { perms ->
@@ -91,6 +97,14 @@ class ActivityMap : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_map)
+
+        // Quick check: if device does not support ARCore, exit gracefully
+        val availability = ArCoreApk.getInstance().checkAvailability(this)
+        if (availability.isUnsupported) {
+            Toast.makeText(this, "Este dispositivo não é compatível com AR.", Toast.LENGTH_LONG).show()
+            finish(); return
+        }
+
         bindViews()
         setupRecycler()
         setupButtons()
@@ -108,6 +122,17 @@ class ActivityMap : BaseActivity() {
 
         mapId = intent.getStringExtra("MAP_ID")
         checkAndRequestPermissions()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Request ARCore install/update if needed. If INSTALL_REQUESTED, Play Store flow will start and we return.
+        val installStatus = ArCoreApk.getInstance().requestInstall(this, userRequestedInstall)
+        if (installStatus == ArCoreApk.InstallStatus.INSTALL_REQUESTED) {
+            userRequestedInstall = false
+            return
+        }
+        // If INSTALLED, proceed normally; ArFragment handles session creation.
     }
 
     private fun bindViews() {

@@ -5,24 +5,17 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Button
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.google.common.util.concurrent.ListenableFuture
-import com.google.firebase.auth.FirebaseAuth
 import com.google.zxing.*
 import com.google.zxing.common.HybridBinarizer
-import androidx.core.net.toUri
-import com.example.indoorar.BaseActivity
 import android.content.res.ColorStateList
 import android.graphics.Color
-import androidx.appcompat.app.AlertDialog
-import com.google.ar.core.ArCoreApk
 
 
 class ActivityScanQR : BaseActivity() {
@@ -136,41 +129,10 @@ class ActivityScanQR : BaseActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
-    private fun isArSupported(): Boolean {
-        val availability = ArCoreApk.getInstance().checkAvailability(this)
-        return availability == ArCoreApk.Availability.SUPPORTED_INSTALLED ||
-                availability == ArCoreApk.Availability.SUPPORTED_APK_TOO_OLD ||
-                availability == ArCoreApk.Availability.SUPPORTED_NOT_INSTALLED
-    }
-
-    private fun showNoArDialogAndGoHome(returnResult: Boolean) {
-        if (returnResult) {
-            // cancela para a Activity que chamou (ex.: ActivityMap) poder finalizar-se
-            setResult(RESULT_CANCELED)
-        }
-        AlertDialog.Builder(this)
-            .setTitle("Navegação indisponível")
-            .setMessage("Seu dispositivo não suporta AR. Não é possível utilizar a navegação neste aparelho.")
-            .setCancelable(false)
-            .setPositiveButton("OK") { _, _ ->
-                val intent = Intent(this, ActivityHomeComum::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                startActivity(intent)
-                finish()
-            }
-            .show()
-    }
-
     private fun handleResult(value: String) {
         val returnResult = intent.getBooleanExtra("RETURN_RESULT", false)
 
-        if (!isArSupported()) {
-            showNoArDialogAndGoHome(returnResult)
-            return
-        }
-
-        // Se a Activity foi chamada para retornar resultado, devolve; senão, abre ActivityMap
+        // Proceed without blocking on ARCore pre-check; ARActivity/flow should handle ARCore install if needed
         if (returnResult) {
             val intent = Intent()
             intent.putExtra("QR_VALUE", value)

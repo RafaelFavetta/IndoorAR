@@ -525,6 +525,8 @@ class MapEditorView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        // Fill background to avoid transparency when panning far from origin
+        canvas.drawColor(Color.WHITE)
         canvas.withTranslation(offsetX, offsetY) {
             scale(scale, scale)
             if (showGrid) drawGrid(this)
@@ -644,12 +646,23 @@ class MapEditorView @JvmOverloads constructor(
     private fun drawGrid(canvas: Canvas) {
         val spacing = 40f
         val radius = 2f
-        val cols = (width / spacing / scale).toInt() + 4
-        val rows = (height / spacing / scale).toInt() + 4
-        for (i in -cols..cols) for (j in -rows..rows) {
+        // Compute visible world bounds based on current camera transform
+        val worldLeft = -offsetX / scale
+        val worldTop = -offsetY / scale
+        val worldRight = (width - offsetX) / scale
+        val worldBottom = (height - offsetY) / scale
+
+        val startCol = kotlin.math.floor(worldLeft / spacing).toInt() - 2
+        val endCol = kotlin.math.ceil(worldRight / spacing).toInt() + 2
+        val startRow = kotlin.math.floor(worldTop / spacing).toInt() - 2
+        val endRow = kotlin.math.ceil(worldBottom / spacing).toInt() + 2
+
+        for (i in startCol..endCol) {
             val x = i * spacing
-            val y = j * spacing
-            canvas.drawCircle(x, y, radius, gridDotPaint)
+            for (j in startRow..endRow) {
+                val y = j * spacing
+                canvas.drawCircle(x, y, radius, gridDotPaint)
+            }
         }
     }
 

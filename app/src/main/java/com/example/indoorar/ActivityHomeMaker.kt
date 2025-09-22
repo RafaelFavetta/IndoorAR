@@ -52,6 +52,10 @@ class ActivityHomeMaker : BaseActivity() {
             startActivity(Intent(this, ActivityMeusMapas::class.java))
         }
 
-        // Removido: botão Logout inexistente no layout activity_home_maker
+        // Botão Perfil
+        val btnPerfil = findViewById<ImageView>(R.id.btnPerfil)
+        btnPerfil.setOnClickListener {
+            startActivity(Intent(this, ActivityPerfil::class.java))
+        }
     }
 }

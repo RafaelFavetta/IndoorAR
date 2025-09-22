@@ -30,7 +30,7 @@
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.023" />
+            app:layout_constraintVertical_bias="0.079" />
 
         <ImageView
             android:id="@+id/logoTopo"
@@ -45,7 +45,7 @@
             app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.023" />
+            app:layout_constraintVertical_bias="0.079" />
 
         <ImageView
             android:id="@+id/userImage"
@@ -111,6 +111,7 @@
             android:paddingTop="16dp"
             android:paddingBottom="16dp">
 
+            <!-- Configurações da Conta -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -121,27 +122,28 @@
                 app:cardElevation="4dp">
 
                 <LinearLayout
-                    android:id="@+id/itemNotificacoes"
+                    android:id="@+id/itemConfiguracoes"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="16dp"
                     android:background="@drawable/ripple_clickable"
                     android:clickable="true"
-                    android:focusable="true">
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="16dp">
 
                     <ImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-/>
+                        android:contentDescription="Ícone de Configurações"
+                        android:src="@drawable/account_circle" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
                         android:layout_weight="1"
-                        android:text="Ações do usuário"
+                        android:text="Configurações da Conta"
                         android:textColor="#32357A"
                         android:textSize="20sp"
                         android:textStyle="bold" />
@@ -149,51 +151,13 @@
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:src="@drawable/arrow"
-                        android:contentDescription="Seta" />
+                        android:contentDescription="Seta"
+                        android:src="@drawable/arrow" />
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:layout_marginEnd="24dp"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
-
-                <LinearLayout
-                    android:id="@+id/itemCalendario"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="16dp"
-                    android:background="@drawable/ripple_clickable"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-
-                        android:contentDescription="Ícone de Calendário" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:layout_weight="1"
-                        android:text="Estatísticas"
-                        android:textColor="#32357A"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
+            <!-- Histórico -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -239,6 +203,7 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- Estatísticas -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -249,7 +214,7 @@
                 app:cardElevation="4dp">
 
                 <LinearLayout
-                    android:id="@+id/itemConfiguracoes"
+                    android:id="@+id/itemCalendario"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -262,15 +227,15 @@
                     <ImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:contentDescription="Ícone de Configurações"
-                        android:src="@drawable/user2" />
+                        android:contentDescription="Ícone de Estatísticas"
+                        android:src="@drawable/bar_chart" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
                         android:layout_weight="1"
-                        android:text="Configurações da Conta"
+                        android:text="Estatísticas"
                         android:textColor="#32357A"
                         android:textSize="20sp"
                         android:textStyle="bold" />
@@ -279,11 +244,12 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/arrow"
-                        android:contentDescription="Seta" />
+                        android:contentDescription="Seta"/>
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- Ajuda e Suporte -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -329,6 +295,7 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- Logout -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

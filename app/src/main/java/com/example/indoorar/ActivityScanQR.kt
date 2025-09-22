@@ -26,6 +26,13 @@ class ActivityScanQR : BaseActivity() {
     private var lastScanned: String? = null
     private var cameraBound = false
 
+    // Hold references to release camera cleanly
+    private var cameraProvider: ProcessCameraProvider? = null
+    private var imageAnalysis: ImageAnalysis? = null
+
+    // Prevent double navigation
+    private var navigating = false
+
     private val requestPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -46,10 +53,24 @@ class ActivityScanQR : BaseActivity() {
         btnResult.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#BDBDBD"))
         btnResult.setOnClickListener {
             val value = lastScanned ?: return@setOnClickListener
+            if (navigating) return@setOnClickListener
+            navigating = true
+            btnResult.isEnabled = false
             handleResult(value)
         }
 
         ensureCameraPermissionAndStart()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Ensure camera is released as we leave
+        stopCamera()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopCamera()
     }
 
     private fun ensureCameraPermissionAndStart() {
@@ -73,15 +94,17 @@ class ActivityScanQR : BaseActivity() {
 
         cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
+            val provider = cameraProviderFuture.get()
+            cameraProvider = provider
 
             val preview = Preview.Builder().build().also {
                 it.surfaceProvider = previewView.surfaceProvider
             }
 
-            val imageAnalysis = ImageAnalysis.Builder()
+            val analysis = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
+            imageAnalysis = analysis
 
             val reader = MultiFormatReader().apply {
                 setHints(mapOf(
@@ -90,7 +113,7 @@ class ActivityScanQR : BaseActivity() {
                 ))
             }
 
-            imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(this)) { imageProxy ->
+            analysis.setAnalyzer(ContextCompat.getMainExecutor(this)) { imageProxy ->
                 val mediaImage = imageProxy.image
                 if (mediaImage != null) {
                     val crop = imageProxy.cropRect
@@ -120,8 +143,8 @@ class ActivityScanQR : BaseActivity() {
 
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
             try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis)
+                provider.unbindAll()
+                provider.bindToLifecycle(this, cameraSelector, preview, analysis)
                 cameraBound = true
             } catch (e: Exception) {
                 Toast.makeText(this, "Erro iniciando câmera: ${e.message}", Toast.LENGTH_LONG).show()
@@ -129,8 +152,23 @@ class ActivityScanQR : BaseActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
+    private fun stopCamera() {
+        try { imageAnalysis?.clearAnalyzer() } catch (_: Exception) {}
+        try {
+            if (cameraProvider == null) {
+                // Try to resolve from future if possible
+                cameraProvider = try { cameraProviderFuture.get() } catch (_: Exception) { null }
+            }
+            cameraProvider?.unbindAll()
+        } catch (_: Exception) {}
+        cameraBound = false
+    }
+
     private fun handleResult(value: String) {
         val returnResult = intent.getBooleanExtra("RETURN_RESULT", false)
+
+        // Release camera promptly before leaving to avoid camera-in-use crash
+        stopCamera()
 
         // Proceed without blocking on ARCore pre-check; ARActivity/flow should handle ARCore install if needed
         if (returnResult) {

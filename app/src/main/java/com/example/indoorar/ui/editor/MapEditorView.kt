@@ -9,6 +9,7 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewConfiguration
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.toColorInt
 import androidx.core.graphics.withSave
@@ -71,6 +72,10 @@ class MapEditorView @JvmOverloads constructor(
     var showBrush = true // Mantido do seu código original
     var showPois = true  // Mantido do seu código original
 
+    // Suavização do snap/alinhamento
+    private var baseSnapThresholdPx = 16f // distância em px de tela para começar a "puxar"
+    private var softSnapStrength = 0.35f  // 0..1, quanto do deslocamento aplicar por frame
+
     // ===== SELECTION/DRAG (Mantido do seu código original) =====
     private var lastDragPoint: PointF? = null
     private var activeHandle: Handle? = null
@@ -96,10 +101,23 @@ class MapEditorView @JvmOverloads constructor(
     // ===== GUIDES DE ALINHAMENTO =====
     private val alignmentGuides = mutableListOf<Pair<PointF, PointF>>()
     private val guidePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#FF9800")
-        strokeWidth = dp(2f)
+        color = "#FF9800".toColorInt()
+        alpha = 170 // mais suave
+        strokeWidth = dp(1.5f)
         style = Paint.Style.STROKE
         pathEffect = DashPathEffect(floatArrayOf(10f, 10f), 0f)
+    }
+
+    // Ícone de lixeira (cacheado)
+    private val deleteIconBitmap: Bitmap? by lazy {
+        val d = ContextCompat.getDrawable(context, com.example.indoorar.R.drawable.ic_voltar_azul) ?: return@lazy null
+        val w = max(1, d.intrinsicWidth)
+        val h = max(1, d.intrinsicHeight)
+        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        d.setBounds(0, 0, w, h)
+        d.draw(c)
+        bmp
     }
 
     init {
@@ -142,6 +160,15 @@ class MapEditorView @JvmOverloads constructor(
 
     // ===== MÉTODOS PÚBLICOS (API DA VIEW) =====
 
+    /** Fornece o Paint usado para o traço do pincel. */
+    fun getBrushPaint(): Paint = brushPaint
+
+    /** Alterna a exibição do grid e invalida a View. */
+    fun toggleGrid() {
+        showGrid = !showGrid
+        invalidate()
+    }
+
     /** Prepara a View para criar um POI no próximo toque. Chamado pela Activity. */
     fun primeForPoiCreation(iconRes: Int) {
         pendingPoiResId = iconRes
@@ -171,29 +198,72 @@ class MapEditorView @JvmOverloads constructor(
         invalidate()
     }
 
+    // ===== UNDO STACK (robusto) =====
+    private sealed class EditorOp { abstract fun undo(host: MapEditorView) }
+    private class AddOp(private val action: Action) : EditorOp() {
+        override fun undo(host: MapEditorView) { host.actions.remove(action); host.invalidate() }
+    }
+    private class DeleteOp(private val action: Action, private val index: Int) : EditorOp() {
+        override fun undo(host: MapEditorView) {
+            val idx = index.coerceIn(0, host.actions.size)
+            host.actions.add(idx, action)
+            host.invalidate()
+        }
+    }
+    private sealed class ActionState {
+        data class PoiState(val poi: Action.Poi, val x: Float, val y: Float) : ActionState()
+        data class ShapeState(val shape: Action.Shape, val start: PointF, val end: PointF) : ActionState()
+    }
+    private class MoveOp(private val before: ActionState, private val after: ActionState) : EditorOp() {
+        override fun undo(host: MapEditorView) {
+            host.applyState(before)
+            host.invalidate()
+        }
+    }
+    private val undoStack = ArrayDeque<EditorOp>()
+    private val UNDO_LIMIT = 100
+    private fun pushOp(op: EditorOp) { undoStack.addLast(op); if (undoStack.size > UNDO_LIMIT) undoStack.removeFirst() }
+    fun canUndo() = undoStack.isNotEmpty()
     fun undo() {
-        if (actions.isNotEmpty()) {
+        val op = if (undoStack.isNotEmpty()) undoStack.removeLast() else null
+        if (op != null) {
+            op.undo(this)
+            selectionListener?.onShapeDeselected()
+        } else if (actions.isNotEmpty()) { // fallback
             actions.removeAt(actions.lastIndex)
-            invalidate()
+        }
+        invalidate()
+    }
+
+    private fun snapshotOf(action: Action?): ActionState? = when (action) {
+        is Action.Poi -> ActionState.PoiState(action, action.x, action.y)
+        is Action.Shape -> ActionState.ShapeState(action, PointF(action.start.x, action.start.y), PointF(action.end.x, action.end.y))
+        else -> null
+    }
+    private fun applyState(state: ActionState) {
+        when (state) {
+            is ActionState.PoiState -> { state.poi.x = state.x; state.poi.y = state.y }
+            is ActionState.ShapeState -> {
+                state.shape.start.x = state.start.x; state.shape.start.y = state.start.y
+                state.shape.end.x = state.end.x; state.shape.end.y = state.end.y
+            }
+        }
+    }
+    private fun statesEqual(a: ActionState?, b: ActionState?): Boolean {
+        if (a == null || b == null || a::class != b::class) return false
+        return when (a) {
+            is ActionState.PoiState -> {
+                val bb = b as ActionState.PoiState; a.x == bb.x && a.y == bb.y
+            }
+            is ActionState.ShapeState -> {
+                val bb = b as ActionState.ShapeState
+                a.start.x == bb.start.x && a.start.y == bb.start.y && a.end.x == bb.end.x && a.end.y == bb.end.y
+            }
         }
     }
 
-    fun addPoi(x: Float, y: Float, iconRes: Int) {
-        val poi = Action.Poi(x = x, y = y, iconRes = iconRes)
-        actions.add(poi)
-        invalidate()
-    }
-
-    fun addAction(action: Action) {
-        actions.add(action)
-        invalidate()
-    }
-
-    fun toggleGrid() { showGrid = !showGrid; invalidate() }
-    fun toggleBrushLayer() { showBrush = !showBrush; invalidate() }
-    fun togglePoiLayer() { showPois = !showPois; invalidate() }
-    fun getBrushPaint() = brushPaint
-
+    // Snapshot do início do arraste
+    private var dragSnapshotBefore: ActionState? = null
 
     // ===== TOUCH =====
 
@@ -237,6 +307,36 @@ class MapEditorView @JvmOverloads constructor(
                 downYScreen = event.y
                 hasMovedBeyondSlop = false
 
+                // Se já existe um selecionado, verifica clique na lixeirinha primeiro
+                actions.firstOrNull { act ->
+                    when (act) {
+                        is Action.Shape -> act.selected
+                        is Action.Poi -> act.selected
+                        else -> false
+                    }
+                }?.let { selectedAct ->
+                    val delRect = getDeleteRectForAction(selectedAct)
+                    if (delRect != null && world.x in delRect.left..delRect.right && world.y in delRect.top..delRect.bottom) {
+                        AlertDialog.Builder(context)
+                            .setTitle("Deseja excluir?")
+                            .setMessage("Esta ação removerá o item do mapa.")
+                            .setNegativeButton("Cancelar", null)
+                            .setPositiveButton("Excluir") { _, _ ->
+                                // Recalcula o índice no momento da exclusão para evitar inconsistências
+                                val idx = actions.indexOf(selectedAct)
+                                if (idx >= 0) {
+                                    actions.removeAt(idx)
+                                    pushOp(DeleteOp(selectedAct, idx))
+                                    selectionListener?.onShapeDeselected()
+                                    draggingObject = null
+                                    invalidate()
+                                }
+                            }
+                            .show()
+                        return true
+                    }
+                }
+
                 draggingObject = hitTestObjects(world)
                 actions.forEach { action ->
                     val isSelected = (action == draggingObject)
@@ -246,6 +346,9 @@ class MapEditorView @JvmOverloads constructor(
                         else -> {}
                     }
                 }
+
+                // snapshot para possível MoveOp
+                dragSnapshotBefore = snapshotOf(draggingObject)
 
                 draggingObject?.let { obj ->
                     when (obj) {
@@ -287,9 +390,33 @@ class MapEditorView @JvmOverloads constructor(
                             is Action.BrushStroke -> {}
                         }
 
-                        // Lógica de alinhamento
+                        // Lógica de alinhamento (suavizada)
                         alignmentGuides.clear()
-                        val snapThreshold = 8f
+                        val snapThreshold = baseSnapThresholdPx / max(0.001f, scale)
+
+                        fun applySoftSnapX(targetDelta: Float) {
+                            val dist = abs(targetDelta)
+                            if (dist <= snapThreshold && dist > 0f) {
+                                val factor = softSnapStrength * (1f - dist / snapThreshold).coerceIn(0f, 1f)
+                                val adj = targetDelta * factor
+                                obj.apply {
+                                    if (this is Action.Poi) x += adj
+                                    if (this is Action.Shape) { start.x += adj; end.x += adj }
+                                }
+                            }
+                        }
+                        fun applySoftSnapY(targetDelta: Float) {
+                            val dist = abs(targetDelta)
+                            if (dist <= snapThreshold && dist > 0f) {
+                                val factor = softSnapStrength * (1f - dist / snapThreshold).coerceIn(0f, 1f)
+                                val adj = targetDelta * factor
+                                obj.apply {
+                                    if (this is Action.Poi) y += adj
+                                    if (this is Action.Shape) { start.y += adj; end.y += adj }
+                                }
+                            }
+                        }
+
                         val draggedBounds = when (obj) {
                             is Action.Poi -> getPoiContentRectInWorld(obj)
                             is Action.Shape -> RectF(obj.start.x, obj.start.y, obj.end.x, obj.end.y)
@@ -297,6 +424,7 @@ class MapEditorView @JvmOverloads constructor(
                         }
                         val draggedCenterX = draggedBounds?.centerX() ?: 0f
                         val draggedCenterY = draggedBounds?.centerY() ?: 0f
+
                         actions.filter { it != obj }.forEach { other ->
                             val otherBounds = when (other) {
                                 is Action.Poi -> getPoiContentRectInWorld(other)
@@ -307,65 +435,47 @@ class MapEditorView @JvmOverloads constructor(
                                 val otherCenterX = otherBounds.centerX()
                                 val otherCenterY = otherBounds.centerY()
                                 // Alinhamento vertical (centro X)
-                                if (abs(draggedCenterX - otherCenterX) < snapThreshold) {
-                                    alignmentGuides.add(Pair(PointF(otherCenterX, 0f), PointF(otherCenterX, height.toFloat())))
-                                    val dx = otherCenterX - draggedCenterX
-                                    obj.apply {
-                                        if (this is Action.Poi) x += dx
-                                        if (this is Action.Shape) {
-                                            start.x += dx; end.x += dx
-                                        }
+                                run {
+                                    val dxToCenter = otherCenterX - draggedCenterX
+                                    if (abs(dxToCenter) < snapThreshold) {
+                                        alignmentGuides.add(Pair(PointF(otherCenterX, 0f), PointF(otherCenterX, height.toFloat())))
+                                        applySoftSnapX(dxToCenter)
                                     }
                                 }
                                 // Alinhamento horizontal (centro Y)
-                                if (abs(draggedCenterY - otherCenterY) < snapThreshold) {
-                                    alignmentGuides.add(Pair(PointF(0f, otherCenterY), PointF(width.toFloat(), otherCenterY)))
-                                    val dy = otherCenterY - draggedCenterY
-                                    obj.apply {
-                                        if (this is Action.Poi) y += dy
-                                        if (this is Action.Shape) {
-                                            start.y += dy; end.y += dy
-                                        }
+                                run {
+                                    val dyToCenter = otherCenterY - draggedCenterY
+                                    if (abs(dyToCenter) < snapThreshold) {
+                                        alignmentGuides.add(Pair(PointF(0f, otherCenterY), PointF(width.toFloat(), otherCenterY)))
+                                        applySoftSnapY(dyToCenter)
                                     }
                                 }
                                 // Bordas esquerda/direita
                                 val edges = listOf(otherBounds.left, otherBounds.right)
                                 edges.forEach { edgeX ->
-                                    if (abs(draggedBounds.left - edgeX) < snapThreshold) {
+                                    val dxLeft = edgeX - draggedBounds.left
+                                    if (abs(dxLeft) < snapThreshold) {
                                         alignmentGuides.add(Pair(PointF(edgeX, 0f), PointF(edgeX, height.toFloat())))
-                                        val dx = edgeX - draggedBounds.left
-                                        obj.apply {
-                                            if (this is Action.Poi) x += dx
-                                            if (this is Action.Shape) { start.x += dx; end.x += dx }
-                                        }
+                                        applySoftSnapX(dxLeft)
                                     }
-                                    if (abs(draggedBounds.right - edgeX) < snapThreshold) {
+                                    val dxRight = edgeX - draggedBounds.right
+                                    if (abs(dxRight) < snapThreshold) {
                                         alignmentGuides.add(Pair(PointF(edgeX, 0f), PointF(edgeX, height.toFloat())))
-                                        val dx = edgeX - draggedBounds.right
-                                        obj.apply {
-                                            if (this is Action.Poi) x += dx
-                                            if (this is Action.Shape) { start.x += dx; end.x += dx }
-                                        }
+                                        applySoftSnapX(dxRight)
                                     }
                                 }
                                 // Bordas superior/inferior
                                 val edgesY = listOf(otherBounds.top, otherBounds.bottom)
                                 edgesY.forEach { edgeY ->
-                                    if (abs(draggedBounds.top - edgeY) < snapThreshold) {
+                                    val dyTop = edgeY - draggedBounds.top
+                                    if (abs(dyTop) < snapThreshold) {
                                         alignmentGuides.add(Pair(PointF(0f, edgeY), PointF(width.toFloat(), edgeY)))
-                                        val dy = edgeY - draggedBounds.top
-                                        obj.apply {
-                                            if (this is Action.Poi) y += dy
-                                            if (this is Action.Shape) { start.y += dy; end.y += dy }
-                                        }
+                                        applySoftSnapY(dyTop)
                                     }
-                                    if (abs(draggedBounds.bottom - edgeY) < snapThreshold) {
+                                    val dyBottom = edgeY - draggedBounds.bottom
+                                    if (abs(dyBottom) < snapThreshold) {
                                         alignmentGuides.add(Pair(PointF(0f, edgeY), PointF(width.toFloat(), edgeY)))
-                                        val dy = edgeY - draggedBounds.bottom
-                                        obj.apply {
-                                            if (this is Action.Poi) y += dy
-                                            if (this is Action.Shape) { start.y += dy; end.y += dy }
-                                        }
+                                        applySoftSnapY(dyBottom)
                                     }
                                 }
                             }
@@ -378,7 +488,6 @@ class MapEditorView @JvmOverloads constructor(
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 alignmentGuides.clear()
 
-                // Só considera clique se não moveu além do slop
                 val isClick = !hasMovedBeyondSlop
 
                 if (isClick) {
@@ -392,9 +501,19 @@ class MapEditorView @JvmOverloads constructor(
                         // Clique em área vazia: ocultar painel
                         selectionListener?.onShapeDeselected()
                     }
+                } else {
+                    // Registrar movimento
+                    draggingObject?.let { obj ->
+                        val before = dragSnapshotBefore
+                        val after = snapshotOf(obj)
+                        if (!statesEqual(before, after)) {
+                            if (before != null && after != null) pushOp(MoveOp(before, after))
+                        }
+                    }
                 }
 
                 draggingObject = null
+                dragSnapshotBefore = null
                 invalidate()
                 return true
             }
@@ -491,7 +610,35 @@ class MapEditorView @JvmOverloads constructor(
             is Action.Poi -> getPoiContentRectInWorld(action) ?: return
             else -> return
         }
+        // Borda de seleção
         canvas.drawRect(rect, shapeSelectionPaint)
+
+        // Desenha lixeira no canto superior direito do retângulo
+        val icon = deleteIconBitmap ?: return
+        val margin = dp(4f) / max(0.001f, scale)
+        val size = dp(24f) / max(0.001f, scale)
+        val left = rect.right - size
+        val top = rect.top - size - margin
+        val dest = RectF(left, top, left + size, top + size)
+
+        // Fundo branco levemente translúcido para contraste
+        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL; alpha = 220 }
+        canvas.drawRoundRect(dest, size/4f, size/4f, bgPaint)
+        canvas.drawBitmap(icon, null, dest, null)
+    }
+
+    // Retângulo da lixeira em coordenadas do mundo para hit test
+    private fun getDeleteRectForAction(action: Action): RectF? {
+        val rect = when (action) {
+            is Action.Shape -> RectF(action.start.x, action.start.y, action.end.x, action.end.y)
+            is Action.Poi -> getPoiContentRectInWorld(action)
+            else -> null
+        } ?: return null
+        val margin = dp(4f) / max(0.001f, scale)
+        val size = dp(24f) / max(0.001f, scale)
+        val left = rect.right - size
+        val top = rect.top - size - margin
+        return RectF(left, top, left + size, top + size)
     }
 
     private fun drawGrid(canvas: Canvas) {
@@ -509,7 +656,7 @@ class MapEditorView @JvmOverloads constructor(
     // ===== MÉTODOS AUXILIARES (Mantidos do seu código, com ajustes para o cache) =====
 
     // Gera uma chave única para o cache baseado no ícone e no tamanho solicitado.
-    private fun getPoiCacheKey(poi: Action.Poi): String = "${'$'}{poi.iconRes}:${'$'}{poi.width}x${'$'}{poi.height}"
+    private fun getPoiCacheKey(poi: Action.Poi): String = "${poi.iconRes}:${poi.width}x${poi.height}"
 
     // Obtém (ou cria) o bitmap já escalado para o tamanho do POI, e calcula as bordas do conteúdo opaco.
     private fun getBitmapForPoi(poi: Action.Poi): Bitmap? {
@@ -613,4 +760,17 @@ class MapEditorView @JvmOverloads constructor(
 
     internal fun screenToWorld(x: Float, y: Float) = PointF((x - offsetX) / scale, (y - offsetY) / scale)
     internal fun dp(v: Float) = v * resources.displayMetrics.density
+
+    fun addPoi(x: Float, y: Float, iconRes: Int) {
+        val poi = Action.Poi(x = x, y = y, iconRes = iconRes)
+        actions.add(poi)
+        pushOp(AddOp(poi))
+        invalidate()
+    }
+
+    fun addAction(action: Action) {
+        actions.add(action)
+        pushOp(AddOp(action))
+        invalidate()
+    }
 }

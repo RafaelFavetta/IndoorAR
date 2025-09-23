@@ -16,6 +16,7 @@ import com.google.zxing.*
 import com.google.zxing.common.HybridBinarizer
 import android.content.res.ColorStateList
 import android.graphics.Color
+import com.google.ar.core.ArCoreApk
 
 
 class ActivityScanQR : BaseActivity() {
@@ -59,7 +60,21 @@ class ActivityScanQR : BaseActivity() {
             handleResult(value)
         }
 
+        // Block scanning entirely only on devices without ARCore support
+        if (!checkArCoreSupport()) return
+
         ensureCameraPermissionAndStart()
+    }
+
+    // ARCore availability
+    private fun checkArCoreSupport(): Boolean {
+        val availability = ArCoreApk.getInstance().checkAvailability(this)
+        if (availability.isUnsupported) {
+            Toast.makeText(this, "Seu dispositivo não contém suporte ao ARCore.", Toast.LENGTH_LONG).show()
+            finish()
+            return false
+        }
+        return true
     }
 
     override fun onPause() {

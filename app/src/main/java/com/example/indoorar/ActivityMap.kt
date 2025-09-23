@@ -98,10 +98,10 @@ class ActivityMap : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_map)
 
-        // Quick check: if device does not support ARCore, exit gracefully
+        // ARCore check
         val availability = ArCoreApk.getInstance().checkAvailability(this)
         if (availability.isUnsupported) {
-            Toast.makeText(this, "Este dispositivo não é compatível com AR.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Seu dispositivo não contém suporte ao ARCore.", Toast.LENGTH_LONG).show()
             finish(); return
         }
 

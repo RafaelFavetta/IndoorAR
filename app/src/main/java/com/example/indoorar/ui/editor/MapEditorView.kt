@@ -34,7 +34,7 @@ class MapEditorView @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     // ===== ESCALA PARA CONVERSÃO =====
-    val pxPerMeter = 12f // 12 pixels = 1 metro
+    val pxPerMeter = 40f // 40 pixels = 1 metro
 
     // Funções auxiliares
     fun pxToMeters(px: Float) = px / pxPerMeter
@@ -75,7 +75,7 @@ class MapEditorView @JvmOverloads constructor(
     // Suavização do snap/alinhamento
     private var baseSnapThresholdPx = 16f // distância em px de tela para começar a "puxar"
     private var softSnapStrength = 0.35f  // 0..1, quanto do deslocamento aplicar por frame
-
+    private var baseHardSnapThresholdPx = 6f // quando chegar bem perto, dar uma travadinha
     // ===== SELECTION/DRAG (Mantido do seu código original) =====
     private var lastDragPoint: PointF? = null
     private var activeHandle: Handle? = null
@@ -390,26 +390,39 @@ class MapEditorView @JvmOverloads constructor(
                             is Action.BrushStroke -> {}
                         }
 
-                        // Lógica de alinhamento (suavizada)
+                        // Lógica de alinhamento (suavizada + snap quando muito perto)
                         alignmentGuides.clear()
                         val snapThreshold = baseSnapThresholdPx / max(0.001f, scale)
+                        val hardSnapThreshold = baseHardSnapThresholdPx / max(0.001f, scale)
 
-                        fun applySoftSnapX(targetDelta: Float) {
+                        fun applySnapX(targetDelta: Float) {
                             val dist = abs(targetDelta)
-                            if (dist <= snapThreshold && dist > 0f) {
+                            if (dist <= 0f) return
+                            val adj = if (dist <= hardSnapThreshold) {
+                                // Snap completo
+                                targetDelta
+                            } else if (dist <= snapThreshold) {
+                                // Snap suave
                                 val factor = softSnapStrength * (1f - dist / snapThreshold).coerceIn(0f, 1f)
-                                val adj = targetDelta * factor
+                                targetDelta * factor
+                            } else 0f
+                            if (adj != 0f) {
                                 obj.apply {
                                     if (this is Action.Poi) x += adj
                                     if (this is Action.Shape) { start.x += adj; end.x += adj }
                                 }
                             }
                         }
-                        fun applySoftSnapY(targetDelta: Float) {
+                        fun applySnapY(targetDelta: Float) {
                             val dist = abs(targetDelta)
-                            if (dist <= snapThreshold && dist > 0f) {
+                            if (dist <= 0f) return
+                            val adj = if (dist <= hardSnapThreshold) {
+                                targetDelta
+                            } else if (dist <= snapThreshold) {
                                 val factor = softSnapStrength * (1f - dist / snapThreshold).coerceIn(0f, 1f)
-                                val adj = targetDelta * factor
+                                targetDelta * factor
+                            } else 0f
+                            if (adj != 0f) {
                                 obj.apply {
                                     if (this is Action.Poi) y += adj
                                     if (this is Action.Shape) { start.y += adj; end.y += adj }
@@ -439,7 +452,7 @@ class MapEditorView @JvmOverloads constructor(
                                     val dxToCenter = otherCenterX - draggedCenterX
                                     if (abs(dxToCenter) < snapThreshold) {
                                         alignmentGuides.add(Pair(PointF(otherCenterX, 0f), PointF(otherCenterX, height.toFloat())))
-                                        applySoftSnapX(dxToCenter)
+                                        applySnapX(dxToCenter)
                                     }
                                 }
                                 // Alinhamento horizontal (centro Y)
@@ -447,7 +460,7 @@ class MapEditorView @JvmOverloads constructor(
                                     val dyToCenter = otherCenterY - draggedCenterY
                                     if (abs(dyToCenter) < snapThreshold) {
                                         alignmentGuides.add(Pair(PointF(0f, otherCenterY), PointF(width.toFloat(), otherCenterY)))
-                                        applySoftSnapY(dyToCenter)
+                                        applySnapY(dyToCenter)
                                     }
                                 }
                                 // Bordas esquerda/direita
@@ -456,12 +469,12 @@ class MapEditorView @JvmOverloads constructor(
                                     val dxLeft = edgeX - draggedBounds.left
                                     if (abs(dxLeft) < snapThreshold) {
                                         alignmentGuides.add(Pair(PointF(edgeX, 0f), PointF(edgeX, height.toFloat())))
-                                        applySoftSnapX(dxLeft)
+                                        applySnapX(dxLeft)
                                     }
                                     val dxRight = edgeX - draggedBounds.right
                                     if (abs(dxRight) < snapThreshold) {
                                         alignmentGuides.add(Pair(PointF(edgeX, 0f), PointF(edgeX, height.toFloat())))
-                                        applySoftSnapX(dxRight)
+                                        applySnapX(dxRight)
                                     }
                                 }
                                 // Bordas superior/inferior
@@ -470,12 +483,12 @@ class MapEditorView @JvmOverloads constructor(
                                     val dyTop = edgeY - draggedBounds.top
                                     if (abs(dyTop) < snapThreshold) {
                                         alignmentGuides.add(Pair(PointF(0f, edgeY), PointF(width.toFloat(), edgeY)))
-                                        applySoftSnapY(dyTop)
+                                        applySnapY(dyTop)
                                     }
                                     val dyBottom = edgeY - draggedBounds.bottom
                                     if (abs(dyBottom) < snapThreshold) {
                                         alignmentGuides.add(Pair(PointF(0f, edgeY), PointF(width.toFloat(), edgeY)))
-                                        applySoftSnapY(dyBottom)
+                                        applySnapY(dyBottom)
                                     }
                                 }
                             }
@@ -644,7 +657,7 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     private fun drawGrid(canvas: Canvas) {
-        val spacing = 40f
+        val spacing = pxPerMeter
         val radius = 2f
         // Compute visible world bounds based on current camera transform
         val worldLeft = -offsetX / scale

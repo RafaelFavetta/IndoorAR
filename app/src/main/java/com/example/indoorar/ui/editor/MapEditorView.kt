@@ -84,7 +84,15 @@ class MapEditorView @JvmOverloads constructor(
         fun onShapeDeselected()
     }
     var selectionListener: OnShapeSelectionListener? = null
-    private enum class Handle { }
+    private enum class Handle { TOP_LEFT, TOP, TOP_RIGHT, RIGHT, BOTTOM_RIGHT, BOTTOM, BOTTOM_LEFT, LEFT }
+
+    // Handle visuals
+    private val handleFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL }
+    private val handleStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = "#0D99FF".toColorInt(); style = Paint.Style.STROKE; strokeWidth = dp(1.5f) }
+    private fun handleRadiusWorld(): Float = dp(6f) / max(0.001f, scale)
+
+    // Resize state
+    private var resizeInitialBounds: RectF? = null
 
     // ===== PAINTS =====
     private val gridDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(210, 210, 210); style = Paint.Style.FILL }
@@ -211,7 +219,7 @@ class MapEditorView @JvmOverloads constructor(
         }
     }
     private sealed class ActionState {
-        data class PoiState(val poi: Action.Poi, val x: Float, val y: Float) : ActionState()
+        data class PoiState(val poi: Action.Poi, val x: Float, val y: Float, val width: Float, val height: Float) : ActionState()
         data class ShapeState(val shape: Action.Shape, val start: PointF, val end: PointF) : ActionState()
     }
     private class MoveOp(private val before: ActionState, private val after: ActionState) : EditorOp() {
@@ -236,13 +244,13 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     private fun snapshotOf(action: Action?): ActionState? = when (action) {
-        is Action.Poi -> ActionState.PoiState(action, action.x, action.y)
+        is Action.Poi -> ActionState.PoiState(action, action.x, action.y, action.width, action.height)
         is Action.Shape -> ActionState.ShapeState(action, PointF(action.start.x, action.start.y), PointF(action.end.x, action.end.y))
         else -> null
     }
     private fun applyState(state: ActionState) {
         when (state) {
-            is ActionState.PoiState -> { state.poi.x = state.x; state.poi.y = state.y }
+            is ActionState.PoiState -> { state.poi.x = state.x; state.poi.y = state.y; state.poi.width = state.width; state.poi.height = state.height }
             is ActionState.ShapeState -> {
                 state.shape.start.x = state.start.x; state.shape.start.y = state.start.y
                 state.shape.end.x = state.end.x; state.shape.end.y = state.end.y
@@ -253,7 +261,7 @@ class MapEditorView @JvmOverloads constructor(
         if (a == null || b == null || a::class != b::class) return false
         return when (a) {
             is ActionState.PoiState -> {
-                val bb = b as ActionState.PoiState; a.x == bb.x && a.y == bb.y
+                val bb = b as ActionState.PoiState; a.x == bb.x && a.y == bb.y && a.width == bb.width && a.height == bb.height
             }
             is ActionState.ShapeState -> {
                 val bb = b as ActionState.ShapeState
@@ -264,6 +272,56 @@ class MapEditorView @JvmOverloads constructor(
 
     // Snapshot do início do arraste
     private var dragSnapshotBefore: ActionState? = null
+
+    // ===== TOUCH =====
+
+    // Helpers for bounds and handles
+    private fun getActionBounds(action: Action): RectF? = when (action) {
+        is Action.Shape -> {
+            val left = min(action.start.x, action.end.x)
+            val top = min(action.start.y, action.end.y)
+            val right = max(action.start.x, action.end.x)
+            val bottom = max(action.start.y, action.end.y)
+            RectF(left, top, right, bottom)
+        }
+        is Action.Poi -> RectF(action.x - action.width / 2f, action.y - action.height / 2f, action.x + action.width / 2f, action.y + action.height / 2f)
+        else -> null
+    }
+
+    private fun getHandlePositions(bounds: RectF): Map<Handle, PointF> {
+        val cx = bounds.centerX()
+        val cy = bounds.centerY()
+        return mapOf(
+            Handle.TOP_LEFT to PointF(bounds.left, bounds.top),
+            Handle.TOP to PointF(cx, bounds.top),
+            Handle.TOP_RIGHT to PointF(bounds.right, bounds.top),
+            Handle.RIGHT to PointF(bounds.right, cy),
+            Handle.BOTTOM_RIGHT to PointF(bounds.right, bounds.bottom),
+            Handle.BOTTOM to PointF(cx, bounds.bottom),
+            Handle.BOTTOM_LEFT to PointF(bounds.left, bounds.bottom),
+            Handle.LEFT to PointF(bounds.left, cy)
+        )
+    }
+
+    private fun drawHandles(canvas: Canvas, bounds: RectF) {
+        val r = handleRadiusWorld()
+        val positions = getHandlePositions(bounds)
+        positions.values.forEach { p ->
+            canvas.drawCircle(p.x, p.y, r, handleFillPaint)
+            canvas.drawCircle(p.x, p.y, r, handleStrokePaint)
+        }
+    }
+
+    private fun hitTestHandles(hit: Action, point: PointF): Handle? {
+        val bounds = getActionBounds(hit) ?: return null
+        val r = handleRadiusWorld() * 1.5f // a little larger hit radius
+        val positions = getHandlePositions(bounds)
+        return positions.entries.firstOrNull { (_, pos) ->
+            val dx = point.x - pos.x
+            val dy = point.y - pos.y
+            dx * dx + dy * dy <= r * r
+        }?.key
+    }
 
     // ===== TOUCH =====
 
@@ -308,13 +366,14 @@ class MapEditorView @JvmOverloads constructor(
                 hasMovedBeyondSlop = false
 
                 // Se já existe um selecionado, verifica clique na lixeirinha primeiro
-                actions.firstOrNull { act ->
+                val currentlySelected = actions.firstOrNull { act ->
                     when (act) {
                         is Action.Shape -> act.selected
                         is Action.Poi -> act.selected
                         else -> false
                     }
-                }?.let { selectedAct ->
+                }
+                currentlySelected?.let { selectedAct ->
                     val delRect = getDeleteRectForAction(selectedAct)
                     if (delRect != null && world.x in delRect.left..delRect.right && world.y in delRect.top..delRect.bottom) {
                         AlertDialog.Builder(context)
@@ -333,6 +392,17 @@ class MapEditorView @JvmOverloads constructor(
                                 }
                             }
                             .show()
+                        return true
+                    }
+                    // Testa hit nos handles do item selecionado
+                    val handle = hitTestHandles(selectedAct, world)
+                    if (handle != null) {
+                        activeHandle = handle
+                        draggingObject = selectedAct
+                        dragSnapshotBefore = snapshotOf(draggingObject)
+                        resizeInitialBounds = getActionBounds(selectedAct)
+                        // mantém seleção como está
+                        invalidate()
                         return true
                     }
                 }
@@ -377,123 +447,189 @@ class MapEditorView @JvmOverloads constructor(
 
                 if (hasMovedBeyondSlop) {
                     draggingObject?.let { obj ->
-                        when (obj) {
-                            is Action.Poi -> { obj.x = world.x - touchOffsetX; obj.y = world.y - touchOffsetY }
-                            is Action.Shape -> {
-                                val width = obj.end.x - obj.start.x
-                                val height = obj.end.y - obj.start.y
-                                obj.start.x = world.x - touchOffsetX
-                                obj.start.y = world.y - touchOffsetY
-                                obj.end.x = obj.start.x + width
-                                obj.end.y = obj.start.y + height
+                        if (activeHandle != null) {
+                            // Redimensionamento
+                            val init = resizeInitialBounds ?: getActionBounds(obj)
+                            if (init != null) {
+                                val minSize = dp(12f) / max(0.001f, scale)
+                                var left = init.left
+                                var top = init.top
+                                var right = init.right
+                                var bottom = init.bottom
+                                when (activeHandle) {
+                                    Handle.LEFT, Handle.TOP_LEFT, Handle.BOTTOM_LEFT -> { left = world.x }
+                                    else -> {}
+                                }
+                                when (activeHandle) {
+                                    Handle.RIGHT, Handle.TOP_RIGHT, Handle.BOTTOM_RIGHT -> { right = world.x }
+                                    else -> {}
+                                }
+                                when (activeHandle) {
+                                    Handle.TOP, Handle.TOP_LEFT, Handle.TOP_RIGHT -> { top = world.y }
+                                    else -> {}
+                                }
+                                when (activeHandle) {
+                                    Handle.BOTTOM, Handle.BOTTOM_LEFT, Handle.BOTTOM_RIGHT -> { bottom = world.y }
+                                    else -> {}
+                                }
+                                // Normaliza e aplica tamanho mínimo
+                                var nLeft = min(left, right)
+                                var nRight = max(left, right)
+                                var nTop = min(top, bottom)
+                                var nBottom = max(top, bottom)
+                                if ((nRight - nLeft) < minSize) {
+                                    val mid = (nLeft + nRight) / 2f
+                                    nLeft = mid - minSize / 2f
+                                    nRight = mid + minSize / 2f
+                                }
+                                if ((nBottom - nTop) < minSize) {
+                                    val mid = (nTop + nBottom) / 2f
+                                    nTop = mid - minSize / 2f
+                                    nBottom = mid + minSize / 2f
+                                }
+
+                                when (obj) {
+                                    is Action.Shape -> {
+                                        obj.start.x = nLeft
+                                        obj.start.y = nTop
+                                        obj.end.x = nRight
+                                        obj.end.y = nBottom
+                                        // Mantém selecionado e atualiza painel
+                                        selectionListener?.onShapeSelected(shapeToProperties(obj))
+                                    }
+                                    is Action.Poi -> {
+                                        val newW = (nRight - nLeft).coerceAtLeast(minSize)
+                                        val newH = (nBottom - nTop).coerceAtLeast(minSize)
+                                        obj.x = (nLeft + nRight) / 2f
+                                        obj.y = (nTop + nBottom) / 2f
+                                        obj.width = newW
+                                        obj.height = newH
+                                        selectionListener?.onShapeSelected(poiToProperties(obj))
+                                    }
+                                    else -> {}
+                                }
+                                invalidate()
                             }
-                            is Action.BrushStroke -> {}
-                        }
+                        } else {
+                            // Movimento normal
+                            when (obj) {
+                                is Action.Poi -> { obj.x = world.x - touchOffsetX; obj.y = world.y - touchOffsetY }
+                                is Action.Shape -> {
+                                    val width = obj.end.x - obj.start.x
+                                    val height = obj.end.y - obj.start.y
+                                    obj.start.x = world.x - touchOffsetX
+                                    obj.start.y = world.y - touchOffsetY
+                                    obj.end.x = obj.start.x + width
+                                    obj.end.y = obj.start.y + height
+                                }
+                                is Action.BrushStroke -> {}
+                            }
 
-                        // Lógica de alinhamento (suavizada + snap quando muito perto)
-                        alignmentGuides.clear()
-                        val snapThreshold = baseSnapThresholdPx / max(0.001f, scale)
-                        val hardSnapThreshold = baseHardSnapThresholdPx / max(0.001f, scale)
+                            // Lógica de alinhamento (suavizada + snap quando muito perto)
+                            alignmentGuides.clear()
+                            val snapThreshold = baseSnapThresholdPx / max(0.001f, scale)
+                            val hardSnapThreshold = baseHardSnapThresholdPx / max(0.001f, scale)
 
-                        fun applySnapX(targetDelta: Float) {
-                            val dist = abs(targetDelta)
-                            if (dist <= 0f) return
-                            val adj = if (dist <= hardSnapThreshold) {
-                                // Snap completo
-                                targetDelta
-                            } else if (dist <= snapThreshold) {
-                                // Snap suave
-                                val factor = softSnapStrength * (1f - dist / snapThreshold).coerceIn(0f, 1f)
-                                targetDelta * factor
-                            } else 0f
-                            if (adj != 0f) {
-                                obj.apply {
-                                    if (this is Action.Poi) x += adj
-                                    if (this is Action.Shape) { start.x += adj; end.x += adj }
+                            fun applySnapX(targetDelta: Float) {
+                                val dist = abs(targetDelta)
+                                if (dist <= 0f) return
+                                val adj = if (dist <= hardSnapThreshold) {
+                                    // Snap completo
+                                    targetDelta
+                                } else if (dist <= snapThreshold) {
+                                    // Snap suave
+                                    val factor = softSnapStrength * (1f - dist / snapThreshold).coerceIn(0f, 1f)
+                                    targetDelta * factor
+                                } else 0f
+                                if (adj != 0f) {
+                                    obj.apply {
+                                        if (this is Action.Poi) x += adj
+                                        if (this is Action.Shape) { start.x += adj; end.x += adj }
+                                    }
                                 }
                             }
-                        }
-                        fun applySnapY(targetDelta: Float) {
-                            val dist = abs(targetDelta)
-                            if (dist <= 0f) return
-                            val adj = if (dist <= hardSnapThreshold) {
-                                targetDelta
-                            } else if (dist <= snapThreshold) {
-                                val factor = softSnapStrength * (1f - dist / snapThreshold).coerceIn(0f, 1f)
-                                targetDelta * factor
-                            } else 0f
-                            if (adj != 0f) {
-                                obj.apply {
-                                    if (this is Action.Poi) y += adj
-                                    if (this is Action.Shape) { start.y += adj; end.y += adj }
+                            fun applySnapY(targetDelta: Float) {
+                                val dist = abs(targetDelta)
+                                if (dist <= 0f) return
+                                val adj = if (dist <= hardSnapThreshold) {
+                                    targetDelta
+                                } else if (dist <= snapThreshold) {
+                                    val factor = softSnapStrength * (1f - dist / snapThreshold).coerceIn(0f, 1f)
+                                    targetDelta * factor
+                                } else 0f
+                                if (adj != 0f) {
+                                    obj.apply {
+                                        if (this is Action.Poi) y += adj
+                                        if (this is Action.Shape) { start.y += adj; end.y += adj }
+                                    }
                                 }
                             }
-                        }
 
-                        val draggedBounds = when (obj) {
-                            is Action.Poi -> getPoiContentRectInWorld(obj)
-                            is Action.Shape -> RectF(obj.start.x, obj.start.y, obj.end.x, obj.end.y)
-                            else -> null
-                        }
-                        val draggedCenterX = draggedBounds?.centerX() ?: 0f
-                        val draggedCenterY = draggedBounds?.centerY() ?: 0f
-
-                        actions.filter { it != obj }.forEach { other ->
-                            val otherBounds = when (other) {
-                                is Action.Poi -> getPoiContentRectInWorld(other)
-                                is Action.Shape -> RectF(other.start.x, other.start.y, other.end.x, other.end.y)
+                            val draggedBounds = when (obj) {
+                                is Action.Poi -> getActionBounds(obj)
+                                is Action.Shape -> RectF(obj.start.x, obj.start.y, obj.end.x, obj.end.y)
                                 else -> null
                             }
-                            if (draggedBounds != null && otherBounds != null) {
-                                val otherCenterX = otherBounds.centerX()
-                                val otherCenterY = otherBounds.centerY()
-                                // Alinhamento vertical (centro X)
-                                run {
-                                    val dxToCenter = otherCenterX - draggedCenterX
-                                    if (abs(dxToCenter) < snapThreshold) {
-                                        alignmentGuides.add(Pair(PointF(otherCenterX, 0f), PointF(otherCenterX, height.toFloat())))
-                                        applySnapX(dxToCenter)
-                                    }
+                            val draggedCenterX = draggedBounds?.centerX() ?: 0f
+                            val draggedCenterY = draggedBounds?.centerY() ?: 0f
+
+                            actions.filter { it != obj }.forEach { other ->
+                                val otherBounds = when (other) {
+                                    is Action.Poi -> getActionBounds(other)
+                                    is Action.Shape -> RectF(other.start.x, other.start.y, other.end.x, other.end.y)
+                                    else -> null
                                 }
-                                // Alinhamento horizontal (centro Y)
-                                run {
-                                    val dyToCenter = otherCenterY - draggedCenterY
-                                    if (abs(dyToCenter) < snapThreshold) {
-                                        alignmentGuides.add(Pair(PointF(0f, otherCenterY), PointF(width.toFloat(), otherCenterY)))
-                                        applySnapY(dyToCenter)
+                                if (draggedBounds != null && otherBounds != null) {
+                                    val otherCenterX = otherBounds.centerX()
+                                    val otherCenterY = otherBounds.centerY()
+                                    // Alinhamento vertical (centro X)
+                                    run {
+                                        val dxToCenter = otherCenterX - draggedCenterX
+                                        if (abs(dxToCenter) < snapThreshold) {
+                                            alignmentGuides.add(Pair(PointF(otherCenterX, 0f), PointF(otherCenterX, height.toFloat())))
+                                            applySnapX(dxToCenter)
+                                        }
                                     }
-                                }
-                                // Bordas esquerda/direita
-                                val edges = listOf(otherBounds.left, otherBounds.right)
-                                edges.forEach { edgeX ->
-                                    val dxLeft = edgeX - draggedBounds.left
-                                    if (abs(dxLeft) < snapThreshold) {
-                                        alignmentGuides.add(Pair(PointF(edgeX, 0f), PointF(edgeX, height.toFloat())))
-                                        applySnapX(dxLeft)
+                                    // Alinhamento horizontal (centro Y)
+                                    run {
+                                        val dyToCenter = otherCenterY - draggedCenterY
+                                        if (abs(dyToCenter) < snapThreshold) {
+                                            alignmentGuides.add(Pair(PointF(0f, otherCenterY), PointF(width.toFloat(), otherCenterY)))
+                                            applySnapY(dyToCenter)
+                                        }
                                     }
-                                    val dxRight = edgeX - draggedBounds.right
-                                    if (abs(dxRight) < snapThreshold) {
-                                        alignmentGuides.add(Pair(PointF(edgeX, 0f), PointF(edgeX, height.toFloat())))
-                                        applySnapX(dxRight)
+                                    // Bordas esquerda/direita
+                                    val edges = listOf(otherBounds.left, otherBounds.right)
+                                    edges.forEach { edgeX ->
+                                        val dxLeft = edgeX - draggedBounds.left
+                                        if (abs(dxLeft) < snapThreshold) {
+                                            alignmentGuides.add(Pair(PointF(edgeX, 0f), PointF(edgeX, height.toFloat())))
+                                            applySnapX(dxLeft)
+                                        }
+                                        val dxRight = edgeX - draggedBounds.right
+                                        if (abs(dxRight) < snapThreshold) {
+                                            alignmentGuides.add(Pair(PointF(edgeX, 0f), PointF(edgeX, height.toFloat())))
+                                            applySnapX(dxRight)
+                                        }
                                     }
-                                }
-                                // Bordas superior/inferior
-                                val edgesY = listOf(otherBounds.top, otherBounds.bottom)
-                                edgesY.forEach { edgeY ->
-                                    val dyTop = edgeY - draggedBounds.top
-                                    if (abs(dyTop) < snapThreshold) {
-                                        alignmentGuides.add(Pair(PointF(0f, edgeY), PointF(width.toFloat(), edgeY)))
-                                        applySnapY(dyTop)
-                                    }
-                                    val dyBottom = edgeY - draggedBounds.bottom
-                                    if (abs(dyBottom) < snapThreshold) {
-                                        alignmentGuides.add(Pair(PointF(0f, edgeY), PointF(width.toFloat(), edgeY)))
-                                        applySnapY(dyBottom)
+                                    // Bordas superior/inferior
+                                    val edgesY = listOf(otherBounds.top, otherBounds.bottom)
+                                    edgesY.forEach { edgeY ->
+                                        val dyTop = edgeY - draggedBounds.top
+                                        if (abs(dyTop) < snapThreshold) {
+                                            alignmentGuides.add(Pair(PointF(0f, edgeY), PointF(width.toFloat(), edgeY)))
+                                            applySnapY(dyTop)
+                                        }
+                                        val dyBottom = edgeY - draggedBounds.bottom
+                                        if (abs(dyBottom) < snapThreshold) {
+                                            alignmentGuides.add(Pair(PointF(0f, edgeY), PointF(width.toFloat(), edgeY)))
+                                            applySnapY(dyBottom)
+                                        }
                                     }
                                 }
                             }
+                            invalidate()
                         }
-                        invalidate()
                     }
                 }
                 return true
@@ -526,6 +662,8 @@ class MapEditorView @JvmOverloads constructor(
                 }
 
                 draggingObject = null
+                activeHandle = null
+                resizeInitialBounds = null
                 dragSnapshotBefore = null
                 invalidate()
                 return true
@@ -621,12 +759,14 @@ class MapEditorView @JvmOverloads constructor(
 
     private fun drawSelection(canvas: Canvas, action: Action) {
         val rect = when (action) {
-            is Action.Shape -> RectF(action.start.x, action.start.y, action.end.x, action.end.y)
-            is Action.Poi -> getPoiContentRectInWorld(action) ?: return
-            else -> return
-        }
+            is Action.Shape -> getActionBounds(action)
+            is Action.Poi -> getActionBounds(action)
+            else -> null
+        } ?: return
         // Borda de seleção
         canvas.drawRect(rect, shapeSelectionPaint)
+        // Desenha handles
+        drawHandles(canvas, rect)
 
         // Desenha lixeira no canto superior direito do retângulo
         val icon = deleteIconBitmap ?: return
@@ -645,8 +785,8 @@ class MapEditorView @JvmOverloads constructor(
     // Retângulo da lixeira em coordenadas do mundo para hit test
     private fun getDeleteRectForAction(action: Action): RectF? {
         val rect = when (action) {
-            is Action.Shape -> RectF(action.start.x, action.start.y, action.end.x, action.end.y)
-            is Action.Poi -> getPoiContentRectInWorld(action)
+            is Action.Shape -> getActionBounds(action)
+            is Action.Poi -> getActionBounds(action)
             else -> null
         } ?: return null
         val margin = dp(4f) / max(0.001f, scale)
@@ -782,7 +922,6 @@ class MapEditorView @JvmOverloads constructor(
         ShapeProps(min(shape.start.x, shape.end.x), min(shape.start.y, shape.end.y),
             abs(shape.end.x - shape.start.x), abs(shape.end.y - shape.start.y), shape.rotation, shape.fillColor)
 
-    private fun hitTestHandles(hit: Action, point: PointF): Handle? = null // Mantido do seu código original
 
     internal fun screenToWorld(x: Float, y: Float) = PointF((x - offsetX) / scale, (y - offsetY) / scale)
     internal fun dp(v: Float) = v * resources.displayMetrics.density

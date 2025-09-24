@@ -7,8 +7,18 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.ProgressBar
+import androidx.lifecycle.lifecycleScope
+import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import kotlinx.coroutines.launch
 
 class ActivityLogin: BaseActivity() {
 
@@ -30,6 +40,7 @@ class ActivityLogin: BaseActivity() {
         val editSenha = findViewById<EditText>(R.id.editSenha)
         btnEntrar = findViewById(R.id.btnEntrar)
         progressBar = findViewById(R.id.progressBar)
+        val btnGoogle = findViewById<MaterialButton>(R.id.btnGoogle)
 
         val btnVoltar = findViewById<ImageView>(R.id.btnVoltar)
         btnVoltar.setOnClickListener {
@@ -46,7 +57,7 @@ class ActivityLogin: BaseActivity() {
             startActivity(Intent(this, ActivityForgotPassword::class.java))
         }
 
-        // Botão Entrar
+        // Botão Entrar (email/senha)
         btnEntrar.setOnClickListener {
             val email = editNome.text.toString().trim() // usando campo "Nome" como login
             val senha = editSenha.text.toString().trim()
@@ -56,13 +67,11 @@ class ActivityLogin: BaseActivity() {
                 return@setOnClickListener
             }
 
-            btnEntrar.isEnabled = false
-            progressBar.visibility = View.VISIBLE
+            setLoading(true)
 
             auth.signInWithEmailAndPassword(email, senha)
                 .addOnCompleteListener { task ->
-                    btnEntrar.isEnabled = true
-                    progressBar.visibility = View.GONE
+                    setLoading(false)
 
                     if (task.isSuccessful) {
                         val uid = auth.currentUser?.uid
@@ -87,5 +96,88 @@ class ActivityLogin: BaseActivity() {
                     }
                 }
         }
+
+        // Botão Google via Credential Manager
+        btnGoogle.setOnClickListener {
+            setLoading(true)
+            lifecycleScope.launch {
+                val credentialManager = CredentialManager.create(this@ActivityLogin)
+                val googleIdOption = GetGoogleIdOption.Builder()
+                    .setServerClientId(getString(R.string.default_web_client_id))
+                    .setFilterByAuthorizedAccounts(false)
+                    .setAutoSelectEnabled(false)
+                    .build()
+                val request = GetCredentialRequest.Builder()
+                    .addCredentialOption(googleIdOption)
+                    .build()
+                try {
+                    val result = credentialManager.getCredential(
+                        context = this@ActivityLogin,
+                        request = request
+                    )
+                    val cred = result.credential
+                    if (cred is CustomCredential && cred.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                        val googleCred = GoogleIdTokenCredential.createFrom(cred.data)
+                        val idToken = googleCred.idToken
+                        val firebaseCred = GoogleAuthProvider.getCredential(idToken, null)
+                        auth.signInWithCredential(firebaseCred)
+                            .addOnCompleteListener { t ->
+                                if (t.isSuccessful) {
+                                    val uid = auth.currentUser?.uid
+                                    if (uid != null) {
+                                        db.collection("usuarios").document(uid).get()
+                                            .addOnSuccessListener { doc ->
+                                                val exists = doc.exists()
+                                                val tipoConta = (doc.getString("tipoConta") ?: "comum").lowercase()
+                                                if (!exists) {
+                                                    val u = auth.currentUser
+                                                    val dados = mapOf(
+                                                        "email" to (u?.email ?: ""),
+                                                        "nome" to (u?.displayName ?: ""),
+                                                        "fotoUrl" to (u?.photoUrl?.toString() ?: ""),
+                                                        "tipoConta" to tipoConta
+                                                    )
+                                                    db.collection("usuarios").document(uid).set(dados)
+                                                        .addOnFailureListener { e ->
+                                                            showSnackbar("Aviso: não foi possível salvar perfil: ${e.message}")
+                                                        }
+                                                }
+                                                when (tipoConta) {
+                                                    "maker" -> startActivity(Intent(this@ActivityLogin, ActivityHomeMaker::class.java))
+                                                    else -> startActivity(Intent(this@ActivityLogin, ActivityHomeComum::class.java))
+                                                }
+                                                finish()
+                                            }
+                                            .addOnFailureListener { e ->
+                                                showSnackbar("Erro ao recuperar dados: ${e.message}")
+                                            }
+                                    } else {
+                                        showSnackbar("Erro interno: UID não encontrado")
+                                    }
+                                    setLoading(false)
+                                } else {
+                                    showSnackbar("Erro ao autenticar com Firebase: ${t.exception?.localizedMessage}")
+                                    setLoading(false)
+                                }
+                            }
+                    } else {
+                        showSnackbar("Credencial do Google inválida")
+                        setLoading(false)
+                    }
+                } catch (e: GetCredentialException) {
+                    showSnackbar("Login com Google falhou: ${e.errorMessage ?: e.message}")
+                    setLoading(false)
+                } catch (t: Throwable) {
+                    showSnackbar("Erro inesperado: ${t.localizedMessage}")
+                    setLoading(false)
+                }
+            }
+        }
+    }
+
+    private fun setLoading(loading: Boolean) {
+        progressBar.visibility = if (loading) View.VISIBLE else View.GONE
+        btnEntrar.isEnabled = !loading
+        findViewById<View>(R.id.btnGoogle)?.isEnabled = !loading
     }
 }

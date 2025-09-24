@@ -223,14 +223,20 @@ class AttributePanelController(
     }
 
     private fun applyOnEdit(edit: EditText, action: () -> Unit) {
+        edit.imeOptions = EditorInfo.IME_ACTION_DONE
+        edit.setSingleLine(true)
+
         edit.setOnFocusChangeListener { _, hasFocus ->
             if (!hasFocus && !isProgrammatic) action()
         }
-        edit.setOnEditorActionListener { _, actionId, event ->
+        edit.setOnEditorActionListener { v, actionId, event ->
             val imeDone = actionId == EditorInfo.IME_ACTION_DONE ||
                     (event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_UP)
             if (imeDone && !isProgrammatic) {
                 action()
+                val imm = v.context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                imm.hideSoftInputFromWindow(v.windowToken, 0)
+                v.clearFocus()
                 true
             } else false
         }

@@ -68,8 +68,7 @@
         android:text="Insira suas informações para \nentrar no seu perfil."
         android:textColor="#32357A"
         android:textSize="16sp"
-        android:textStyle="bold
-"
+        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.125"
@@ -108,14 +107,14 @@
         android:id="@+id/editNome"
         android:layout_width="350dp"
         android:layout_height="50dp"
-        android:autofillHints="name"
+        android:autofillHints="emailAddress"
         android:background="@drawable/btn_arredondado3"
         android:drawableStart="@drawable/email"
         android:drawablePadding="12dp"
         android:elevation="4dp"
         android:fontFamily="@font/inter"
         android:hint="E-mail"
-        android:inputType="textPersonName"
+        android:inputType="textEmailAddress"
         android:minHeight="48dp"
         android:paddingStart="20dp"
         android:paddingEnd="20dp"
@@ -206,10 +205,6 @@
 
 
     <com.google.android.material.button.MaterialButton
-
-
-
-
         android:id="@+id/btnGoogle"
         android:layout_width="350dp"
         android:layout_height="50dp"
@@ -236,5 +231,3 @@
         app:layout_constraintVertical_bias="0.987" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-
-

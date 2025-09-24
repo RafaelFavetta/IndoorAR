@@ -3,15 +3,18 @@
     xmlns:tools="http://schemas.android.com/tools" >
 
     <!-- Permissões -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <uses-feature
+       <uses-feature
         android:name="android.hardware.camera.any"
-        android:required="false" /> <!-- Dizendo que câmera é opcional -->
+        android:required="false" />
+
     <uses-feature
-        android:name="android.hardware.camera"
+        android:name="com.google.ar.core"
         android:required="false" />
 
     <application
@@ -23,6 +26,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.IndoorAR" >
+        <!-- Mark ARCore optional for Sceneform -->
+        <meta-data
+            android:name="com.google.ar.core"
+            android:value="optional" />
         <activity
             android:name=".ActivityHomeComum"
             android:exported="false" />
@@ -30,16 +37,10 @@
             android:name=".ActivityLogin"
             android:exported="false" />
         <activity
-            android:name=".ActivityCadastroMaker"
-            android:exported="false" />
-        <activity
-            android:name=".Activity_cadastro_comum"
-            android:exported="false" />
-        <activity
             android:name=".ui.ARActivity"
             android:exported="false" />
         <activity
-            android:name=".Activity_perfil2"
+            android:name=".ActivityPerfil"
             android:exported="false" />
         <activity
             android:name=".ui.ActivityEditor"
@@ -51,9 +52,6 @@
             android:exported="false" />
         <activity
             android:name=".ActivityForgotPassword"
-            android:exported="false" />
-        <activity
-            android:name=".ActivityPerfil"
             android:exported="false" />
         <activity
             android:name=".ActivityScanQR"

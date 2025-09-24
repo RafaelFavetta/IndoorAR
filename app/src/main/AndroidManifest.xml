@@ -9,13 +9,10 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <uses-feature
+       <uses-feature
         android:name="android.hardware.camera.any"
-        android:required="false" /> <!-- Dizendo que câmera é opcional -->
-    <uses-feature
-        android:name="android.hardware.camera"
         android:required="false" />
-    <!-- Declare ARCore as optional so the app can be installed on non-AR devices -->
+
     <uses-feature
         android:name="com.google.ar.core"
         android:required="false" />

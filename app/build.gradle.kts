@@ -74,7 +74,7 @@ dependencies {
     //Google Material
     implementation("com.google.android.material:material:1.13.0")
 
-    //API Google
+    //API Google (Play Services Auth ainda pode ser usada por compatibilidade)
     implementation("com.google.android.gms:play-services-auth:21.4.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
@@ -116,6 +116,15 @@ dependencies {
 
     implementation("androidx.activity:activity-ktx:1.11.0")
     implementation("androidx.activity:activity:1.11.0")
+
+    // Lifecycle para lifecycleScope usado no novo sign-in
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
+
+    // Novo Google Sign-In (Credential Manager + Google Identity Services)
+    implementation("androidx.credentials:credentials:1.5.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("androidx.recyclerview:recyclerview:1.4.0")

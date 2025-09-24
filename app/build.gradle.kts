@@ -69,7 +69,7 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
 
     //Gson
-    implementation("com.google.code.gson:gson:2.13.1")
+    implementation("com.google.code.gson:gson:2.13.2")
 
     //Google Material
     implementation("com.google.android.material:material:1.13.0")
@@ -83,11 +83,11 @@ dependencies {
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
     // CameraX
-    implementation("androidx.camera:camera-core:1.4.2")
-    implementation("androidx.camera:camera-camera2:1.4.2")
-    implementation("androidx.camera:camera-lifecycle:1.4.2")
-    implementation("androidx.camera:camera-view:1.4.2")
-    implementation("androidx.camera:camera-extensions:1.4.2")
+    implementation("androidx.camera:camera-core:1.5.0")
+    implementation("androidx.camera:camera-camera2:1.5.0")
+    implementation("androidx.camera:camera-lifecycle:1.5.0")
+    implementation("androidx.camera:camera-view:1.5.0")
+    implementation("androidx.camera:camera-extensions:1.5.0")
 
     // AR / SceneForm
     implementation("com.gorisse.thomas.sceneform:sceneform:1.23.0")
@@ -114,8 +114,8 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
 
-    implementation("androidx.activity:activity-ktx:1.10.1")
-    implementation("androidx.activity:activity:1.10.1")
+    implementation("androidx.activity:activity-ktx:1.11.0")
+    implementation("androidx.activity:activity:1.11.0")
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("androidx.recyclerview:recyclerview:1.4.0")

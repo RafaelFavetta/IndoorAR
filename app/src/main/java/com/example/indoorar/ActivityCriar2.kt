@@ -3,16 +3,28 @@ package com.example.indoorar
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.ProgressBar
 import androidx.core.content.getSystemService
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.redmadrobot.inputmask.MaskedTextChangedListener
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 class ActivityCriar2 : BaseActivity() {
 
@@ -22,6 +34,8 @@ class ActivityCriar2 : BaseActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var btnCadastrar: Button
     private var telefoneBruto: String = ""
+
+    private lateinit var btnGoogle: MaterialButton
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,6 +51,7 @@ class ActivityCriar2 : BaseActivity() {
         val senhaField = findViewById<EditText>(R.id.editSenha)
         btnCadastrar = findViewById(R.id.btnCadastro)
         progressBar = findViewById(R.id.progressBar)
+        btnGoogle = findViewById(R.id.btnGoogle)
 
         val btnVoltar = findViewById<ImageView>(R.id.btnVoltar)
         btnVoltar.setOnClickListener {
@@ -57,6 +72,78 @@ class ActivityCriar2 : BaseActivity() {
             }
         )
 
+        // Google Sign-In via Credential Manager
+        btnGoogle.setOnClickListener {
+            setLoading(true)
+            lifecycleScope.launch {
+                val credentialManager = CredentialManager.create(this@ActivityCriar2)
+                val googleIdOption = GetGoogleIdOption.Builder()
+                    .setServerClientId(getString(R.string.default_web_client_id))
+                    .setFilterByAuthorizedAccounts(false)
+                    .setAutoSelectEnabled(false)
+                    .build()
+                val request = GetCredentialRequest.Builder()
+                    .addCredentialOption(googleIdOption)
+                    .build()
+                try {
+                    val result = credentialManager.getCredential(
+                        context = this@ActivityCriar2,
+                        request = request
+                    )
+                    val cred = result.credential
+                    if (cred is CustomCredential && cred.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                        val googleCred = GoogleIdTokenCredential.createFrom(cred.data)
+                        val idToken = googleCred.idToken
+                        val firebaseCred = GoogleAuthProvider.getCredential(idToken, null)
+                        auth.signInWithCredential(firebaseCred).addOnCompleteListener { t ->
+                            if (t.isSuccessful) {
+                                val uid = auth.currentUser?.uid
+                                if (uid == null) {
+                                    showSnackbar("Erro interno: UID não encontrado")
+                                    setLoading(false)
+                                    return@addOnCompleteListener
+                                }
+                                val u = auth.currentUser
+                                val dados = mapOf(
+                                    "email" to (u?.email ?: ""),
+                                    "nome" to (u?.displayName ?: ""),
+                                    "fotoUrl" to (u?.photoUrl?.toString() ?: ""),
+                                    "tipoConta" to "maker"
+                                )
+                                db.collection("usuarios").document(uid)
+                                    .set(dados, SetOptions.merge())
+                                    .addOnCompleteListener {
+                                        startActivity(Intent(this@ActivityCriar2, ActivityHomeMaker::class.java).apply {
+                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                        })
+                                        finish()
+                                    }
+                                    .addOnFailureListener { e ->
+                                        showSnackbar("Aviso: não salvou perfil (${e.message})")
+                                        startActivity(Intent(this@ActivityCriar2, ActivityHomeMaker::class.java).apply {
+                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                        })
+                                        finish()
+                                    }
+                            } else {
+                                showSnackbar("Erro ao autenticar: ${t.exception?.localizedMessage}")
+                                setLoading(false)
+                            }
+                        }
+                    } else {
+                        showSnackbar("Credencial do Google inválida")
+                        setLoading(false)
+                    }
+                } catch (e: GetCredentialException) {
+                    showSnackbar("Login com Google falhou: ${e.errorMessage ?: e.message}")
+                    setLoading(false)
+                } catch (t: Throwable) {
+                    showSnackbar("Erro inesperado: ${t.localizedMessage}")
+                    setLoading(false)
+                }
+            }
+        }
+
         btnCadastrar.setOnClickListener {
             closeKeyboard()
             val nome = nomeField.text.toString().trim()
@@ -73,7 +160,11 @@ class ActivityCriar2 : BaseActivity() {
         }
     }
 
-
+    private fun setLoading(loading: Boolean) {
+        progressBar.visibility = if (loading) View.VISIBLE else View.GONE
+        btnCadastrar.isEnabled = !loading
+        findViewById<View>(R.id.btnGoogle)?.isEnabled = !loading
+    }
 
     private fun validarCampos(nome: String, email: String, telefone: String, senha: String): Boolean {
         return when {

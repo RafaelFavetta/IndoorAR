@@ -75,6 +75,7 @@ class ActivityMapasExistentes : BaseActivity() {
         val txtTitulo = view.findViewById<TextView>(R.id.txtTituloMapa)
         val txtDesc = view.findViewById<TextView>(R.id.txtDescricaoMapa)
         val ivPreview = view.findViewById<ImageView>(R.id.ivPreview)
+        val btnIniciar = view.findViewById<Button>(R.id.btnIniciarNavegacao)
         txtTitulo.text = m.nome
         txtDesc.text = m.descricao
         ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
@@ -91,9 +92,20 @@ class ActivityMapasExistentes : BaseActivity() {
             }
         }
 
-        view.findViewById<Button>(R.id.btnIniciarNavegacao).setOnClickListener {
+        var launching = false
+        btnIniciar.setOnClickListener {
+            if (launching) return@setOnClickListener
+            launching = true
+            btnIniciar.isEnabled = false
             dialog.dismiss()
-            startActivity(Intent(this, ActivityMap::class.java).putExtra("MAP_ID", m.id))
+            val id = m.id
+            if (id.isBlank()) {
+                Toast.makeText(this, "ID de mapa inválido", Toast.LENGTH_SHORT).show()
+                launching = false
+                btnIniciar.isEnabled = true
+                return@setOnClickListener
+            }
+            startActivity(Intent(this, ActivityMap::class.java).putExtra("MAP_ID", id))
         }
 
         val btnBaixarQRCode = view.findViewById<Button>(R.id.btnBaixarQRCode)

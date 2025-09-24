@@ -182,21 +182,69 @@ class ActivityScanQR : BaseActivity() {
     private fun handleResult(value: String) {
         val returnResult = intent.getBooleanExtra("RETURN_RESULT", false)
 
-        // Release camera promptly before leaving to avoid camera-in-use crash
+        // Tenta extrair um mapId válido do QR (id puro, URL com /mapas/{id} ou ?mapId=)
+        val mapId = extractMapIdFromQr(value)
+        if (mapId == null) {
+            // Falha em interpretar o QR
+            Toast.makeText(this, "QR inválido", Toast.LENGTH_SHORT).show()
+            navigating = false
+            btnResult.isEnabled = true
+            return
+        }
+
         stopCamera()
 
-        // Proceed without blocking on ARCore pre-check; ARActivity/flow should handle ARCore install if needed
         if (returnResult) {
             val intent = Intent()
-            intent.putExtra("QR_VALUE", value)
+            intent.putExtra("QR_VALUE", mapId)
             setResult(RESULT_OK, intent)
             finish()
         } else {
             val mapIntent = Intent(this, ActivityMap::class.java).apply {
-                putExtra("MAP_ID", value)
+                putExtra("MAP_ID", mapId)
             }
             startActivity(mapIntent)
             finish()
         }
+    }
+
+    private fun extractMapIdFromQr(raw: String): String? {
+        val s = raw.trim()
+        // Caso 1: já é um id simples (sem barra)
+        if (!s.contains('/')) return s
+
+        // Caso 2: URL com parâmetro ?mapId=XYZ
+        run {
+            val idx = s.indexOf("mapId=")
+            if (idx >= 0) {
+                val sub = s.substring(idx + 6)
+                val end = listOf('&', '#', '?', '/').map { c -> sub.indexOf(c).takeIf { it >= 0 } ?: sub.length }.min()
+                val id = sub.substring(0, end)
+                if (id.isNotBlank()) return id
+            }
+        }
+
+        // Caso 3: caminho contendo /mapas/{id}
+        run {
+            val token = "/mapas/"
+            val idx = s.indexOf(token)
+            if (idx >= 0) {
+                val sub = s.substring(idx + token.length)
+                val end = sub.indexOf('/')
+                val id = if (end >= 0) sub.substring(0, end) else sub
+                if (id.isNotBlank()) return id
+            }
+        }
+
+        // Última tentativa: pega o último segmento da URL
+        run {
+            val parts = s.split('/').filter { it.isNotBlank() }
+            if (parts.isNotEmpty()) {
+                val tail = parts.last()
+                if (tail.isNotBlank()) return tail
+            }
+        }
+
+        return null
     }
 }

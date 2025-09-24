@@ -88,8 +88,9 @@ class ActivityMap : BaseActivity() {
     ) { res ->
         if (res.resultCode == RESULT_OK) {
             val value = res.data?.getStringExtra("QR_VALUE")
-            if (!value.isNullOrBlank()) {
-                mapId = value; carregarMapa()
+            val extracted = value?.let { extractMapId(it) }
+            if (!extracted.isNullOrBlank()) {
+                mapId = extracted; carregarMapa()
             } else { Toast.makeText(this, "QR inválido", Toast.LENGTH_SHORT).show(); finish() }
         } else { Toast.makeText(this, "Scan cancelado", Toast.LENGTH_SHORT).show(); finish() }
     }
@@ -109,18 +110,8 @@ class ActivityMap : BaseActivity() {
         setupRecycler()
         setupButtons()
 
-        arFragment = supportFragmentManager.findFragmentById(R.id.arFragment) as ArFragment
-        arFragment.arSceneView.scene.addOnUpdateListener {
-            if (loadingText.isVisible) loadingText.visibility = View.GONE
-            val frame = arFragment.arSceneView.arFrame ?: return@addOnUpdateListener
-            val pose = frame.camera.pose
-            minimapView.updateUserPosition(pose.tx(), pose.tz())
-            atualizarDistanciaRestante(pose.tx(), pose.tz())
-            tentarRecalcularSeDesviou(pose.tx(), pose.tz())
-            atualizarDestaqueEsferas(pose.tx(), pose.tz())
-        }
-
-        mapId = intent.getStringExtra("MAP_ID")
+        // Sanitiza o MAP_ID vindo pela intent (pode ser URL)
+        mapId = intent.getStringExtra("MAP_ID")?.let { extractMapId(it) }
         checkAndRequestPermissions()
     }
 
@@ -133,6 +124,25 @@ class ActivityMap : BaseActivity() {
             return
         }
         // If INSTALLED, proceed normally; ArFragment handles session creation.
+        initializeArFragment()
+    }
+
+    private fun initializeArFragment() {
+        try {
+            arFragment = supportFragmentManager.findFragmentById(R.id.arFragment) as ArFragment
+            arFragment.arSceneView.scene.addOnUpdateListener {
+                if (loadingText.isVisible) loadingText.visibility = View.GONE
+                val frame = arFragment.arSceneView.arFrame ?: return@addOnUpdateListener
+                val pose = frame.camera.pose
+                minimapView.updateUserPosition(pose.tx(), pose.tz())
+                atualizarDistanciaRestante(pose.tx(), pose.tz())
+                tentarRecalcularSeDesviou(pose.tx(), pose.tz())
+                atualizarDestaqueEsferas(pose.tx(), pose.tz())
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Erro ao inicializar AR: ${e.message}", Toast.LENGTH_LONG).show()
+            finish()
+        }
     }
 
     private fun bindViews() {
@@ -186,10 +196,16 @@ class ActivityMap : BaseActivity() {
     }
 
     private fun carregarMapa() {
-        val id = mapId ?: return
+        val id = mapId
+        if (id.isNullOrBlank()) { Toast.makeText(this, "QR inválido", Toast.LENGTH_SHORT).show(); finish(); return }
+        if (id.contains('/')) { Toast.makeText(this, "ID de mapa inválido", Toast.LENGTH_SHORT).show(); finish(); return }
         loadingText.visibility = View.VISIBLE
         val db = FirebaseFirestore.getInstance()
-        val docRef = db.collection("mapas").document(id)
+        val docRef = try {
+            db.collection("mapas").document(id)
+        } catch (e: IllegalArgumentException) {
+            Toast.makeText(this, "ID de mapa inválido", Toast.LENGTH_SHORT).show(); finish(); return
+        }
         docRef.get().addOnSuccessListener { doc ->
             if (!doc.exists()) { Toast.makeText(this, "Mapa não encontrado", Toast.LENGTH_LONG).show(); finish(); return@addOnSuccessListener }
             docRef.collection("formas").get().addOnSuccessListener { formasSnap ->
@@ -269,7 +285,7 @@ class ActivityMap : BaseActivity() {
             minimapView.addPoi(x, z)
             val name = p.getString("name") ?: "POI"
             val iconRes = (p.get("iconRes") as? Number)?.toInt() ?: R.drawable.ic_location
-            val id = p.getString("id") ?: name + x + z
+            val id = p.getString("id") ?: (name + x + z)
             val isStart = (p.get("isStartQR") as? Boolean) == true
             destinos += DestinoPoi(id, name, x, z, iconRes, isStart)
         }
@@ -482,7 +498,7 @@ class ActivityMap : BaseActivity() {
     private fun aStar(startId: String, goalId: String): List<String>? {
         if (!graphNodes.containsKey(startId) || !graphNodes.containsKey(goalId)) return null
         data class Rec(var id: String, var g: Double, var f: Double, var parent: String?)
-        val open = PriorityQueue<Rec>(compareBy { it.f })
+        val open = java.util.PriorityQueue<Rec>(compareBy { it.f })
         val all = mutableMapOf<String, Rec>()
         val closed = mutableSetOf<String>()
         fun h(a: GraphNode, b: GraphNode) = hypot((a.x - b.x).toDouble(), (a.z - b.z).toDouble())
@@ -516,6 +532,30 @@ class ActivityMap : BaseActivity() {
                 }
             }
         }
+        return null
+    }
+
+    // Extrai/sanitiza id de mapa a partir de uma string (id puro, URL com parametro mapId, ou segmento final)
+    private fun extractMapId(raw: String): String? {
+        val s = raw.trim()
+        if (!s.contains('/')) return s
+        val idxParam = s.indexOf("mapId=")
+        if (idxParam >= 0) {
+            val sub = s.substring(idxParam + 6)
+            val end = listOf('&', '#', '?', '/').map { c -> sub.indexOf(c).takeIf { it >= 0 } ?: sub.length }.min()
+            val id = sub.substring(0, end)
+            if (id.isNotBlank()) return id
+        }
+        val token = "/mapas/"
+        val idx = s.indexOf(token)
+        if (idx >= 0) {
+            val sub = s.substring(idx + token.length)
+            val end = sub.indexOf('/')
+            val id = if (end >= 0) sub.substring(0, end) else sub
+            if (id.isNotBlank()) return id
+        }
+        val parts = s.split('/').filter { it.isNotBlank() }
+        if (parts.isNotEmpty()) return parts.last()
         return null
     }
 }

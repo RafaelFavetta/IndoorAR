@@ -7,9 +7,9 @@
     android:layout_height="match_parent"
     android:background="#FDFDFD">
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/arFragment"
-        android:name="com.google.ar.sceneform.ux.ArFragment"
+    <!-- Container for AR fragment (added programmatically after permissions/AR ready) -->
+    <FrameLayout
+        android:id="@+id/arFragmentContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_constraintTop_toTopOf="parent"

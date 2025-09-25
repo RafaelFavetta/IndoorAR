@@ -25,15 +25,14 @@ import com.google.ar.sceneform.Node
 import com.google.ar.core.Anchor
 import com.google.ar.core.Pose
 import com.example.indoorar.ui.MinimapView
-import java.util.PriorityQueue
 import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.math.max
-
-// Add ARCore availability import
 import com.google.ar.core.ArCoreApk
 
 class ActivityMap : BaseActivity() {
+
+
 
     private lateinit var arFragment: ArFragment
     private lateinit var loadingText: TextView
@@ -59,7 +58,7 @@ class ActivityMap : BaseActivity() {
     // Rota atual
     private var currentPathNodeIds: List<String> = emptyList()
     private var currentPathAnchors: MutableList<AnchorNode> = mutableListOf()
-    private var cumulativeDistances: List<Double> = emptyList() // acumulada por nó no path
+    private var cumulativeDistances: List<Double> = emptyList()
     private var totalDistance: Double = 0.0
     private var lastUserRecalcCheckPose: Pair<Float, Float>? = null
 
@@ -69,9 +68,8 @@ class ActivityMap : BaseActivity() {
     private var nearSphereMaterial: com.google.ar.sceneform.rendering.Material? = null
     private val sphereHighlightDistance = 1.0
 
-    // Track ARCore install prompt state
-    private var userRequestedInstall: Boolean = true
-    private var arInstallReady: Boolean = false
+    // AR init tracking
+    private var userRequestedInstall: Boolean = true // kept for availability check only
     private var arInitialized: Boolean = false
 
     private val requestPermissions = registerForActivityResult(
@@ -82,8 +80,7 @@ class ActivityMap : BaseActivity() {
             Toast.makeText(this, "Permissão de câmera necessária", Toast.LENGTH_LONG).show()
             finish(); return@registerForActivityResult
         }
-        // If ARCore install is already handled, we can initialize AR now
-        if (arInstallReady) ensureArInitialized()
+        ensureArInitialized()
         ensureMapLoadedOrScan()
     }
 
@@ -103,19 +100,19 @@ class ActivityMap : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_map)
 
-        // ARCore check
+        // ARCore basic availability check (optional devices allowed)
         val availability = ArCoreApk.getInstance().checkAvailability(this)
-        if (availability.isUnsupported) {
-            Toast.makeText(this, "Seu dispositivo não contém suporte ao ARCore.", Toast.LENGTH_LONG).show()
+        if (availability == ArCoreApk.Availability.UNSUPPORTED_DEVICE_NOT_CAPABLE) {
+            // Apenas alerta, mas tenta inicializar AR mesmo assim
+            Toast.makeText(this, "Dispositivo não certificado para ARCore, mas tentando inicializar...", Toast.LENGTH_LONG).show()
+        } else if (availability.isUnsupported) {
+            // Outros casos realmente não suportados
+            Toast.makeText(this, "Seu dispositivo não suporta ARCore.", Toast.LENGTH_LONG).show()
             finish(); return
         }
 
+
         bindViews()
-        // Obtain reference to the ArFragment so it's available during map processing
-        try {
-            arFragment = supportFragmentManager.findFragmentById(R.id.arFragment) as ArFragment
-        } catch (_: Exception) { /* fragment not inflated yet; will retry later */ }
-        // Do not initialize AR here; wait until we know ARCore is installed and camera permission is granted
         setupRecycler()
         setupButtons()
 
@@ -126,14 +123,13 @@ class ActivityMap : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Request ARCore install/update if needed. If INSTALL_REQUESTED, Play Store flow will start and we return.
+        // Explicitly request ARCore install/update if needed. If Play Store flow starts, return and wait for resume.
         val installStatus = ArCoreApk.getInstance().requestInstall(this, userRequestedInstall)
         if (installStatus == ArCoreApk.InstallStatus.INSTALL_REQUESTED) {
             userRequestedInstall = false
             return
         }
-        // If INSTALLED, mark ready and try to init if we have camera permission
-        arInstallReady = true
+        // If ARCore is installed, ensure AR initialization (will wait for camera permission if needed)
         ensureArInitialized()
     }
 
@@ -141,14 +137,25 @@ class ActivityMap : BaseActivity() {
         ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
     private fun ensureArInitialized() {
-        if (arInitialized) return
-        if (!hasCameraPermission()) return
+        if (arInitialized || !hasCameraPermission()) return
         initializeArFragment()
         arInitialized = true
     }
 
     private fun initializeArFragment() {
         try {
+            val tag = "AR_FRAGMENT"
+            val existing = supportFragmentManager.findFragmentByTag(tag) as? ArFragment
+            if (existing == null) {
+                val frag = ArFragment()
+                supportFragmentManager
+                    .beginTransaction()
+                    .replace(R.id.arFragmentContainer, frag, tag)
+                    .commitNowAllowingStateLoss()
+                arFragment = frag
+            } else {
+                arFragment = existing
+            }
             arFragment.arSceneView.scene.addOnUpdateListener {
                 if (loadingText.isVisible) loadingText.visibility = View.GONE
                 val frame = arFragment.arSceneView.arFrame ?: return@addOnUpdateListener
@@ -160,7 +167,6 @@ class ActivityMap : BaseActivity() {
             }
         } catch (e: Exception) {
             Toast.makeText(this, "Erro ao inicializar AR: ${e.message}", Toast.LENGTH_LONG).show()
-            finish()
         }
     }
 
@@ -199,10 +205,12 @@ class ActivityMap : BaseActivity() {
 
     private fun checkAndRequestPermissions() {
         val needed = mutableListOf<String>()
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+        if (!hasCameraPermission()) {
             needed += Manifest.permission.CAMERA
         }
-        if (needed.isNotEmpty()) requestPermissions.launch(needed.toTypedArray()) else ensureMapLoadedOrScan()
+        if (needed.isNotEmpty()) requestPermissions.launch(needed.toTypedArray()) else {
+            ensureArInitialized(); ensureMapLoadedOrScan()
+        }
     }
 
     private fun ensureMapLoadedOrScan() {
@@ -222,7 +230,7 @@ class ActivityMap : BaseActivity() {
         val db = FirebaseFirestore.getInstance()
         val docRef = try {
             db.collection("mapas").document(id)
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             Toast.makeText(this, "ID de mapa inválido", Toast.LENGTH_SHORT).show(); finish(); return
         }
         docRef.get().addOnSuccessListener { doc ->
@@ -269,32 +277,50 @@ class ActivityMap : BaseActivity() {
         if (minX == Float.MAX_VALUE) { minX = 0f; minZ = 0f; maxX = 10f; maxZ = 10f }
         minimapView.setWorldBounds(minX, minZ, maxX, maxZ)
 
-        // Formas (desenho + AR)
-        formas.forEach { f ->
-            val pos = f.get("posicao") as? List<*> ?: return@forEach
-            val tam = f.get("tamanho") as? List<*> ?: return@forEach
-            val corHex = (f.getString("cor") ?: "#D9D9D9").replace("#", "")
-            val r = corHex.chunked(2).getOrNull(0)?.toInt(16) ?: 0xD9
-            val g = corHex.chunked(2).getOrNull(1)?.toInt(16) ?: 0xD9
-            val b = corHex.chunked(2).getOrNull(2)?.toInt(16) ?: 0xD9
-            val x = (pos.getOrNull(0) as? Number)?.toFloat() ?: 0f
-            val z = (pos.getOrNull(1) as? Number)?.toFloat() ?: 0f
-            val h = (tam.getOrNull(0) as? Number)?.toFloat() ?: 0.1f
-            val w = (tam.getOrNull(1) as? Number)?.toFloat() ?: 0.1f
-            minimapView.addForma(x, z, w, h, android.graphics.Color.rgb(r, g, b))
-            val sceneView = arFragment.arSceneView
-            val session = sceneView.session ?: return@forEach
-            val pose = Pose(floatArrayOf(x + w/2f, 0f, z + h/2f), floatArrayOf(0f,0f,0f,1f))
-            val anchor: Anchor = session.createAnchor(pose)
-            MaterialFactory.makeOpaqueWithColor(this, Color(android.graphics.Color.rgb(r,g,b)))
-                .thenAccept { material ->
-                    val size = Vector3(w, 0.1f, h)
-                    val renderable = ShapeFactory.makeCube(size, Vector3.zero(), material)
-                    val anchorNode = AnchorNode(anchor)
-                    anchorNode.setParent(sceneView.scene)
-                    val node = Node().apply { this.renderable = renderable }
-                    node.setParent(anchorNode)
-                }
+        // Formas (desenho + AR) - only if AR is initialized
+        val canRenderAr = arInitialized && this::arFragment.isInitialized
+        if (canRenderAr) {
+            formas.forEach { f ->
+                val pos = f.get("posicao") as? List<*> ?: return@forEach
+                val tam = f.get("tamanho") as? List<*> ?: return@forEach
+                val corHex = (f.getString("cor") ?: "#D9D9D9").replace("#", "")
+                val r = corHex.chunked(2).getOrNull(0)?.toInt(16) ?: 0xD9
+                val g = corHex.chunked(2).getOrNull(1)?.toInt(16) ?: 0xD9
+                val b = corHex.chunked(2).getOrNull(2)?.toInt(16) ?: 0xD9
+                val x = (pos.getOrNull(0) as? Number)?.toFloat() ?: 0f
+                val z = (pos.getOrNull(1) as? Number)?.toFloat() ?: 0f
+                val h = (tam.getOrNull(0) as? Number)?.toFloat() ?: 0.1f
+                val w = (tam.getOrNull(1) as? Number)?.toFloat() ?: 0.1f
+                minimapView.addForma(x, z, w, h, android.graphics.Color.rgb(r, g, b))
+                val sceneView = arFragment.arSceneView
+                val session = sceneView.session ?: return@forEach
+                val pose = Pose(floatArrayOf(x + w/2f, 0f, z + h/2f), floatArrayOf(0f,0f,0f,1f))
+                val anchor: Anchor = session.createAnchor(pose)
+                MaterialFactory.makeOpaqueWithColor(this, Color(android.graphics.Color.rgb(r,g,b)))
+                    .thenAccept { material ->
+                        val size = Vector3(w, 0.1f, h)
+                        val renderable = ShapeFactory.makeCube(size, Vector3.zero(), material)
+                        val anchorNode = AnchorNode(anchor)
+                        anchorNode.setParent(sceneView.scene)
+                        val node = Node().apply { this.renderable = renderable }
+                        node.setParent(anchorNode)
+                    }
+            }
+        } else {
+            // Still add formas to minimap for visualization
+            formas.forEach { f ->
+                val pos = f.get("posicao") as? List<*> ?: return@forEach
+                val tam = f.get("tamanho") as? List<*> ?: return@forEach
+                val corHex = (f.getString("cor") ?: "#D9D9D9").replace("#", "")
+                val r = corHex.chunked(2).getOrNull(0)?.toInt(16) ?: 0xD9
+                val g = corHex.chunked(2).getOrNull(1)?.toInt(16) ?: 0xD9
+                val b = corHex.chunked(2).getOrNull(2)?.toInt(16) ?: 0xD9
+                val x = (pos.getOrNull(0) as? Number)?.toFloat() ?: 0f
+                val z = (pos.getOrNull(1) as? Number)?.toFloat() ?: 0f
+                val h = (tam.getOrNull(0) as? Number)?.toFloat() ?: 0.1f
+                val w = (tam.getOrNull(1) as? Number)?.toFloat() ?: 0.1f
+                minimapView.addForma(x, z, w, h, android.graphics.Color.rgb(r, g, b))
+            }
         }
 
         destinos.clear()
@@ -303,7 +329,6 @@ class ActivityMap : BaseActivity() {
             val z = (p.get("y") as? Number)?.toFloat() ?: 0f
             minimapView.addPoi(x, z)
             val name = p.getString("name") ?: "POI"
-            // Resolve icon by name (string) if provided; fall back to a safe default. Avoid using raw int ids from Firestore.
             val iconRes = resolvePoiIconRes(p)
             val id = p.getString("id") ?: (name + x + z)
             val isStart = (p.get("isStartQR") as? Boolean) == true
@@ -333,26 +358,19 @@ class ActivityMap : BaseActivity() {
     }
 
     private fun resolvePoiIconRes(p: DocumentSnapshot): Int {
-        // Prefer a string field like "iconName" that maps to a drawable resource name.
-        val iconName = p.getString("iconName")
-            ?: p.getString("icon") // allow alternative key
+        val iconName = p.getString("iconName") ?: p.getString("icon")
         if (!iconName.isNullOrBlank()) {
             val resId = resources.getIdentifier(iconName, "drawable", packageName)
             if (resId != 0) return resId
         }
-        // Fallbacks: try a generic location icon if present; otherwise default poi icon.
-        return try {
-            R.drawable.ic_location
-        } catch (_: Exception) {
-            // If ic_location doesn't exist in this build, use a very safe default the layout uses.
+        return try { R.drawable.ic_location } catch (_: Exception) {
             resources.getIdentifier("ic_poi_default", "drawable", packageName).takeIf { it != 0 }
                 ?: android.R.drawable.star_on
         }
     }
 
     private fun calcularRotaAStar(dest: DestinoPoi) {
-        // Ensure AR is ready before using arFragment
-        if (!arInitialized) {
+        if (!arInitialized || !this::arFragment.isInitialized) {
             Toast.makeText(this, "AR ainda não está pronto. Aguarde alguns segundos e tente novamente.", Toast.LENGTH_SHORT).show()
             return
         }
@@ -396,13 +414,10 @@ class ActivityMap : BaseActivity() {
                 if (steps > 1) {
                     val stepX = dx / steps
                     val stepZ = dz / steps
-                    for (s in 1 until steps) {
-                        out += (ax + stepX * s) to (az + stepZ * s)
-                    }
+                    for (s in 1 until steps) out += (ax + stepX * s) to (az + stepZ * s)
                 }
             }
         }
-        // garante último ponto
         out += pontos.last()
         return out
     }
@@ -422,7 +437,6 @@ class ActivityMap : BaseActivity() {
 
     private fun atualizarDistanciaRestante(ux: Float, uz: Float) {
         if (currentPathNodeIds.isEmpty()) return
-        // encontrar nó mais próximo do usuário
         var bestIdx = 0
         var bestDist = Double.MAX_VALUE
         currentPathNodeIds.forEachIndexed { idx, id ->
@@ -430,7 +444,6 @@ class ActivityMap : BaseActivity() {
             val d = hypot((n.x - ux).toDouble(), (n.z - uz).toDouble())
             if (d < bestDist) { bestDist = d; bestIdx = idx }
         }
-        // se está no último nó
         if (bestIdx == currentPathNodeIds.lastIndex && bestDist < 1.0) {
             tvDistancia.text = "Distância: Chegou"; return
         }
@@ -447,14 +460,11 @@ class ActivityMap : BaseActivity() {
         val last = lastUserRecalcCheckPose
         if (last != null) {
             val mov = hypot((ux - last.first).toDouble(), (uz - last.second).toDouble())
-            if (mov < 0.7) return // não se moveu o bastante desde última checagem
+            if (mov < 0.7) return
         }
         lastUserRecalcCheckPose = ux to uz
-        // distância do usuário ao segmento mais próximo da rota
         val dist = distanciaParaRota(ux, uz)
-        if (dist > 2.0) {
-            destinoSelecionado?.let { calcularRotaAStar(it) }
-        }
+        if (dist > 2.0) { destinoSelecionado?.let { calcularRotaAStar(it) } }
     }
 
     private fun distanciaParaRota(x: Float, z: Float): Double {
@@ -463,7 +473,6 @@ class ActivityMap : BaseActivity() {
         for (i in 0 until currentPathNodeIds.size - 1) {
             val a = graphNodes[currentPathNodeIds[i]] ?: continue
             val b = graphNodes[currentPathNodeIds[i + 1]] ?: continue
-            // projeção ponto-segmento 2D
             val ax = a.x; val az = a.z; val bx = b.x; val bz = b.z
             val vx = bx - ax; val vz = bz - az
             val wx = x - ax; val wz = z - az
@@ -479,11 +488,12 @@ class ActivityMap : BaseActivity() {
 
     private fun desenharEsferasRota(pontos: List<Pair<Float,Float>>) {
         limparEsferas()
+        if (!arInitialized || !this::arFragment.isInitialized) return
         if (pontos.isEmpty()) return
         val scene = arFragment.arSceneView.scene
         val session = arFragment.arSceneView.session ?: return
-        val baseFuture = MaterialFactory.makeOpaqueWithColor(this, Color(0xFF1565C0.toInt())) // azul escuro
-        val nearFuture = MaterialFactory.makeOpaqueWithColor(this, Color(0xFF64B5F6.toInt())) // azul claro
+        val baseFuture = MaterialFactory.makeOpaqueWithColor(this, Color(0xFF1565C0.toInt()))
+        val nearFuture = MaterialFactory.makeOpaqueWithColor(this, Color(0xFF64B5F6.toInt()))
         baseFuture.thenCombine(nearFuture) { base, near ->
             baseSphereMaterial = base; nearSphereMaterial = near
             pontos.forEach { (x, z) ->
@@ -518,7 +528,6 @@ class ActivityMap : BaseActivity() {
 
     private fun limparRota() {
         limparEsferas()
-        // limpar anterior
         currentPathAnchors.forEach { it.setParent(null); it.anchor?.detach() }
         currentPathAnchors.clear()
         currentPathNodeIds = emptyList()
@@ -578,7 +587,6 @@ class ActivityMap : BaseActivity() {
         return null
     }
 
-    // Extrai/sanitiza id de mapa a partir de uma string (id puro, URL com parametro mapId, ou segmento final)
     private fun extractMapId(raw: String): String? {
         val s = raw.trim()
         if (!s.contains('/')) return s
@@ -632,12 +640,9 @@ class DestinoPoiAdapter(
     }
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = items[position]
-        // Guard against invalid resource ids that may come from remote content
-        try {
-            holder.icon.setImageResource(item.iconRes)
-        } catch (_: Exception) {
-            val fallback = holder.itemView.resources.getIdentifier("ic_poi_default", "drawable", holder.itemView.context.packageName)
-            if (fallback != 0) holder.icon.setImageResource(fallback)
+        try { holder.icon.setImageResource(item.iconRes) } catch (_: Exception) {
+            val fb = holder.itemView.resources.getIdentifier("ic_poi_default", "drawable", holder.itemView.context.packageName)
+            if (fb != 0) holder.icon.setImageResource(fb)
         }
         holder.txt.text = item.name
         holder.itemView.setOnClickListener { onClick(item) }

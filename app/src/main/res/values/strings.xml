@@ -5,4 +5,9 @@
     <string name="shape_circle">Círculo</string>
     <string name="shape_triangle">Triângulo</string>
     <string name="shape_line">Linha</string>
+
+    <!-- Distancia/UI strings -->
+    <string name="distance_meters">Distância: %1$.2f m</string>
+    <string name="distance_arrived">Distância: Chegou</string>
+    <string name="distance_placeholder">Distância: —</string>
 </resources>

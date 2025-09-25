@@ -117,8 +117,11 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.11.0")
     implementation("androidx.activity:activity:1.11.0")
 
-    // Lifecycle para lifecycleScope usado no novo sign-in
+    // Lifecycle
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
+
+    // Fragment KTX
+    implementation("androidx.fragment:fragment-ktx:1.8.9")
 
     // Novo Google Sign-In (Credential Manager + Google Identity Services)
     implementation("androidx.credentials:credentials:1.5.0")

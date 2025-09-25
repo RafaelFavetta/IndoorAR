@@ -71,6 +71,8 @@ class ActivityMap : BaseActivity() {
 
     // Track ARCore install prompt state
     private var userRequestedInstall: Boolean = true
+    private var arInstallReady: Boolean = false
+    private var arInitialized: Boolean = false
 
     private val requestPermissions = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -80,6 +82,8 @@ class ActivityMap : BaseActivity() {
             Toast.makeText(this, "Permissão de câmera necessária", Toast.LENGTH_LONG).show()
             finish(); return@registerForActivityResult
         }
+        // If ARCore install is already handled, we can initialize AR now
+        if (arInstallReady) ensureArInitialized()
         ensureMapLoadedOrScan()
     }
 
@@ -107,6 +111,11 @@ class ActivityMap : BaseActivity() {
         }
 
         bindViews()
+        // Obtain reference to the ArFragment so it's available during map processing
+        try {
+            arFragment = supportFragmentManager.findFragmentById(R.id.arFragment) as ArFragment
+        } catch (_: Exception) { /* fragment not inflated yet; will retry later */ }
+        // Do not initialize AR here; wait until we know ARCore is installed and camera permission is granted
         setupRecycler()
         setupButtons()
 
@@ -123,13 +132,23 @@ class ActivityMap : BaseActivity() {
             userRequestedInstall = false
             return
         }
-        // If INSTALLED, proceed normally; ArFragment handles session creation.
+        // If INSTALLED, mark ready and try to init if we have camera permission
+        arInstallReady = true
+        ensureArInitialized()
+    }
+
+    private fun hasCameraPermission(): Boolean =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+    private fun ensureArInitialized() {
+        if (arInitialized) return
+        if (!hasCameraPermission()) return
         initializeArFragment()
+        arInitialized = true
     }
 
     private fun initializeArFragment() {
         try {
-            arFragment = supportFragmentManager.findFragmentById(R.id.arFragment) as ArFragment
             arFragment.arSceneView.scene.addOnUpdateListener {
                 if (loadingText.isVisible) loadingText.visibility = View.GONE
                 val frame = arFragment.arSceneView.arFrame ?: return@addOnUpdateListener
@@ -284,7 +303,8 @@ class ActivityMap : BaseActivity() {
             val z = (p.get("y") as? Number)?.toFloat() ?: 0f
             minimapView.addPoi(x, z)
             val name = p.getString("name") ?: "POI"
-            val iconRes = (p.get("iconRes") as? Number)?.toInt() ?: R.drawable.ic_location
+            // Resolve icon by name (string) if provided; fall back to a safe default. Avoid using raw int ids from Firestore.
+            val iconRes = resolvePoiIconRes(p)
             val id = p.getString("id") ?: (name + x + z)
             val isStart = (p.get("isStartQR") as? Boolean) == true
             destinos += DestinoPoi(id, name, x, z, iconRes, isStart)
@@ -312,7 +332,30 @@ class ActivityMap : BaseActivity() {
         minimapView.invalidate()
     }
 
+    private fun resolvePoiIconRes(p: DocumentSnapshot): Int {
+        // Prefer a string field like "iconName" that maps to a drawable resource name.
+        val iconName = p.getString("iconName")
+            ?: p.getString("icon") // allow alternative key
+        if (!iconName.isNullOrBlank()) {
+            val resId = resources.getIdentifier(iconName, "drawable", packageName)
+            if (resId != 0) return resId
+        }
+        // Fallbacks: try a generic location icon if present; otherwise default poi icon.
+        return try {
+            R.drawable.ic_location
+        } catch (_: Exception) {
+            // If ic_location doesn't exist in this build, use a very safe default the layout uses.
+            resources.getIdentifier("ic_poi_default", "drawable", packageName).takeIf { it != 0 }
+                ?: android.R.drawable.star_on
+        }
+    }
+
     private fun calcularRotaAStar(dest: DestinoPoi) {
+        // Ensure AR is ready before using arFragment
+        if (!arInitialized) {
+            Toast.makeText(this, "AR ainda não está pronto. Aguarde alguns segundos e tente novamente.", Toast.LENGTH_SHORT).show()
+            return
+        }
         val frame = arFragment.arSceneView.arFrame
         val camPose = frame?.camera?.pose
         val startNodeId = destinos.firstOrNull { it.isStart }?.id ?: run {
@@ -572,6 +615,7 @@ data class DestinoPoi(
 )
 
 data class GraphNode(val id: String, val x: Float, val z: Float)
+
 data class GraphEdge(val from: String, val to: String, val peso: Double)
 
 class DestinoPoiAdapter(
@@ -588,7 +632,13 @@ class DestinoPoiAdapter(
     }
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = items[position]
-        holder.icon.setImageResource(item.iconRes)
+        // Guard against invalid resource ids that may come from remote content
+        try {
+            holder.icon.setImageResource(item.iconRes)
+        } catch (_: Exception) {
+            val fallback = holder.itemView.resources.getIdentifier("ic_poi_default", "drawable", holder.itemView.context.packageName)
+            if (fallback != 0) holder.icon.setImageResource(fallback)
+        }
         holder.txt.text = item.name
         holder.itemView.setOnClickListener { onClick(item) }
     }

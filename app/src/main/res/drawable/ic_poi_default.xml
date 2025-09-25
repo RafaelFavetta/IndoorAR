@@ -1,5 +1,8 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:height="128dp" android:viewportHeight="960" android:viewportWidth="960" android:width="128dp">
-      
-    <path android:fillColor="#32357A" android:pathData="M480,683 L277,480l203,-203 203,203 -203,203ZM523,859q-9,9 -20,13.5T481,877q-11,0 -22.5,-4.5T438,859L101,522q-9,-9 -13.5,-20T83,480q0,-11 4.5,-22.5T101,437l338,-338q8,-8 19,-12.5t22,-4.5q11,0 22,4.5t19,12.5l338,338q9,9 13.5,20.33Q877,468.67 877,480q0,11.25 -4.7,22.5 -4.69,11.25 -13.3,19.5L523,859ZM480,793 L793,480 480,167 167,480 480,793Z"/>
-    
-</vector>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simple yellow circle placeholder for POIs -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <size android:width="24dp" android:height="24dp" />
+    <solid android:color="#FDD835" />
+    <stroke android:width="1dp" android:color="#F9A825" />
+</shape>
+

@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.View
 import kotlin.math.max
@@ -30,6 +31,15 @@ class MinimapView @JvmOverloads constructor(
     private var maxZ = 10f
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val userPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val haloPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    init {
+        userPaint.style = Paint.Style.FILL
+        userPaint.color = Color.rgb(33, 150, 243) // Bright blue
+        haloPaint.style = Paint.Style.FILL
+        haloPaint.color = Color.rgb(33, 150, 243)
+    }
 
     fun setWorldBounds(minX: Float, minZ: Float, maxX: Float, maxZ: Float) {
         this.minX = minX
@@ -42,9 +52,7 @@ class MinimapView @JvmOverloads constructor(
     fun addForma(x: Float, z: Float, w: Float, h: Float, color: Int) { formas += Forma(x, z, w, h, color) }
     fun addPoi(x: Float, z: Float) { pois += Poi(x, z) }
 
-    fun setRoute(points: List<Pair<Float, Float>>) {
-        route.clear(); route.addAll(points); invalidate()
-    }
+    fun setRoute(points: List<Pair<Float, Float>>) { route.clear(); route.addAll(points); invalidate() }
     fun clearRoute() { route.clear(); invalidate() }
 
     fun updateUserPosition(x: Float, z: Float) {
@@ -98,10 +106,20 @@ class MinimapView @JvmOverloads constructor(
             canvas.drawCircle(cx, cy, 4f, paint)
         }
 
-        // usuário
-        paint.color = Color.CYAN
+        // usuário (ponto azul com brilho pulsando)
         val ux = (userX - minX) * scaleX
         val uz = (userZ - minZ) * scaleY
-        canvas.drawCircle(ux, uz, 6f, paint)
+        val now = SystemClock.uptimeMillis()
+        val phase = (now % 1000L).toFloat() / 1000f // 0..1
+        val baseRadius = 6f
+        val haloRadius = baseRadius + 6f * phase
+        val alpha = ((1f - phase) * 120f).toInt().coerceIn(0, 120)
+        haloPaint.alpha = alpha
+        canvas.drawCircle(ux, uz, haloRadius, haloPaint)
+        userPaint.alpha = 255
+        canvas.drawCircle(ux, uz, baseRadius, userPaint)
+
+        // Continuar animando o brilho
+        postInvalidateOnAnimation()
     }
 }

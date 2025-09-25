@@ -2,37 +2,44 @@ package com.example.indoorar
 
 import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.ar.core.ArCoreApk
+import com.google.ar.core.Anchor
+import com.google.ar.core.Pose
+import com.google.ar.sceneform.AnchorNode
+import com.google.ar.sceneform.Node
+import com.google.ar.sceneform.math.Vector3
+import com.google.ar.sceneform.rendering.Color
+import com.google.ar.sceneform.rendering.MaterialFactory
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.*
+import com.google.ar.sceneform.rendering.ShapeFactory
 import com.google.ar.sceneform.ux.ArFragment
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.ar.sceneform.rendering.MaterialFactory
-import com.google.ar.sceneform.rendering.Color
-import com.google.ar.sceneform.rendering.ShapeFactory
-import com.google.ar.sceneform.math.Vector3
-import com.google.ar.sceneform.AnchorNode
-import com.google.ar.sceneform.Node
-import com.google.ar.core.Anchor
-import com.google.ar.core.Pose
 import com.example.indoorar.ui.MinimapView
+import com.example.indoorar.tracking.SensorFusionTracker
 import kotlin.math.hypot
-import kotlin.math.min
 import kotlin.math.max
-import com.google.ar.core.ArCoreApk
+import kotlin.math.min
 
 class ActivityMap : BaseActivity() {
-
-
 
     private lateinit var arFragment: ArFragment
     private lateinit var loadingText: TextView
@@ -45,6 +52,8 @@ class ActivityMap : BaseActivity() {
     private lateinit var recyclerDestino: RecyclerView
     private lateinit var btnLimparRota: MaterialButton
     private lateinit var tvDistancia: TextView
+    private lateinit var arContainer: View
+    private lateinit var cameraPreview: PreviewView
 
     // POIs (destinos)
     private val destinos = mutableListOf<DestinoPoi>()
@@ -68,20 +77,42 @@ class ActivityMap : BaseActivity() {
     private var nearSphereMaterial: com.google.ar.sceneform.rendering.Material? = null
     private val sphereHighlightDistance = 1.0
 
-    // AR init tracking
-    private var userRequestedInstall: Boolean = true // kept for availability check only
-    private var arInitialized: Boolean = false
+    // Sensor Fusion (Para quem não tem ARCore)
+    private var sensorTracker: SensorFusionTracker? = null
+    private var estX: Float = 0f
+    private var estZ: Float = 0f
+    private val reanchorNodeThresholdMeters = 0.8f
+    private val stepLengthMeters = 0.7f // usar 0.7m real; sub-passos aplicam 1.0m em blocos
+    private val mapNorthDegrees: Float = 0f
+
+    // Location services
+    private lateinit var settingsClient: SettingsClient
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    private val enableLocationLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { res ->
+        if (res.resultCode == RESULT_OK) {
+            proceedAfterLocationReady()
+        } else {
+            Toast.makeText(this, "A localização é necessária para usar o mapa.", Toast.LENGTH_LONG).show()
+            finish()
+        }
+    }
 
     private val requestPermissions = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { perms ->
-        val camOk = perms[Manifest.permission.CAMERA] == true
-        if (!camOk) {
-            Toast.makeText(this, "Permissão de câmera necessária", Toast.LENGTH_LONG).show()
-            finish(); return@registerForActivityResult
-        }
-        ensureArInitialized()
-        ensureMapLoadedOrScan()
+        val camOk = perms[Manifest.permission.CAMERA] == true || hasCameraPermission()
+        val actOk = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q)
+            (perms[Manifest.permission.ACTIVITY_RECOGNITION] == true || hasActivityRecognitionPermission()) else true
+        val locOk = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true || hasLocationPermission()
+
+        if (!camOk) { Toast.makeText(this, "Permissão de câmera necessária", Toast.LENGTH_LONG).show(); finish(); return@registerForActivityResult }
+        if (!actOk) { Toast.makeText(this, "Permissão de atividade física negada. A posição pode não atualizar automaticamente.", Toast.LENGTH_LONG).show() }
+        if (!locOk) { Toast.makeText(this, "Permissão de localização necessária", Toast.LENGTH_LONG).show(); finish(); return@registerForActivityResult }
+
+        ensureLocationServicesEnabled()
     }
 
     private val scanLauncher = registerForActivityResult(
@@ -90,27 +121,16 @@ class ActivityMap : BaseActivity() {
         if (res.resultCode == RESULT_OK) {
             val value = res.data?.getStringExtra("QR_VALUE")
             val extracted = value?.let { extractMapId(it) }
-            if (!extracted.isNullOrBlank()) {
-                mapId = extracted; carregarMapa()
-            } else { Toast.makeText(this, "QR inválido", Toast.LENGTH_SHORT).show(); finish() }
+            if (!extracted.isNullOrBlank()) { mapId = extracted; carregarMapa() }
+            else { Toast.makeText(this, "QR inválido", Toast.LENGTH_SHORT).show(); finish() }
         } else { Toast.makeText(this, "Scan cancelado", Toast.LENGTH_SHORT).show(); finish() }
     }
+
+    private lateinit var destinoAdapter: DestinoPoiAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_map)
-
-        // ARCore basic availability check (optional devices allowed)
-        val availability = ArCoreApk.getInstance().checkAvailability(this)
-        if (availability == ArCoreApk.Availability.UNSUPPORTED_DEVICE_NOT_CAPABLE) {
-            // Apenas alerta, mas tenta inicializar AR mesmo assim
-            Toast.makeText(this, "Dispositivo não certificado para ARCore, mas tentando inicializar...", Toast.LENGTH_LONG).show()
-        } else if (availability.isUnsupported) {
-            // Outros casos realmente não suportados
-            Toast.makeText(this, "Seu dispositivo não suporta ARCore.", Toast.LENGTH_LONG).show()
-            finish(); return
-        }
-
 
         bindViews()
         setupRecycler()
@@ -123,39 +143,67 @@ class ActivityMap : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Explicitly request ARCore install/update if needed. If Play Store flow starts, return and wait for resume.
-        val installStatus = ArCoreApk.getInstance().requestInstall(this, userRequestedInstall)
-        if (installStatus == ArCoreApk.InstallStatus.INSTALL_REQUESTED) {
-            userRequestedInstall = false
-            return
+        if (hasCameraPermission()) {
+            checkArCoreSupport()
         }
-        // If ARCore is installed, ensure AR initialization (will wait for camera permission if needed)
-        ensureArInitialized()
     }
 
-    private fun hasCameraPermission(): Boolean =
-        ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    override fun onPause() {
+        super.onPause()
+        sensorTracker?.stop()
+    }
 
-    private fun ensureArInitialized() {
-        if (arInitialized || !hasCameraPermission()) return
-        initializeArFragment()
-        arInitialized = true
+    private fun checkArCoreSupport() {
+        val availability = ArCoreApk.getInstance().checkAvailability(this)
+        when (availability) {
+            ArCoreApk.Availability.SUPPORTED_INSTALLED -> {
+                initializeArFragment()
+                arContainer.visibility = View.VISIBLE
+                cameraPreview.visibility = View.GONE
+            }
+            ArCoreApk.Availability.SUPPORTED_APK_TOO_OLD,
+            ArCoreApk.Availability.SUPPORTED_NOT_INSTALLED -> {
+                try { ArCoreApk.getInstance().requestInstall(this, true) } catch (_: Exception) {}
+                initializeArFragment()
+                arContainer.visibility = View.VISIBLE
+                cameraPreview.visibility = View.GONE
+            }
+            else -> { initializeCameraFallback() }
+        }
+    }
+
+    private fun initializeCameraFallback() {
+        arContainer.visibility = View.GONE
+        cameraPreview.visibility = View.VISIBLE
+        val providerFuture = ProcessCameraProvider.getInstance(this)
+        val executor = ContextCompat.getMainExecutor(this)
+        providerFuture.addListener({
+            try {
+                val provider = providerFuture.get()
+                val preview = Preview.Builder().build().apply { setSurfaceProvider(cameraPreview.surfaceProvider) }
+                provider.unbindAll()
+                provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview)
+                if (loadingText.isVisible) loadingText.visibility = View.GONE
+            } catch (e: Exception) {
+                Toast.makeText(this, "Falha CameraX: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }, executor)
     }
 
     private fun initializeArFragment() {
         try {
+            stopSensorTracking()
             val tag = "AR_FRAGMENT"
-            val existing = supportFragmentManager.findFragmentByTag(tag) as? ArFragment
+            val existing = supportFragmentManager.findFragmentByTag(tag)
             if (existing == null) {
-                val frag = ArFragment()
-                supportFragmentManager
-                    .beginTransaction()
-                    .replace(R.id.arFragmentContainer, frag, tag)
-                    .commitNowAllowingStateLoss()
-                arFragment = frag
-            } else {
-                arFragment = existing
+                val tx = supportFragmentManager.beginTransaction()
+                tx.add(R.id.arFragmentContainer, ArFragment(), tag)
+                tx.commitNow()
             }
+            arFragment = supportFragmentManager.findFragmentByTag(tag) as ArFragment
+            arContainer.visibility = View.VISIBLE
+            cameraPreview.visibility = View.GONE
+
             arFragment.arSceneView.scene.addOnUpdateListener {
                 if (loadingText.isVisible) loadingText.visibility = View.GONE
                 val frame = arFragment.arSceneView.arFrame ?: return@addOnUpdateListener
@@ -167,6 +215,7 @@ class ActivityMap : BaseActivity() {
             }
         } catch (e: Exception) {
             Toast.makeText(this, "Erro ao inicializar AR: ${e.message}", Toast.LENGTH_LONG).show()
+            initializeCameraFallback()
         }
     }
 
@@ -178,18 +227,19 @@ class ActivityMap : BaseActivity() {
         recyclerDestino = findViewById(R.id.recyclerDestino)
         btnLimparRota = findViewById(R.id.btnLimparRota)
         tvDistancia = findViewById(R.id.tvDistancia)
+        arContainer = findViewById(R.id.arFragmentContainer)
+        cameraPreview = findViewById(R.id.cameraPreview)
     }
 
     private fun setupRecycler() {
         recyclerDestino.layoutManager = LinearLayoutManager(this)
-        recyclerDestino.adapter = DestinoPoiAdapter(destinos) { poi ->
+        destinoAdapter = DestinoPoiAdapter(destinos) { poi ->
             cardDestino.visibility = View.GONE
             destinoSelecionado = poi
-            if (!graphLoaded) {
-                Toast.makeText(this, "Grafo não carregado", Toast.LENGTH_SHORT).show(); return@DestinoPoiAdapter
-            }
+            if (!graphLoaded) { Toast.makeText(this, "Grafo não carregado", Toast.LENGTH_SHORT).show(); return@DestinoPoiAdapter }
             calcularRotaAStar(poi)
         }
+        recyclerDestino.adapter = destinoAdapter
     }
 
     private fun setupButtons() {
@@ -205,19 +255,48 @@ class ActivityMap : BaseActivity() {
 
     private fun checkAndRequestPermissions() {
         val needed = mutableListOf<String>()
-        if (!hasCameraPermission()) {
-            needed += Manifest.permission.CAMERA
+        if (!hasCameraPermission()) needed += Manifest.permission.CAMERA
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q && !hasActivityRecognitionPermission()) {
+            needed += Manifest.permission.ACTIVITY_RECOGNITION
         }
-        if (needed.isNotEmpty()) requestPermissions.launch(needed.toTypedArray()) else {
-            ensureArInitialized(); ensureMapLoadedOrScan()
+        if (!hasLocationPermission()) needed += Manifest.permission.ACCESS_FINE_LOCATION
+        if (needed.isNotEmpty()) {
+            requestPermissions.launch(needed.toTypedArray())
+        } else {
+            ensureLocationServicesEnabled()
         }
+    }
+
+    private fun ensureLocationServicesEnabled() {
+        if (!this::settingsClient.isInitialized) settingsClient = LocationServices.getSettingsClient(this)
+        if (!this::fusedLocationClient.isInitialized) fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        val req = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 2000L)
+            .setMinUpdateIntervalMillis(1000L)
+            .build()
+        val settingsRequest = LocationSettingsRequest.Builder().addLocationRequest(req).setAlwaysShow(true).build()
+
+        settingsClient.checkLocationSettings(settingsRequest)
+            .addOnSuccessListener { proceedAfterLocationReady() }
+            .addOnFailureListener { ex ->
+                if (ex is ResolvableApiException) {
+                    try {
+                        enableLocationLauncher.launch(IntentSenderRequest.Builder(ex.resolution).build())
+                    } catch (_: Exception) {
+                        Toast.makeText(this, "Ative a localização para continuar", Toast.LENGTH_LONG).show(); finish()
+                    }
+                } else { Toast.makeText(this, "Localização desativada. Ative-a para usar o mapa.", Toast.LENGTH_LONG).show(); finish() }
+            }
+    }
+
+    private fun proceedAfterLocationReady() {
+        checkArCoreSupport()
+        ensureMapLoadedOrScan()
     }
 
     private fun ensureMapLoadedOrScan() {
         if (mapId.isNullOrBlank()) {
-            val intentScan = Intent(this, ActivityScanQR::class.java).apply {
-                putExtra("RETURN_RESULT", true)
-            }
+            val intentScan = Intent(this, ActivityScanQR::class.java).apply { putExtra("RETURN_RESULT", true) }
             scanLauncher.launch(intentScan)
         } else carregarMapa()
     }
@@ -228,9 +307,7 @@ class ActivityMap : BaseActivity() {
         if (id.contains('/')) { Toast.makeText(this, "ID de mapa inválido", Toast.LENGTH_SHORT).show(); finish(); return }
         loadingText.visibility = View.VISIBLE
         val db = FirebaseFirestore.getInstance()
-        val docRef = try {
-            db.collection("mapas").document(id)
-        } catch (_: IllegalArgumentException) {
+        val docRef = try { db.collection("mapas").document(id) } catch (_: IllegalArgumentException) {
             Toast.makeText(this, "ID de mapa inválido", Toast.LENGTH_SHORT).show(); finish(); return
         }
         docRef.get().addOnSuccessListener { doc ->
@@ -255,7 +332,6 @@ class ActivityMap : BaseActivity() {
         nodes: List<DocumentSnapshot>,
         edges: List<DocumentSnapshot>
     ) {
-        // Bounds
         var minX = Float.MAX_VALUE; var minZ = Float.MAX_VALUE
         var maxX = -Float.MAX_VALUE; var maxZ = -Float.MAX_VALUE
         formas.forEach { f ->
@@ -277,9 +353,21 @@ class ActivityMap : BaseActivity() {
         if (minX == Float.MAX_VALUE) { minX = 0f; minZ = 0f; maxX = 10f; maxZ = 10f }
         minimapView.setWorldBounds(minX, minZ, maxX, maxZ)
 
-        // Formas (desenho + AR) - only if AR is initialized
-        val canRenderAr = arInitialized && this::arFragment.isInitialized
-        if (canRenderAr) {
+        if (!this::arFragment.isInitialized) {
+            formas.forEach { f ->
+                val pos = f.get("posicao") as? List<*> ?: return@forEach
+                val tam = f.get("tamanho") as? List<*> ?: return@forEach
+                val corHex = (f.getString("cor") ?: "#D9D9D9").replace("#", "")
+                val r = corHex.chunked(2).getOrNull(0)?.toInt(16) ?: 0xD9
+                val g = corHex.chunked(2).getOrNull(1)?.toInt(16) ?: 0xD9
+                val b = corHex.chunked(2).getOrNull(2)?.toInt(16) ?: 0xD9
+                val x = (pos.getOrNull(0) as? Number)?.toFloat() ?: 0f
+                val z = (pos.getOrNull(1) as? Number)?.toFloat() ?: 0f
+                val h = (tam.getOrNull(0) as? Number)?.toFloat() ?: 0.1f
+                val w = (tam.getOrNull(1) as? Number)?.toFloat() ?: 0.1f
+                minimapView.addForma(x, z, w, h, android.graphics.Color.rgb(r, g, b))
+            }
+        } else {
             formas.forEach { f ->
                 val pos = f.get("posicao") as? List<*> ?: return@forEach
                 val tam = f.get("tamanho") as? List<*> ?: return@forEach
@@ -301,28 +389,14 @@ class ActivityMap : BaseActivity() {
                         val size = Vector3(w, 0.1f, h)
                         val renderable = ShapeFactory.makeCube(size, Vector3.zero(), material)
                         val anchorNode = AnchorNode(anchor)
-                        anchorNode.setParent(sceneView.scene)
+                        anchorNode.parent = sceneView.scene
                         val node = Node().apply { this.renderable = renderable }
-                        node.setParent(anchorNode)
+                        node.parent = anchorNode
                     }
-            }
-        } else {
-            // Still add formas to minimap for visualization
-            formas.forEach { f ->
-                val pos = f.get("posicao") as? List<*> ?: return@forEach
-                val tam = f.get("tamanho") as? List<*> ?: return@forEach
-                val corHex = (f.getString("cor") ?: "#D9D9D9").replace("#", "")
-                val r = corHex.chunked(2).getOrNull(0)?.toInt(16) ?: 0xD9
-                val g = corHex.chunked(2).getOrNull(1)?.toInt(16) ?: 0xD9
-                val b = corHex.chunked(2).getOrNull(2)?.toInt(16) ?: 0xD9
-                val x = (pos.getOrNull(0) as? Number)?.toFloat() ?: 0f
-                val z = (pos.getOrNull(1) as? Number)?.toFloat() ?: 0f
-                val h = (tam.getOrNull(0) as? Number)?.toFloat() ?: 0.1f
-                val w = (tam.getOrNull(1) as? Number)?.toFloat() ?: 0.1f
-                minimapView.addForma(x, z, w, h, android.graphics.Color.rgb(r, g, b))
             }
         }
 
+        val oldSize = destinos.size
         destinos.clear()
         pois.forEach { p ->
             val x = (p.get("x") as? Number)?.toFloat() ?: 0f
@@ -334,7 +408,8 @@ class ActivityMap : BaseActivity() {
             val isStart = (p.get("isStartQR") as? Boolean) == true
             destinos += DestinoPoi(id, name, x, z, iconRes, isStart)
         }
-        recyclerDestino.adapter?.notifyDataSetChanged()
+        if (oldSize > 0) destinoAdapter.notifyItemRangeRemoved(0, oldSize)
+        if (destinos.isNotEmpty()) destinoAdapter.notifyItemRangeInserted(0, destinos.size)
         btnEscolherDestino.isEnabled = destinos.isNotEmpty()
 
         graphNodes.clear(); adjacency.clear()
@@ -355,22 +430,32 @@ class ActivityMap : BaseActivity() {
 
         loadingText.visibility = View.GONE
         minimapView.invalidate()
+
+        if (!this::arFragment.isInitialized && sensorTracker == null) {
+            val startPoi = destinos.firstOrNull { it.isStart }
+            val initX = startPoi?.x ?: graphNodes.values.firstOrNull()?.x ?: 0f
+            val initZ = startPoi?.z ?: graphNodes.values.firstOrNull()?.z ?: 0f
+            startSensorTracking(initX, initZ)
+        }
     }
 
     private fun resolvePoiIconRes(p: DocumentSnapshot): Int {
         val iconName = p.getString("iconName") ?: p.getString("icon")
-        if (!iconName.isNullOrBlank()) {
-            val resId = resources.getIdentifier(iconName, "drawable", packageName)
-            if (resId != 0) return resId
-        }
-        return try { R.drawable.ic_location } catch (_: Exception) {
-            resources.getIdentifier("ic_poi_default", "drawable", packageName).takeIf { it != 0 }
-                ?: android.R.drawable.star_on
+        return when (iconName?.lowercase()) {
+            "porta", "door" -> R.drawable.ic_door_azul
+            "banheiro", "bathroom" -> R.drawable.ic_banheiro_azul
+            "escada", "stairs" -> R.drawable.ic_stairs_azul
+            "elevador", "elevator" -> R.drawable.ic_elevator_azul
+            "extintor", "fire_extinguisher" -> R.drawable.ic_extintor_azul
+            "circulo", "circle" -> R.drawable.ic_circle_azul
+            "quadrado", "square" -> R.drawable.ic_square_azul
+            "triangulo", "triangle" -> R.drawable.ic_triangle_azul
+            else -> R.drawable.ic_poi_default
         }
     }
 
     private fun calcularRotaAStar(dest: DestinoPoi) {
-        if (!arInitialized || !this::arFragment.isInitialized) {
+        if (!this::arFragment.isInitialized) {
             Toast.makeText(this, "AR ainda não está pronto. Aguarde alguns segundos e tente novamente.", Toast.LENGTH_SHORT).show()
             return
         }
@@ -381,17 +466,12 @@ class ActivityMap : BaseActivity() {
             encontrarNodeMaisProximo(camPose.tx(), camPose.tz())
         }
         val goalNodeId = dest.id
-        if (!graphNodes.containsKey(goalNodeId)) {
-            Toast.makeText(this, "Destino sem nó correspondente", Toast.LENGTH_SHORT).show(); return
-        }
-        val path = aStar(startNodeId, goalNodeId)
-        if (path == null) {
-            Toast.makeText(this, "Sem rota encontrada", Toast.LENGTH_SHORT).show(); return
-        }
+        if (!graphNodes.containsKey(goalNodeId)) { Toast.makeText(this, "Destino sem nó correspondente", Toast.LENGTH_SHORT).show(); return }
+        val path = aStar(startNodeId, goalNodeId) ?: run { Toast.makeText(this, "Sem rota encontrada", Toast.LENGTH_SHORT).show(); return }
         currentPathNodeIds = path
         gerarCumulativeDistances()
         totalDistance = if (cumulativeDistances.isNotEmpty()) cumulativeDistances.last() else 0.0
-        tvDistancia.text = "Distância: %.2f m".format(totalDistance)
+        tvDistancia.text = getString(R.string.distance_meters, totalDistance)
         val ptsNodes = path.mapNotNull { graphNodes[it] }.map { it.x to it.z }
         val ptsDensificados = densificarRota(ptsNodes)
         minimapView.setRoute(ptsDensificados)
@@ -445,14 +525,14 @@ class ActivityMap : BaseActivity() {
             if (d < bestDist) { bestDist = d; bestIdx = idx }
         }
         if (bestIdx == currentPathNodeIds.lastIndex && bestDist < 1.0) {
-            tvDistancia.text = "Distância: Chegou"; return
+            tvDistancia.text = getString(R.string.distance_arrived); return
         }
         val distAteProxNo = bestDist
         val restante = if (bestIdx < cumulativeDistances.size) {
             val totalAteNo = cumulativeDistances[bestIdx]
             max(0.0, totalDistance - totalAteNo - distAteProxNo)
         } else 0.0
-        tvDistancia.text = "Distância: %.2f m".format(restante)
+        tvDistancia.text = getString(R.string.distance_meters, restante)
     }
 
     private fun tentarRecalcularSeDesviou(ux: Float, uz: Float) {
@@ -488,7 +568,7 @@ class ActivityMap : BaseActivity() {
 
     private fun desenharEsferasRota(pontos: List<Pair<Float,Float>>) {
         limparEsferas()
-        if (!arInitialized || !this::arFragment.isInitialized) return
+        if (!this::arFragment.isInitialized) return
         if (pontos.isEmpty()) return
         val scene = arFragment.arSceneView.scene
         val session = arFragment.arSceneView.session ?: return
@@ -500,11 +580,11 @@ class ActivityMap : BaseActivity() {
                 val pose = Pose(floatArrayOf(x, 0f, z), floatArrayOf(0f,0f,0f,1f))
                 val anchor = session.createAnchor(pose)
                 val anchorNode = AnchorNode(anchor)
-                anchorNode.setParent(scene)
+                anchorNode.parent = scene
                 val mat = baseSphereMaterial ?: return@forEach
                 val renderable = ShapeFactory.makeSphere(0.07f, Vector3.zero(), mat)
                 val node = Node().apply { this.renderable = renderable }
-                node.setParent(anchorNode)
+                node.parent = anchorNode
                 routeSpheres += RouteSphere(anchorNode, node, x, z)
             }
         }
@@ -522,19 +602,19 @@ class ActivityMap : BaseActivity() {
     }
 
     private fun limparEsferas() {
-        routeSpheres.forEach { it.anchorNode.setParent(null); it.anchorNode.anchor?.detach() }
+        routeSpheres.forEach { it.anchorNode.parent = null; it.anchorNode.anchor?.detach() }
         routeSpheres.clear()
     }
 
     private fun limparRota() {
         limparEsferas()
-        currentPathAnchors.forEach { it.setParent(null); it.anchor?.detach() }
+        currentPathAnchors.forEach { it.parent = null; it.anchor?.detach() }
         currentPathAnchors.clear()
         currentPathNodeIds = emptyList()
         cumulativeDistances = emptyList()
         totalDistance = 0.0
         minimapView.clearRoute()
-        tvDistancia.text = "Distância: --"
+        tvDistancia.text = getString(R.string.distance_placeholder)
     }
 
     private fun encontrarNodeMaisProximo(x: Float, z: Float): String {
@@ -593,7 +673,7 @@ class ActivityMap : BaseActivity() {
         val idxParam = s.indexOf("mapId=")
         if (idxParam >= 0) {
             val sub = s.substring(idxParam + 6)
-            val end = listOf('&', '#', '?', '/').map { c -> sub.indexOf(c).takeIf { it >= 0 } ?: sub.length }.min()
+            val end = listOf('&', '#', '?', '/').map { ch -> sub.indexOf(ch) }.filter { it >= 0 }.minOrNull() ?: sub.length
             val id = sub.substring(0, end)
             if (id.isNotBlank()) return id
         }
@@ -608,6 +688,96 @@ class ActivityMap : BaseActivity() {
         val parts = s.split('/').filter { it.isNotBlank() }
         if (parts.isNotEmpty()) return parts.last()
         return null
+    }
+
+    private fun hasCameraPermission(): Boolean =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+
+    private fun hasActivityRecognitionPermission(): Boolean =
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q)
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED
+        else true
+
+    private fun hasLocationPermission(): Boolean =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+    private fun projectToNearestEdge(x: Float, z: Float): Pair<Float, Float> {
+        val segments: MutableList<Pair<GraphNode, GraphNode>> = mutableListOf()
+        if (currentPathNodeIds.size >= 2) {
+            for (i in 0 until currentPathNodeIds.size - 1) {
+                val a = graphNodes[currentPathNodeIds[i]]
+                val b = graphNodes[currentPathNodeIds[i + 1]]
+                if (a != null && b != null) segments += a to b
+            }
+        }
+        if (segments.isEmpty()) {
+            val seen = mutableSetOf<String>()
+            adjacency.forEach { (from, edges) ->
+                val a = graphNodes[from] ?: return@forEach
+                edges.forEach { e ->
+                    val b = graphNodes[e.to] ?: return@forEach
+                    val key = listOf(a.id, b.id).sorted().joinToString("-")
+                    if (seen.add(key)) segments += a to b
+                }
+            }
+        }
+        if (segments.isEmpty()) return x to z
+
+        var bestX = x; var bestZ = z; var bestD = Double.MAX_VALUE
+        segments.forEach { (na, nb) ->
+            val ax = na.x; val az = na.z
+            val bx = nb.x; val bz = nb.z
+            val vx = bx - ax; val vz = bz - az
+            val wx = x - ax; val wz = z - az
+            val len2 = (vx*vx + vz*vz)
+            val t = if (len2 == 0f) 0f else ((wx*vx + wz*vz) / len2).coerceIn(0f, 1f)
+            val px = ax + t * vx
+            val pz = az + t * vz
+            val d = hypot((px - x).toDouble(), (pz - z).toDouble())
+            if (d < bestD) { bestD = d; bestX = px; bestZ = pz }
+        }
+        val SNAP_MAX_DIST = 1.5
+        return if (bestD <= SNAP_MAX_DIST) bestX to bestZ else x to z
+    }
+
+    private fun checkReanchorToNode(x: Float, z: Float): Pair<Boolean, Pair<Float, Float>?> {
+        if (graphNodes.isEmpty()) return false to null
+        var bestId: String? = null
+        var bestD = Double.MAX_VALUE
+        graphNodes.forEach { (id, n) ->
+            val d = hypot((n.x - x).toDouble(), (n.z - z).toDouble())
+            if (d < bestD) { bestD = d; bestId = id }
+        }
+        return if (bestId != null && bestD <= reanchorNodeThresholdMeters.toDouble()) {
+            val n = graphNodes[bestId]!!
+            true to (n.x to n.z)
+        } else false to null
+    }
+
+    private fun startSensorTracking(initialX: Float, initialZ: Float) {
+        if (sensorTracker != null) return
+        val sm = getSystemService(android.content.Context.SENSOR_SERVICE) as android.hardware.SensorManager
+        val hasStep = (sm.getDefaultSensor(android.hardware.Sensor.TYPE_STEP_DETECTOR) != null) || (sm.getDefaultSensor(android.hardware.Sensor.TYPE_STEP_COUNTER) != null)
+        if (!hasStep) { Toast.makeText(this, "Sem sensor de passos dedicado: usando detecção por acelerômetro (pode ser menos precisa).", Toast.LENGTH_LONG).show() }
+        sensorTracker = SensorFusionTracker(
+            context = this,
+            mapNorthDegrees = mapNorthDegrees,
+            stepLengthMeters = stepLengthMeters,
+            onPosition = { x, z, _ ->
+                estX = x; estZ = z
+                minimapView.updateUserPosition(x, z)
+                atualizarDistanciaRestante(x, z)
+                tentarRecalcularSeDesviou(x, z)
+                atualizarDestaqueEsferas(x, z)
+            },
+            mapMatch = { x, z -> projectToNearestEdge(x, z) },
+            reanchorCheck = { x, z -> checkReanchorToNode(x, z) }
+        ).also { it.start(initialX, initialZ) }
+    }
+
+    private fun stopSensorTracking() {
+        sensorTracker?.stop()
+        sensorTracker = null
     }
 }
 
@@ -640,10 +810,7 @@ class DestinoPoiAdapter(
     }
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = items[position]
-        try { holder.icon.setImageResource(item.iconRes) } catch (_: Exception) {
-            val fb = holder.itemView.resources.getIdentifier("ic_poi_default", "drawable", holder.itemView.context.packageName)
-            if (fb != 0) holder.icon.setImageResource(fb)
-        }
+        try { holder.icon.setImageResource(item.iconRes) } catch (_: Exception) { holder.icon.setImageResource(R.drawable.ic_poi_default) }
         holder.txt.text = item.name
         holder.itemView.setOnClickListener { onClick(item) }
     }

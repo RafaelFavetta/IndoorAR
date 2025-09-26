@@ -151,6 +151,13 @@ class ActivityMap : BaseActivity() {
         if (hasCameraPermission()) {
             checkArCoreSupport()
         }
+        // Ensure sensors resume if we paused the app
+        if (sensorTracker == null && graphLoaded) {
+            val startPoi = destinos.firstOrNull { it.isStart }
+            val initX = startPoi?.x ?: graphNodes.values.firstOrNull()?.x ?: 0f
+            val initZ = startPoi?.z ?: graphNodes.values.firstOrNull()?.z ?: 0f
+            startSensorTracking(initX, initZ)
+        }
     }
 
     override fun onPause() {
@@ -220,7 +227,7 @@ class ActivityMap : BaseActivity() {
 
     private fun initializeArFragment() {
         try {
-            stopSensorTracking()
+            // Do not stopSensorTracking() here; keep sensors as fallback while AR isn't tracking
             val tag = "AR_FRAGMENT"
             val existing = supportFragmentManager.findFragmentByTag(tag)
             if (existing == null) {
@@ -473,7 +480,8 @@ class ActivityMap : BaseActivity() {
         loadingText.visibility = View.GONE
         minimapView.invalidate()
 
-        if (!this::arFragment.isInitialized && sensorTracker == null) {
+        // Always start SensorFusion as fallback regardless of AR fragment state
+        if (sensorTracker == null) {
             val startPoi = destinos.firstOrNull { it.isStart }
             val initX = startPoi?.x ?: graphNodes.values.firstOrNull()?.x ?: 0f
             val initZ = startPoi?.z ?: graphNodes.values.firstOrNull()?.z ?: 0f
@@ -521,6 +529,13 @@ class ActivityMap : BaseActivity() {
         if (this::arFragment.isInitialized && arFragment.arSceneView.session != null) {
             desenharEsferasRota(ptsDensificados)
         }
+        // Update distance immediately using the best available user position
+        val pose = if (this::arFragment.isInitialized) arFragment.arSceneView.arFrame?.camera?.pose else null
+        val uxuz = when {
+            pose != null -> pose.tx() to pose.tz()
+            else -> estX to estZ
+        }
+        atualizarDistanciaRestante(uxuz.first, uxuz.second)
     }
 
     private val densifyStepMeters = 0.5f
@@ -809,11 +824,18 @@ class ActivityMap : BaseActivity() {
             mapNorthDegrees = mapNorthDegrees,
             stepLengthMeters = stepLengthMeters,
             onPosition = { x, z, _ ->
-                estX = x; estZ = z
-                minimapView.updateUserPosition(x, z)
-                atualizarDistanciaRestante(x, z)
-                tentarRecalcularSeDesviou(x, z)
-                atualizarDestaqueEsferas(x, z)
+                // Drive UI/distance updates only when AR is not actively tracking
+                val arInactive = !(this::arFragment.isInitialized && isArReady && arFragment.arSceneView.session != null)
+                if (arInactive) {
+                    estX = x; estZ = z
+                    minimapView.updateUserPosition(x, z)
+                    atualizarDistanciaRestante(x, z)
+                    tentarRecalcularSeDesviou(x, z)
+                    atualizarDestaqueEsferas(x, z)
+                } else {
+                    // Keep latest estimate even if AR is driving UI
+                    estX = x; estZ = z
+                }
             },
             mapMatch = { x, z -> projectToNearestEdge(x, z) },
             reanchorCheck = { x, z -> checkReanchorToNode(x, z) }

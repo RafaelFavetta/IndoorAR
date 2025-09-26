@@ -4,11 +4,16 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.View
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sin
 
 class MinimapView @JvmOverloads constructor(
     context: Context,
@@ -33,12 +38,20 @@ class MinimapView @JvmOverloads constructor(
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val userPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val haloPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    // Arrow params (in view px)
+    private val arrowSpacingPx = 26f
+    private val arrowLengthPx = 16f
+    private val arrowWidthPx = 12f
 
     init {
         userPaint.style = Paint.Style.FILL
         userPaint.color = Color.rgb(33, 150, 243) // Bright blue
         haloPaint.style = Paint.Style.FILL
         haloPaint.color = Color.rgb(33, 150, 243)
+        arrowPaint.style = Paint.Style.FILL
+        arrowPaint.color = Color.rgb(33, 150, 243)
     }
 
     fun setWorldBounds(minX: Float, minZ: Float, maxX: Float, maxZ: Float) {
@@ -81,15 +94,36 @@ class MinimapView @JvmOverloads constructor(
             canvas.drawRect(left, top, right, bottom, paint)
         }
 
-        // rota
+        // rota (setas azuis)
         if (route.size >= 2) {
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 4f
-            paint.color = Color.GREEN
+            var leftover = 0f
             for (i in 0 until route.size - 1) {
                 val (ax, az) = route[i]
                 val (bx, bz) = route[i + 1]
-                canvas.drawLine((ax - minX) * scaleX, (az - minZ) * scaleY, (bx - minX) * scaleX, (bz - minZ) * scaleY, paint)
+                val x1 = (ax - minX) * scaleX
+                val y1 = (az - minZ) * scaleY
+                val x2 = (bx - minX) * scaleX
+                val y2 = (bz - minZ) * scaleY
+                val dx = x2 - x1
+                val dy = y2 - y1
+                val segLen = hypot(dx.toDouble(), dy.toDouble()).toFloat()
+                if (segLen <= 0.001f) continue
+                val angle = atan2(dy, dx)
+
+                var placed = false
+                var dist = if (leftover > 0f) leftover else 0f
+                while (dist + arrowSpacingPx <= segLen) {
+                    dist += arrowSpacingPx
+                    val px = x1 + (dx * (dist / segLen))
+                    val py = y1 + (dy * (dist / segLen))
+                    drawArrow(canvas, px, py, angle)
+                    placed = true
+                }
+                if (!placed) {
+                    drawArrow(canvas, (x1 + x2) * 0.5f, (y1 + y2) * 0.5f, angle)
+                }
+                leftover = (dist + arrowSpacingPx) - segLen
+                if (leftover < 0f) leftover = 0f
             }
             // destino
             paint.style = Paint.Style.FILL
@@ -110,7 +144,7 @@ class MinimapView @JvmOverloads constructor(
         val ux = (userX - minX) * scaleX
         val uz = (userZ - minZ) * scaleY
         val now = SystemClock.uptimeMillis()
-        val phase = (now % 1000L).toFloat() / 1000f // 0..1
+        val phase = (now % 1000L).toFloat() / 1000f
         val baseRadius = 6f
         val haloRadius = baseRadius + 6f * phase
         val alpha = ((1f - phase) * 120f).toInt().coerceIn(0, 120)
@@ -119,7 +153,32 @@ class MinimapView @JvmOverloads constructor(
         userPaint.alpha = 255
         canvas.drawCircle(ux, uz, baseRadius, userPaint)
 
-        // Continuar animando o brilho
         postInvalidateOnAnimation()
+    }
+
+    private fun drawArrow(canvas: Canvas, cx: Float, cy: Float, angleRad: Float) {
+        val len = arrowLengthPx
+        val halfW = arrowWidthPx / 2f
+        val verts = floatArrayOf(
+            0f, -len / 2f,
+            -halfW, len / 2f,
+            halfW, len / 2f
+        )
+        val cosA = cos(angleRad)
+        val sinA = sin(angleRad)
+        val tx = floatArrayOf(
+            verts[0] * cosA - verts[1] * sinA + cx,
+            verts[0] * sinA + verts[1] * cosA + cy,
+            verts[2] * cosA - verts[3] * sinA + cx,
+            verts[2] * sinA + verts[3] * cosA + cy,
+            verts[4] * cosA - verts[5] * sinA + cx,
+            verts[4] * sinA + verts[5] * cosA + cy
+        )
+        val path = Path()
+        path.moveTo(tx[0], tx[1])
+        path.lineTo(tx[2], tx[3])
+        path.lineTo(tx[4], tx[5])
+        path.close()
+        canvas.drawPath(path, arrowPaint)
     }
 }

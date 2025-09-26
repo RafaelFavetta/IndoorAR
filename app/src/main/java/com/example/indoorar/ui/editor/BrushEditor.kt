@@ -25,7 +25,16 @@ class BrushEditor(private val host: MapEditorView) {
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 tempStroke?.let { points ->
-                    if (points.size > 1) host.addAction(Action.BrushStroke(points.toList()))
+                    if (points.size > 1) {
+                        val paint = host.getBrushPaint()
+                        host.addAction(
+                            Action.BrushStroke(
+                                points = points.toList(),
+                                color = paint.color,
+                                strokeWidth = paint.strokeWidth
+                            )
+                        )
+                    }
                 }
                 tempStroke = null
                 host.invalidate()

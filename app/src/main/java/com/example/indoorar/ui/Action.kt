@@ -7,7 +7,9 @@ import java.util.UUID
 sealed class Action {
 
     data class BrushStroke(
-        val points: List<PointF>
+        val points: List<PointF>,
+        val color: Int,
+        val strokeWidth: Float
     ) : Action()
 
     // Novo tipo: Texto

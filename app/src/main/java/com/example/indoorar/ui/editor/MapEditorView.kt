@@ -225,8 +225,8 @@ class MapEditorView @JvmOverloads constructor(
         currentTool = tool
         onToolChangedListener?.invoke(tool)
 
-        // Ativa o grid apenas para o cursor
-        showGrid = (tool == Tool.CURSOR)
+        // Removido: grid não depende mais da ferramenta
+        // showGrid = (tool == Tool.CURSOR)
 
         // Limpa estados para evitar bugs entre ferramentas
         draggingObject = null

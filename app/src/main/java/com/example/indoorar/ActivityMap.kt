@@ -22,6 +22,7 @@ import com.google.android.material.card.MaterialCardView
 import com.google.ar.core.ArCoreApk
 import com.google.ar.core.Anchor
 import com.google.ar.core.Pose
+import com.google.ar.core.TrackingState
 import com.google.ar.sceneform.AnchorNode
 import com.google.ar.sceneform.Node
 import com.google.ar.sceneform.math.Vector3
@@ -45,6 +46,10 @@ class ActivityMap : BaseActivity() {
     private lateinit var loadingText: TextView
     private lateinit var minimapView: MinimapView
     private var mapId: String? = null
+
+    // Track ARCore install flow to avoid re-requesting every resume
+    private var arInstallRequested: Boolean = false
+    private var isArReady: Boolean = false
 
     // UI
     private lateinit var btnEscolherDestino: MaterialButton
@@ -155,6 +160,13 @@ class ActivityMap : BaseActivity() {
 
     private fun checkArCoreSupport() {
         val availability = ArCoreApk.getInstance().checkAvailability(this)
+        // If transient, re-check shortly
+        if (availability.isTransient) {
+            loadingText.visibility = View.VISIBLE
+            loadingText.text = "Verificando AR..."
+            loadingText.postDelayed({ checkArCoreSupport() }, 500)
+            return
+        }
         when (availability) {
             ArCoreApk.Availability.SUPPORTED_INSTALLED -> {
                 initializeArFragment()
@@ -163,10 +175,26 @@ class ActivityMap : BaseActivity() {
             }
             ArCoreApk.Availability.SUPPORTED_APK_TOO_OLD,
             ArCoreApk.Availability.SUPPORTED_NOT_INSTALLED -> {
-                try { ArCoreApk.getInstance().requestInstall(this, true) } catch (_: Exception) {}
-                initializeArFragment()
-                arContainer.visibility = View.VISIBLE
-                cameraPreview.visibility = View.GONE
+                try {
+                    val status = ArCoreApk.getInstance().requestInstall(this, /*userRequestedInstall=*/!arInstallRequested)
+                    when (status) {
+                        ArCoreApk.InstallStatus.INSTALLED -> {
+                            initializeArFragment()
+                            arContainer.visibility = View.VISIBLE
+                            cameraPreview.visibility = View.GONE
+                        }
+                        ArCoreApk.InstallStatus.INSTALL_REQUESTED -> {
+                            // Wait for installation to complete; on next onResume we'll be called again
+                            arInstallRequested = true
+                            loadingText.visibility = View.VISIBLE
+                            loadingText.text = "Instalando/Atualizando AR..."
+                            return
+                        }
+                    }
+                } catch (_: Exception) {
+                    // Could not request install; fall back to camera
+                    initializeCameraFallback()
+                }
             }
             else -> { initializeCameraFallback() }
         }
@@ -204,15 +232,29 @@ class ActivityMap : BaseActivity() {
             arContainer.visibility = View.VISIBLE
             cameraPreview.visibility = View.GONE
 
+            loadingText.visibility = View.VISIBLE
+            loadingText.text = "Inicializando AR..."
+
             arFragment.arSceneView.scene.addOnUpdateListener {
-                if (loadingText.isVisible) loadingText.visibility = View.GONE
-                val frame = arFragment.arSceneView.arFrame ?: return@addOnUpdateListener
-                val pose = frame.camera.pose
+                val frame = arFragment.arSceneView.arFrame
+                val cam = frame?.camera
+                isArReady = cam?.trackingState == TrackingState.TRACKING
+                if (isArReady && loadingText.isVisible) loadingText.visibility = View.GONE
+                if (frame == null || cam == null) return@addOnUpdateListener
+                val pose = cam.pose
                 minimapView.updateUserPosition(pose.tx(), pose.tz())
                 atualizarDistanciaRestante(pose.tx(), pose.tz())
                 tentarRecalcularSeDesviou(pose.tx(), pose.tz())
                 atualizarDestaqueEsferas(pose.tx(), pose.tz())
             }
+
+            // Safety net: if session didn't start after a few seconds, fallback to CameraX
+            arContainer.postDelayed({
+                if (!isArReady && arFragment.arSceneView.session == null) {
+                    Toast.makeText(this, "Falha ao iniciar sessão AR. Usando câmera básica.", Toast.LENGTH_LONG).show()
+                    initializeCameraFallback()
+                }
+            }, 6000)
         } catch (e: Exception) {
             Toast.makeText(this, "Erro ao inicializar AR: ${e.message}", Toast.LENGTH_LONG).show()
             initializeCameraFallback()
@@ -455,15 +497,15 @@ class ActivityMap : BaseActivity() {
     }
 
     private fun calcularRotaAStar(dest: DestinoPoi) {
-        if (!this::arFragment.isInitialized) {
-            Toast.makeText(this, "AR ainda não está pronto. Aguarde alguns segundos e tente novamente.", Toast.LENGTH_SHORT).show()
-            return
-        }
-        val frame = arFragment.arSceneView.arFrame
-        val camPose = frame?.camera?.pose
+        // Determine best start node even if AR isn't fully ready yet
         val startNodeId = destinos.firstOrNull { it.isStart }?.id ?: run {
-            if (camPose == null) { Toast.makeText(this, "Posição indisponível", Toast.LENGTH_SHORT).show(); return }
-            encontrarNodeMaisProximo(camPose.tx(), camPose.tz())
+            val camPose = if (this::arFragment.isInitialized) arFragment.arSceneView.arFrame?.camera?.pose else null
+            when {
+                camPose != null -> encontrarNodeMaisProximo(camPose.tx(), camPose.tz())
+                sensorTracker != null -> encontrarNodeMaisProximo(estX, estZ)
+                graphNodes.isNotEmpty() -> graphNodes.keys.first()
+                else -> { Toast.makeText(this, "Sem referência de posição.", Toast.LENGTH_SHORT).show(); return }
+            }
         }
         val goalNodeId = dest.id
         if (!graphNodes.containsKey(goalNodeId)) { Toast.makeText(this, "Destino sem nó correspondente", Toast.LENGTH_SHORT).show(); return }
@@ -475,7 +517,10 @@ class ActivityMap : BaseActivity() {
         val ptsNodes = path.mapNotNull { graphNodes[it] }.map { it.x to it.z }
         val ptsDensificados = densificarRota(ptsNodes)
         minimapView.setRoute(ptsDensificados)
-        desenharEsferasRota(ptsDensificados)
+        // Draw spheres only if AR session exists
+        if (this::arFragment.isInitialized && arFragment.arSceneView.session != null) {
+            desenharEsferasRota(ptsDensificados)
+        }
     }
 
     private val densifyStepMeters = 0.5f

@@ -24,6 +24,7 @@ import android.text.InputType
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.graphics.toColorInt
+import androidx.constraintlayout.widget.ConstraintLayout
 
 class ActivityEditor : BaseActivity() {
 
@@ -48,6 +49,11 @@ class ActivityEditor : BaseActivity() {
         setupFormasClicks()
         setupBrushClicks()
         setupCursorClicks()
+        // Position any visible tool cards initially (safety on rotate)
+        alignCardAbove(R.id.cardCursor, R.id.linearcursor)
+        alignCardAbove(R.id.cardBrush, R.id.linearbrush)
+        alignCardAbove(R.id.cardFormas, R.id.linearformas)
+        alignCardAbove(R.id.cardPoi, R.id.linearpoi)
 
         // Listener para a View avisar a Activity quando a ferramenta mudar
         mapEditor.onToolChangedListener = { newTool ->
@@ -325,45 +331,58 @@ class ActivityEditor : BaseActivity() {
                             // Toggle o card se já estiver na ferramenta
                             val visible = formasCard.visibility == View.VISIBLE
                             formasCard.visibility = if (visible) View.GONE else View.VISIBLE
+                            alignCardAbove(R.id.cardFormas, R.id.linearformas)
                             poiCard.visibility = View.GONE
                             brushCard.visibility = View.GONE
+                            cursorCard.visibility = View.GONE
                         } else {
                             mapEditor.setTool(Tool.FORMAS)
                             formasCard.visibility = View.VISIBLE
+                            alignCardAbove(R.id.cardFormas, R.id.linearformas)
                             poiCard.visibility = View.GONE
                             brushCard.visibility = View.GONE
+                            cursorCard.visibility = View.GONE
                         }
                     }
                     Tool.POI -> {
                         if (mapEditor.currentTool == Tool.POI) {
                             val visible = poiCard.visibility == View.VISIBLE
                             poiCard.visibility = if (visible) View.GONE else View.VISIBLE
+                            alignCardAbove(R.id.cardPoi, R.id.linearpoi)
                             formasCard.visibility = View.GONE
                             brushCard.visibility = View.GONE
+                            cursorCard.visibility = View.GONE
                         } else {
                             mapEditor.setTool(Tool.POI)
                             poiCard.visibility = View.VISIBLE
+                            alignCardAbove(R.id.cardPoi, R.id.linearpoi)
                             formasCard.visibility = View.GONE
                             brushCard.visibility = View.GONE
+                            cursorCard.visibility = View.GONE
                         }
                     }
                     Tool.BRUSH -> {
                         if (mapEditor.currentTool == Tool.BRUSH) {
                             val visible = brushCard.visibility == View.VISIBLE
                             brushCard.visibility = if (visible) View.GONE else View.VISIBLE
+                            alignCardAbove(R.id.cardBrush, R.id.linearbrush)
                             formasCard.visibility = View.GONE
                             poiCard.visibility = View.GONE
+                            cursorCard.visibility = View.GONE
                         } else {
                             mapEditor.setTool(Tool.BRUSH)
                             brushCard.visibility = View.VISIBLE
+                            alignCardAbove(R.id.cardBrush, R.id.linearbrush)
                             formasCard.visibility = View.GONE
                             poiCard.visibility = View.GONE
+                            cursorCard.visibility = View.GONE
                         }
                     }
                     Tool.CURSOR -> {
                         if (mapEditor.currentTool == Tool.CURSOR) {
                             val visible = cursorCard.visibility == View.VISIBLE
                             cursorCard.visibility = if (visible) View.GONE else View.VISIBLE
+                            alignCardAbove(R.id.cardCursor, R.id.linearcursor)
                             // hide others
                             formasCard.visibility = View.GONE
                             poiCard.visibility = View.GONE
@@ -371,6 +390,7 @@ class ActivityEditor : BaseActivity() {
                         } else {
                             mapEditor.setTool(Tool.CURSOR)
                             cursorCard.visibility = View.VISIBLE
+                            alignCardAbove(R.id.cardCursor, R.id.linearcursor)
                             // hide others
                             formasCard.visibility = View.GONE
                             poiCard.visibility = View.GONE
@@ -502,6 +522,28 @@ class ActivityEditor : BaseActivity() {
 
     private fun setupAttributePanel() {
         AttributePanelController(this, mapEditor)
+    }
+
+    private fun alignCardAbove(cardId: Int, anchorContainerId: Int) {
+        val card = findViewById<View>(cardId) ?: return
+        val anchor = findViewById<View>(anchorContainerId) ?: return
+        card.post {
+            val parent = card.parent as? View ?: return@post
+            val parentWidth = parent.width
+            if (parentWidth <= 0) return@post
+            val locAnchor = IntArray(2)
+            val locParent = IntArray(2)
+            anchor.getLocationOnScreen(locAnchor)
+            parent.getLocationOnScreen(locParent)
+            val anchorCenterX = locAnchor[0] + anchor.width / 2f - locParent[0]
+            val bias = (anchorCenterX / parentWidth).coerceIn(0f, 1f)
+            val lp = card.layoutParams
+            if (lp is ConstraintLayout.LayoutParams) {
+                lp.horizontalBias = bias
+                card.layoutParams = lp
+            }
+            card.bringToFront()
+        }
     }
 
 }

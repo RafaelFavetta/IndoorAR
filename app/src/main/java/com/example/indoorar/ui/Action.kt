@@ -10,6 +10,16 @@ sealed class Action {
         val points: List<PointF>
     ) : Action()
 
+    // Novo tipo: Texto
+    data class Text(
+        var x: Float,
+        var y: Float,
+        var text: String,
+        var sizeSp: Float = 14f,
+        var color: Int = "#000000".toColorInt(),
+        var selected: Boolean = false
+    ) : Action()
+
     // POI sem 'nome' e 'descricao'
     data class Poi(
         val id: String = UUID.randomUUID().toString(),

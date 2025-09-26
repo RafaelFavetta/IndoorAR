@@ -158,6 +158,7 @@ class AttributePanelController(
                 if (yPx != null) obj.y = yPx
             }
             is Action.BrushStroke -> {}
+            is Action.Text -> {}
         }
         editor.invalidate()
     }
@@ -182,6 +183,7 @@ class AttributePanelController(
                 obj.height = hPx ?: obj.height
             }
             is Action.BrushStroke -> {} // nada
+            is Action.Text -> {}
         }
         editor.invalidate()
     }

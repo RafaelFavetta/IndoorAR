@@ -23,7 +23,7 @@ import com.google.firebase.auth.FirebaseAuth
 import android.text.InputType
 import android.view.ViewGroup
 import android.widget.FrameLayout
-
+import androidx.core.graphics.toColorInt
 
 class ActivityEditor : BaseActivity() {
 
@@ -34,6 +34,7 @@ class ActivityEditor : BaseActivity() {
     private lateinit var btnSalvarMapa: MaterialButton
     private lateinit var poiCard: MaterialCardView
     private lateinit var formasCard: MaterialCardView
+    private lateinit var brushCard: MaterialCardView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,6 +45,7 @@ class ActivityEditor : BaseActivity() {
         setupAttributePanel()
         setupPoiClicks()
         setupFormasClicks()
+        setupBrushClicks()
 
         // Listener para a View avisar a Activity quando a ferramenta mudar
         mapEditor.onToolChangedListener = { newTool ->
@@ -51,6 +53,7 @@ class ActivityEditor : BaseActivity() {
             // Esconde/mostra cards conforme ferramenta
             poiCard.visibility = if (newTool == Tool.POI) View.VISIBLE else View.GONE
             formasCard.visibility = if (newTool == Tool.FORMAS) View.VISIBLE else View.GONE
+            brushCard.visibility = if (newTool == Tool.BRUSH) View.VISIBLE else View.GONE
         }
 
         btnSalvarMapa.setOnClickListener {
@@ -281,6 +284,7 @@ class ActivityEditor : BaseActivity() {
         btnSalvarMapa = findViewById(R.id.btnSalvarMapa)
         poiCard = findViewById(R.id.cardPoi)
         formasCard = findViewById(R.id.cardFormas)
+        brushCard = findViewById(R.id.cardBrush)
     }
 
 
@@ -312,10 +316,12 @@ class ActivityEditor : BaseActivity() {
                             val visible = formasCard.visibility == View.VISIBLE
                             formasCard.visibility = if (visible) View.GONE else View.VISIBLE
                             poiCard.visibility = View.GONE
+                            brushCard.visibility = View.GONE
                         } else {
                             mapEditor.setTool(Tool.FORMAS)
                             formasCard.visibility = View.VISIBLE
                             poiCard.visibility = View.GONE
+                            brushCard.visibility = View.GONE
                         }
                     }
                     Tool.POI -> {
@@ -323,10 +329,25 @@ class ActivityEditor : BaseActivity() {
                             val visible = poiCard.visibility == View.VISIBLE
                             poiCard.visibility = if (visible) View.GONE else View.VISIBLE
                             formasCard.visibility = View.GONE
+                            brushCard.visibility = View.GONE
                         } else {
                             mapEditor.setTool(Tool.POI)
                             poiCard.visibility = View.VISIBLE
                             formasCard.visibility = View.GONE
+                            brushCard.visibility = View.GONE
+                        }
+                    }
+                    Tool.BRUSH -> {
+                        if (mapEditor.currentTool == Tool.BRUSH) {
+                            val visible = brushCard.visibility == View.VISIBLE
+                            brushCard.visibility = if (visible) View.GONE else View.VISIBLE
+                            formasCard.visibility = View.GONE
+                            poiCard.visibility = View.GONE
+                        } else {
+                            mapEditor.setTool(Tool.BRUSH)
+                            brushCard.visibility = View.VISIBLE
+                            formasCard.visibility = View.GONE
+                            poiCard.visibility = View.GONE
                         }
                     }
                     else -> {
@@ -334,6 +355,7 @@ class ActivityEditor : BaseActivity() {
                         // Oculta quaisquer cards quando mudar para outras ferramentas
                         poiCard.visibility = View.GONE
                         formasCard.visibility = View.GONE
+                        brushCard.visibility = View.GONE
                     }
                 }
             }
@@ -378,6 +400,59 @@ class ActivityEditor : BaseActivity() {
                 formasCard.visibility = View.GONE
                 Toast.makeText(this, "Toque e arraste no mapa para desenhar", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun setupBrushClicks() {
+        fun currentColor(): Int {
+            val hex = inputHex.text?.toString()?.ifBlank { "#3264FF" } ?: "#3264FF"
+            return try { hex.toColorInt() } catch (_: Exception) { "#3264FF".toColorInt() }
+        }
+        // Tamanhos em dp para consistência
+        findViewById<LinearLayout>(R.id.brushThin).setOnClickListener {
+            mapEditor.getBrushPaint().strokeWidth = mapEditor.dp(2f)
+            mapEditor.getBrushPaint().color = currentColor()
+            mapEditor.setTool(Tool.BRUSH)
+            brushCard.visibility = View.GONE
+            Toast.makeText(this, "Pincel fino ativo. Desenhe no mapa.", Toast.LENGTH_SHORT).show()
+        }
+        findViewById<LinearLayout>(R.id.brushMedium).setOnClickListener {
+            mapEditor.getBrushPaint().strokeWidth = mapEditor.dp(4f)
+            mapEditor.getBrushPaint().color = currentColor()
+            mapEditor.setTool(Tool.BRUSH)
+            brushCard.visibility = View.GONE
+            Toast.makeText(this, "Pincel médio ativo. Desenhe no mapa.", Toast.LENGTH_SHORT).show()
+        }
+        findViewById<LinearLayout>(R.id.brushThick).setOnClickListener {
+            mapEditor.getBrushPaint().strokeWidth = mapEditor.dp(8f)
+            mapEditor.getBrushPaint().color = currentColor()
+            mapEditor.setTool(Tool.BRUSH)
+            brushCard.visibility = View.GONE
+            Toast.makeText(this, "Pincel grosso ativo. Desenhe no mapa.", Toast.LENGTH_SHORT).show()
+        }
+        findViewById<LinearLayout>(R.id.brushText).setOnClickListener {
+            val input = EditText(this).apply {
+                hint = "Digite o texto"
+                inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                maxLines = 2
+            }
+            AlertDialog.Builder(this)
+                .setTitle("Inserir texto")
+                .setView(input)
+                .setPositiveButton("OK") { dialog, _ ->
+                    val txt = input.text?.toString()?.trim().orEmpty()
+                    if (txt.isNotEmpty()) {
+                        val color = currentColor()
+                        val sizeSp = 14f
+                        mapEditor.setTool(Tool.BRUSH)
+                        mapEditor.primeForTextCreation(txt, sizeSp, color)
+                        Toast.makeText(this, "Toque no mapa para posicionar o texto", Toast.LENGTH_SHORT).show()
+                    }
+                    dialog.dismiss()
+                    brushCard.visibility = View.GONE
+                }
+                .setNegativeButton("Cancelar") { dialog, _ -> dialog.dismiss() }
+                .show()
         }
     }
 

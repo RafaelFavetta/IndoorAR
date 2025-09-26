@@ -47,6 +47,8 @@ class MapEditorView @JvmOverloads constructor(
     val actions = mutableListOf<Action>()
     var onToolChangedListener: ((Tool) -> Unit)? = null
     private var pendingPoiResId: Int? = null
+    private data class PendingText(val text: String, val size: Float, val color: Int)
+    private var pendingText: PendingText? = null
 
     // ===== CONTROLE DE CÂMERA E TOQUE =====
     var scale = 1f
@@ -186,6 +188,12 @@ class MapEditorView @JvmOverloads constructor(
         setTool(Tool.POI)
     }
 
+    /** Prepara a View para criar um Texto no próximo toque (mantém ferramenta atual). */
+    fun primeForTextCreation(text: String, size: Float, color: Int) {
+        pendingText = PendingText(text, size, color)
+        // mantém ferramenta BRUSH para coerência com UI; criação acontece no próximo toque
+    }
+
     /** Permite selecionar o tipo de forma que será desenhada no modo FORMAS. */
     fun setShapeType(type: Action.ShapeType) {
         shapeEditor.setType(type)
@@ -224,6 +232,7 @@ class MapEditorView @JvmOverloads constructor(
     private sealed class ActionState {
         data class PoiState(val poi: Action.Poi, val x: Float, val y: Float, val width: Float, val height: Float) : ActionState()
         data class ShapeState(val shape: Action.Shape, val start: PointF, val end: PointF) : ActionState()
+        data class TextState(val text: Action.Text, val x: Float, val y: Float, val size: Float) : ActionState()
     }
     private class MoveOp(private val before: ActionState, private val after: ActionState) : EditorOp() {
         override fun undo(host: MapEditorView) {
@@ -249,6 +258,7 @@ class MapEditorView @JvmOverloads constructor(
     private fun snapshotOf(action: Action?): ActionState? = when (action) {
         is Action.Poi -> ActionState.PoiState(action, action.x, action.y, action.width, action.height)
         is Action.Shape -> ActionState.ShapeState(action, PointF(action.start.x, action.start.y), PointF(action.end.x, action.end.y))
+        is Action.Text -> ActionState.TextState(action, action.x, action.y, action.sizeSp)
         else -> null
     }
     private fun applyState(state: ActionState) {
@@ -257,6 +267,9 @@ class MapEditorView @JvmOverloads constructor(
             is ActionState.ShapeState -> {
                 state.shape.start.x = state.start.x; state.shape.start.y = state.start.y
                 state.shape.end.x = state.end.x; state.shape.end.y = state.end.y
+            }
+            is ActionState.TextState -> {
+                state.text.x = state.x; state.text.y = state.y; state.text.sizeSp = state.size
             }
         }
     }
@@ -269,6 +282,10 @@ class MapEditorView @JvmOverloads constructor(
             is ActionState.ShapeState -> {
                 val bb = b as ActionState.ShapeState
                 a.start.x == bb.start.x && a.start.y == bb.start.y && a.end.x == bb.end.x && a.end.y == bb.end.y
+            }
+            is ActionState.TextState -> {
+                val bb = b as ActionState.TextState
+                a.x == bb.x && a.y == bb.y && a.size == bb.size
             }
         }
     }
@@ -288,6 +305,12 @@ class MapEditorView @JvmOverloads constructor(
             RectF(left, top, right, bottom)
         }
         is Action.Poi -> RectF(action.x - action.width / 2f, action.y - action.height / 2f, action.x + action.width / 2f, action.y + action.height / 2f)
+        is Action.Text -> {
+            val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = dp(action.sizeSp) }
+            val b = Rect()
+            p.getTextBounds(action.text, 0, action.text.length, b)
+            RectF(action.x, action.y, action.x + b.width(), action.y + b.height())
+        }
         else -> null
     }
 
@@ -340,6 +363,17 @@ class MapEditorView @JvmOverloads constructor(
 
         val world = screenToWorld(event.x, event.y)
 
+        // MODO DE CRIAÇÃO DE TEXTO (tem prioridade quando há texto pendente)
+        if (pendingText != null) {
+            if (event.action == MotionEvent.ACTION_UP) {
+                val p = pendingText!!
+                addText(world.x, world.y, p.text, p.size, p.color)
+                pendingText = null
+                setTool(Tool.CURSOR)
+            }
+            return true
+        }
+
         // MODO DE CRIAÇÃO DE POI (tem prioridade)
         if (currentTool == Tool.POI) {
             if (event.action == MotionEvent.ACTION_UP) {
@@ -377,6 +411,7 @@ class MapEditorView @JvmOverloads constructor(
                     when (act) {
                         is Action.Shape -> act.selected
                         is Action.Poi -> act.selected
+                        is Action.Text -> act.selected
                         else -> false
                     }
                 }
@@ -420,6 +455,7 @@ class MapEditorView @JvmOverloads constructor(
                     when (action) {
                         is Action.Shape -> action.selected = isSelected
                         is Action.Poi -> action.selected = isSelected
+                        is Action.Text -> action.selected = isSelected
                         else -> {}
                     }
                 }
@@ -431,6 +467,7 @@ class MapEditorView @JvmOverloads constructor(
                     when (obj) {
                         is Action.Poi -> { touchOffsetX = world.x - obj.x; touchOffsetY = world.y - obj.y }
                         is Action.Shape -> { touchOffsetX = world.x - obj.start.x; touchOffsetY = world.y - obj.start.y }
+                        is Action.Text -> { touchOffsetX = world.x - obj.x; touchOffsetY = world.y - obj.y }
                         is Action.BrushStroke -> {}
                     }
                 }
@@ -529,6 +566,7 @@ class MapEditorView @JvmOverloads constructor(
                                     obj.end.x = obj.start.x + width
                                     obj.end.y = obj.start.y + height
                                 }
+                                is Action.Text -> { obj.x = world.x - touchOffsetX; obj.y = world.y - touchOffsetY }
                                 is Action.BrushStroke -> {}
                             }
 
@@ -575,6 +613,7 @@ class MapEditorView @JvmOverloads constructor(
                             val draggedBounds = when (obj) {
                                 is Action.Poi -> getActionBounds(obj)
                                 is Action.Shape -> RectF(obj.start.x, obj.start.y, obj.end.x, obj.end.y)
+                                is Action.Text -> getActionBounds(obj)
                                 else -> null
                             }
                             val draggedCenterX = draggedBounds?.centerX() ?: 0f
@@ -584,6 +623,7 @@ class MapEditorView @JvmOverloads constructor(
                                 val otherBounds = when (other) {
                                     is Action.Poi -> getActionBounds(other)
                                     is Action.Shape -> RectF(other.start.x, other.start.y, other.end.x, other.end.y)
+                                    is Action.Text -> getActionBounds(other)
                                     else -> null
                                 }
                                 if (draggedBounds != null && otherBounds != null) {
@@ -648,10 +688,12 @@ class MapEditorView @JvmOverloads constructor(
 
                 if (isClick) {
                     draggingObject?.let {
-                        // Clique em objeto: mostrar painel
-                        selectionListener?.onShapeSelected(
-                            if (it is Action.Shape) shapeToProperties(it) else poiToProperties(it as Action.Poi)
-                        )
+                        // Clique em objeto: mostrar painel (somente para Shape/Poi)
+                        when (it) {
+                            is Action.Shape -> selectionListener?.onShapeSelected(shapeToProperties(it))
+                            is Action.Poi -> selectionListener?.onShapeSelected(poiToProperties(it))
+                            else -> {}
+                        }
                         performClick()
                     } ?: run {
                         // Clique em área vazia: ocultar painel
@@ -766,6 +808,20 @@ class MapEditorView @JvmOverloads constructor(
 
                     if (action.selected) drawSelection(canvas, action)
                 }
+                is Action.Text -> {
+                    val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = action.color
+                        style = Paint.Style.FILL
+                        textSize = dp(action.sizeSp)
+                    }
+                    // desenha texto com (x,y) sendo topo-esquerda
+                    val bounds = Rect()
+                    val text = action.text
+                    p.getTextBounds(text, 0, text.length, bounds)
+                    val baseY = action.y + bounds.height()
+                    canvas.drawText(text, action.x, baseY, p)
+                    if (action.selected) drawSelection(canvas, action)
+                }
             }
         }
     }
@@ -774,6 +830,7 @@ class MapEditorView @JvmOverloads constructor(
         val rect = when (action) {
             is Action.Shape -> getActionBounds(action)
             is Action.Poi -> getActionBounds(action)
+            is Action.Text -> getActionBounds(action)
             else -> null
         } ?: return
         // Borda de seleção
@@ -857,7 +914,7 @@ class MapEditorView @JvmOverloads constructor(
 
     // Hit test for quick buttons and delete dialog/action
     private fun handleQuickButtonsTap(world: PointF): Boolean {
-        val selectedAct = actions.firstOrNull { when (it) { is Action.Shape -> it.selected; is Action.Poi -> it.selected; else -> false } } ?: return false
+        val selectedAct = actions.firstOrNull { when (it) { is Action.Shape -> it.selected; is Action.Poi -> it.selected; is Action.Text -> it.selected; else -> false } } ?: return false
         val bounds = getActionBounds(selectedAct) ?: return false
         val map = getQuickButtonRects(bounds)
         val hit = map.entries.firstOrNull { (_, r) -> world.x in r.left..r.right && world.y in r.top..r.bottom } ?: return false
@@ -901,7 +958,7 @@ class MapEditorView @JvmOverloads constructor(
                 val copy = when (selectedAct) {
                     is Action.Shape -> {
                         val s = selectedAct
-                        val dup = com.example.indoorar.ui.Action.Shape(
+                        com.example.indoorar.ui.Action.Shape(
                             start = PointF(s.start.x + offset, s.start.y + offset),
                             end = PointF(s.end.x + offset, s.end.y + offset),
                             selected = false,
@@ -913,7 +970,6 @@ class MapEditorView @JvmOverloads constructor(
                             cornerRadius = s.cornerRadius,
                             strokeEnabled = s.strokeEnabled
                         )
-                        dup
                     }
                     is Action.Poi -> {
                         val p = selectedAct
@@ -923,6 +979,17 @@ class MapEditorView @JvmOverloads constructor(
                             width = p.width,
                             height = p.height,
                             iconRes = p.iconRes
+                        )
+                    }
+                    is Action.Text -> {
+                        val t = selectedAct
+                        com.example.indoorar.ui.Action.Text(
+                            x = t.x + offset,
+                            y = t.y + offset,
+                            text = t.text,
+                            sizeSp = t.sizeSp,
+                            color = t.color,
+                            selected = false
                         )
                     }
                     else -> null
@@ -943,6 +1010,7 @@ class MapEditorView @JvmOverloads constructor(
         val rect = when (action) {
             is Action.Shape -> getActionBounds(action)
             is Action.Poi -> getActionBounds(action)
+            is Action.Text -> getActionBounds(action)
             else -> null
         } ?: return null
         val margin = dp(4f) / max(0.001f, scale)
@@ -1051,6 +1119,10 @@ class MapEditorView @JvmOverloads constructor(
                     val bottom = max(action.start.y, action.end.y)
                     point.x in left..right && point.y in top..bottom
                 }
+                is Action.Text -> {
+                    val rect = getActionBounds(action) ?: return@find false
+                    point.x in rect.left..rect.right && point.y in rect.top..rect.bottom
+                }
                 else -> false
             }
         }
@@ -1063,6 +1135,10 @@ class MapEditorView @JvmOverloads constructor(
         ShapeProps(min(shape.start.x, shape.end.x), min(shape.start.y, shape.end.y),
             abs(shape.end.x - shape.start.x), abs(shape.end.y - shape.start.y), shape.rotation, shape.fillColor)
 
+    private fun textToProperties(text: Action.Text): ShapeProps {
+        val r = getActionBounds(text) ?: RectF(text.x, text.y, text.x, text.y)
+        return ShapeProps(r.left, r.top, r.width(), r.height(), 0f, text.color)
+    }
 
     internal fun screenToWorld(x: Float, y: Float) = PointF((x - offsetX) / scale, (y - offsetY) / scale)
     internal fun dp(v: Float) = v * resources.displayMetrics.density
@@ -1071,6 +1147,13 @@ class MapEditorView @JvmOverloads constructor(
         val poi = Action.Poi(x = x, y = y, iconRes = iconRes)
         actions.add(poi)
         pushOp(AddOp(poi))
+        invalidate()
+    }
+
+    fun addText(x: Float, y: Float, text: String, size: Float, color: Int) {
+        val t = Action.Text(x = x, y = y, text = text, sizeSp = size, color = color)
+        actions.add(t)
+        pushOp(AddOp(t))
         invalidate()
     }
 

@@ -43,6 +43,9 @@ class AttributePanelController(
     init {
         editor.selectionListener = this
         painel.visibility = View.GONE
+        // Keep attribute panel always on top of other views
+        painel.bringToFront()
+        try { painel.elevation = 1000f } catch (_: Throwable) {}
         layoutStartQR?.visibility = View.GONE
         layoutIsWalkable?.visibility = View.GONE
         setupFieldHandlers()
@@ -115,6 +118,9 @@ class AttributePanelController(
 
         updateColorPreview(meta.corHex)
         painel.visibility = View.VISIBLE
+        // Reassert Z-order when showing
+        painel.bringToFront()
+        try { painel.elevation = 1000f } catch (_: Throwable) {}
         isProgrammatic = false
     }
 

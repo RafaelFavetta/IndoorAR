@@ -517,8 +517,8 @@ class MapEditorView @JvmOverloads constructor(
                     }
                 }
 
-                // Não mostrar painel aqui. Ao iniciar qualquer toque, esconda para não atrapalhar o arraste.
-                selectionListener?.onShapeDeselected()
+                // Não esconder o painel ao iniciar toque
+                // selectionListener?.onShapeDeselected()
 
                 // Limpa as guides ao iniciar um novo toque
                 alignmentGuides.clear()
@@ -602,7 +602,7 @@ class MapEditorView @JvmOverloads constructor(
                         } else {
                             // Movimento normal
                             when (obj) {
-                                is Action.Poi -> { obj.x = world.x - touchOffsetX; obj.y = world.y - touchOffsetY }
+                                is Action.Poi -> { obj.x = world.x - touchOffsetX; obj.y = world.y - touchOffsetY; selectionListener?.onShapeSelected(poiToProperties(obj)) }
                                 is Action.Shape -> {
                                     val width = obj.end.x - obj.start.x
                                     val height = obj.end.y - obj.start.y
@@ -610,6 +610,7 @@ class MapEditorView @JvmOverloads constructor(
                                     obj.start.y = world.y - touchOffsetY
                                     obj.end.x = obj.start.x + width
                                     obj.end.y = obj.start.y + height
+                                    selectionListener?.onShapeSelected(shapeToProperties(obj))
                                 }
                                 is Action.Text -> { obj.x = world.x - touchOffsetX; obj.y = world.y - touchOffsetY }
                                 is Action.BrushStroke -> {}
@@ -918,8 +919,9 @@ class MapEditorView @JvmOverloads constructor(
 
     private fun drawQuickButtons(canvas: Canvas, action: Action, bounds: RectF) {
         val buttons: List<QuickBtn> = when (action) {
-            is Action.Text -> listOf(QuickBtn.DUP, QuickBtn.T_INC, QuickBtn.T_DEC, QuickBtn.DELETE)
-            is Action.Shape, is Action.Poi -> listOf(QuickBtn.DUP, QuickBtn.STROKE, QuickBtn.ROUND, QuickBtn.DELETE)
+            is Action.Text -> listOf(QuickBtn.DUP, QuickBtn.T_INC, QuickBtn.T_DEC, QuickBtn.RENAME, QuickBtn.DELETE)
+            is Action.Shape -> listOf(QuickBtn.DUP, QuickBtn.STROKE, QuickBtn.ROUND, QuickBtn.DELETE)
+            is Action.Poi -> listOf(QuickBtn.DUP, QuickBtn.DELETE)
             else -> emptyList()
         }
         val rects = getQuickButtonRects(bounds, buttons)
@@ -943,7 +945,7 @@ class MapEditorView @JvmOverloads constructor(
                 QuickBtn.DUP -> drawDuplicateIcon(canvas, r)
                 QuickBtn.T_INC -> drawTextIncIcon(canvas, r)
                 QuickBtn.T_DEC -> drawTextDecIcon(canvas, r)
-                QuickBtn.RENAME -> { /* não usado no momento */ }
+                QuickBtn.RENAME -> drawRenameIcon(canvas, r)
             }
         }
     }
@@ -980,50 +982,62 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     private fun drawTextIncIcon(canvas: Canvas, r: RectF) {
-        // Draw a big, high-contrast T and a thick + sign so it's clearly visible
-        val tPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.DKGRAY; style = Paint.Style.STROKE; strokeWidth = r.width()*0.14f; strokeCap = Paint.Cap.ROUND }
-        val plusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#0D99FF"); style = Paint.Style.STROKE; strokeWidth = r.width()*0.18f; strokeCap = Paint.Cap.ROUND }
-        // T
-        val tTopY = r.top + r.height()*0.30f
-        val tBottomY = r.bottom - r.height()*0.22f
-        val tLeftX = r.left + r.width()*0.18f
-        val tRightX = r.left + r.width()*0.60f
-        val tCx = (tLeftX + tRightX) / 2f
-        canvas.drawLine(tLeftX, tTopY, tRightX, tTopY, tPaint)
-        canvas.drawLine(tCx, tTopY, tCx, tBottomY, tPaint)
-        // + (bigger and centered on right side)
+        // A+ icon, high-contrast
+        val aPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.DKGRAY; style = Paint.Style.STROKE; strokeWidth = r.width()*0.12f; strokeCap = Paint.Cap.ROUND }
+        val symPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = "#0D99FF".toColorInt(); style = Paint.Style.STROKE; strokeWidth = r.width()*0.14f; strokeCap = Paint.Cap.ROUND }
+        val base = r.bottom - r.height()*0.15f
+        val midX = r.left + r.width()*0.28f
+        val leftX = r.left + r.width()*0.10f
+        val rightX = r.left + r.width()*0.46f
+        val apexY = r.top + r.height()*0.22f
+        canvas.drawLine(leftX, base, midX, apexY, aPaint)
+        canvas.drawLine(midX, apexY, rightX, base, aPaint)
+        canvas.drawLine(leftX + (rightX-leftX)*0.22f, base - (base-apexY)*0.45f, rightX - (rightX-leftX)*0.22f, base - (base-apexY)*0.45f, aPaint)
         val cX = r.right - r.width()*0.28f
         val cY = r.top + r.height()*0.52f
-        val len = min(r.width(), r.height()) * 0.28f
-        canvas.drawLine(cX - len/2f, cY, cX + len/2f, cY, plusPaint)
-        canvas.drawLine(cX, cY - len/2f, cX, cY + len/2f, plusPaint)
+        val len = min(r.width(), r.height()) * 0.26f
+        canvas.drawLine(cX - len/2f, cY, cX + len/2f, cY, symPaint)
+        canvas.drawLine(cX, cY - len/2f, cX, cY + len/2f, symPaint)
     }
 
     private fun drawTextDecIcon(canvas: Canvas, r: RectF) {
-        // Draw a big, high-contrast T and a thick - sign so it's clearly visible
-        val tPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.DKGRAY; style = Paint.Style.STROKE; strokeWidth = r.width()*0.14f; strokeCap = Paint.Cap.ROUND }
-        val minusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#0D99FF"); style = Paint.Style.STROKE; strokeWidth = r.width()*0.18f; strokeCap = Paint.Cap.ROUND }
-        // T
-        val tTopY = r.top + r.height()*0.30f
-        val tBottomY = r.bottom - r.height()*0.22f
-        val tLeftX = r.left + r.width()*0.18f
-        val tRightX = r.left + r.width()*0.60f
-        val tCx = (tLeftX + tRightX) / 2f
-        canvas.drawLine(tLeftX, tTopY, tRightX, tTopY, tPaint)
-        canvas.drawLine(tCx, tTopY, tCx, tBottomY, tPaint)
-        // - (bigger and centered on right side)
+        // A- icon, high-contrast
+        val aPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.DKGRAY; style = Paint.Style.STROKE; strokeWidth = r.width()*0.12f; strokeCap = Paint.Cap.ROUND }
+        val symPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = "#0D99FF".toColorInt(); style = Paint.Style.STROKE; strokeWidth = r.width()*0.14f; strokeCap = Paint.Cap.ROUND }
+        val base = r.bottom - r.height()*0.15f
+        val midX = r.left + r.width()*0.28f
+        val leftX = r.left + r.width()*0.10f
+        val rightX = r.left + r.width()*0.46f
+        val apexY = r.top + r.height()*0.22f
+        canvas.drawLine(leftX, base, midX, apexY, aPaint)
+        canvas.drawLine(midX, apexY, rightX, base, aPaint)
+        canvas.drawLine(leftX + (rightX-leftX)*0.22f, base - (base-apexY)*0.45f, rightX - (rightX-leftX)*0.22f, base - (base-apexY)*0.45f, aPaint)
         val cX = r.right - r.width()*0.28f
         val cY = r.top + r.height()*0.52f
-        val len = min(r.width(), r.height()) * 0.28f
-        canvas.drawLine(cX - len/2f, cY, cX + len/2f, cY, minusPaint)
+        val len = min(r.width(), r.height()) * 0.26f
+        canvas.drawLine(cX - len/2f, cY, cX + len/2f, cY, symPaint)
+    }
+
+    private fun drawRenameIcon(canvas: Canvas, r: RectF) {
+        // Simple pencil/edit icon
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.DKGRAY; style = Paint.Style.STROKE; strokeWidth = r.width()*0.10f; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
+        val inset = r.width()*0.20f
+        val x1 = r.left + inset
+        val y1 = r.bottom - inset
+        val x2 = r.right - inset*0.6f
+        val y2 = r.top + inset*0.6f
+        canvas.drawLine(x1, y1, x2, y2, p)
+        canvas.drawLine(x2, y2, x2 - inset*0.4f, y2 + inset*0.15f, p)
+        canvas.drawLine(x1, y1, x1 + inset*0.25f, y1 - inset*0.18f, p)
     }
 
     private fun handleQuickButtonsTap(world: PointF): Boolean {
         val selectedAct = actions.firstOrNull { when (it) { is Action.Shape -> it.selected; is Action.Poi -> it.selected; is Action.Text -> it.selected; else -> false } } ?: return false
         val bounds = getActionBounds(selectedAct) ?: return false
         val buttons: List<QuickBtn> = when (selectedAct) {
-            is Action.Text -> listOf(QuickBtn.DUP, QuickBtn.T_INC, QuickBtn.T_DEC, QuickBtn.DELETE)
-            is Action.Shape, is Action.Poi -> listOf(QuickBtn.DUP, QuickBtn.STROKE, QuickBtn.ROUND, QuickBtn.DELETE)
+            is Action.Text -> listOf(QuickBtn.DUP, QuickBtn.T_INC, QuickBtn.T_DEC, QuickBtn.RENAME, QuickBtn.DELETE)
+            is Action.Shape -> listOf(QuickBtn.DUP, QuickBtn.STROKE, QuickBtn.ROUND, QuickBtn.DELETE)
+            is Action.Poi -> listOf(QuickBtn.DUP, QuickBtn.DELETE)
             else -> emptyList()
         }
         val map = getQuickButtonRects(bounds, buttons)
@@ -1117,7 +1131,29 @@ class MapEditorView @JvmOverloads constructor(
                     invalidate()
                 }
             }
-            QuickBtn.RENAME -> { /* não utilizado */ }
+            QuickBtn.RENAME -> {
+                if (selectedAct is Action.Text) {
+                    val input = EditText(context).apply {
+                        setText(selectedAct.text)
+                        setSelection(text.length)
+                        inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                        maxLines = 2
+                    }
+                    AlertDialog.Builder(context)
+                        .setTitle("Renomear texto")
+                        .setView(input)
+                        .setPositiveButton("OK") { dialog, _ ->
+                            val newText = input.text?.toString()?.trim().orEmpty()
+                            if (newText.isNotEmpty()) {
+                                selectedAct.text = newText
+                                invalidate()
+                            }
+                            dialog.dismiss()
+                        }
+                        .setNegativeButton("Cancelar") { dialog, _ -> dialog.dismiss() }
+                        .show()
+                }
+            }
         }
         return true
     }

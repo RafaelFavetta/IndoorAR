@@ -444,7 +444,7 @@ class ActivityEditor : BaseActivity() {
                     if (txt.isNotEmpty()) {
                         // Padrão solicitado: tamanho um pouco maior e cor preta
                         val color = "#000000".toColorInt()
-                        val sizeSp = 18f
+                        val sizeSp = 20f
                         mapEditor.setTool(Tool.BRUSH)
                         mapEditor.primeForTextCreation(txt, sizeSp, color)
                         Toast.makeText(this, "Toque no mapa para posicionar o texto", Toast.LENGTH_SHORT).show()

@@ -86,6 +86,9 @@ class MapEditorView @JvmOverloads constructor(
     var selectionListener: OnShapeSelectionListener? = null
     private enum class Handle { TOP_LEFT, TOP, TOP_RIGHT, RIGHT, BOTTOM_RIGHT, BOTTOM, BOTTOM_LEFT, LEFT }
 
+    // Quick action buttons next to delete
+    private enum class QuickBtn { DELETE, ROUND, STROKE, DUP }
+
     // Handle visuals
     private val handleFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL }
     private val handleStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = "#0D99FF".toColorInt(); style = Paint.Style.STROKE; strokeWidth = dp(1.5f) }
@@ -118,7 +121,7 @@ class MapEditorView @JvmOverloads constructor(
 
     // Ícone de lixeira (cacheado)
     private val deleteIconBitmap: Bitmap? by lazy {
-        val d = ContextCompat.getDrawable(context, com.example.indoorar.R.drawable.ic_voltar_azul) ?: return@lazy null
+        val d = ContextCompat.getDrawable(context, com.example.indoorar.R.drawable.ic_delete_red_24) ?: return@lazy null
         val w = max(1, d.intrinsicWidth)
         val h = max(1, d.intrinsicHeight)
         val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
@@ -314,7 +317,8 @@ class MapEditorView @JvmOverloads constructor(
 
     private fun hitTestHandles(hit: Action, point: PointF): Handle? {
         val bounds = getActionBounds(hit) ?: return null
-        val r = handleRadiusWorld() * 1.5f // a little larger hit radius
+        // Increase handle hit radius: at least 16dp in screen space, scaled to world coords
+        val r = max(handleRadiusWorld() * 1.5f, dp(16f) / max(0.001f, scale))
         val positions = getHandlePositions(bounds)
         return positions.entries.firstOrNull { (_, pos) ->
             val dx = point.x - pos.x
@@ -364,6 +368,9 @@ class MapEditorView @JvmOverloads constructor(
                 downXScreen = event.x
                 downYScreen = event.y
                 hasMovedBeyondSlop = false
+
+                // Botões rápidos (delete/round/stroke/dup) têm prioridade
+                if (handleQuickButtonsTap(world)) return true
 
                 // Se já existe um selecionado, verifica clique na lixeirinha primeiro
                 val currentlySelected = actions.firstOrNull { act ->
@@ -722,12 +729,18 @@ class MapEditorView @JvmOverloads constructor(
                         rotate(action.rotation, cx, cy)
                         when (action.type) {
                             Action.ShapeType.RECTANGLE, Action.ShapeType.SQUARE -> {
-                                drawRect(norm, fill)
-                                drawRect(norm, stroke)
+                                val cr = action.cornerRadius.coerceAtLeast(0f)
+                                if (cr > 0f) {
+                                    drawRoundRect(norm, cr, cr, fill)
+                                    if (action.strokeEnabled) drawRoundRect(norm, cr, cr, stroke)
+                                } else {
+                                    drawRect(norm, fill)
+                                    if (action.strokeEnabled) drawRect(norm, stroke)
+                                }
                             }
                             Action.ShapeType.CIRCLE -> {
                                 drawOval(norm, fill)
-                                drawOval(norm, stroke)
+                                if (action.strokeEnabled) drawOval(norm, stroke)
                             }
                             Action.ShapeType.TRIANGLE -> {
                                 val path = Path().apply {
@@ -737,7 +750,7 @@ class MapEditorView @JvmOverloads constructor(
                                     close()
                                 }
                                 drawPath(path, fill)
-                                drawPath(path, stroke)
+                                if (action.strokeEnabled) drawPath(path, stroke)
                             }
                             Action.ShapeType.LINE -> {
                                 // Usa a cor de preenchimento como cor da linha
@@ -768,19 +781,162 @@ class MapEditorView @JvmOverloads constructor(
         // Desenha handles
         drawHandles(canvas, rect)
 
-        // Desenha lixeira no canto superior direito do retângulo
-        val icon = deleteIconBitmap ?: return
-        val margin = dp(4f) / max(0.001f, scale)
-        val size = dp(24f) / max(0.001f, scale)
-        val left = rect.right - size
-        val top = rect.top - size - margin
-        val dest = RectF(left, top, left + size, top + size)
-
-        // Fundo branco levemente translúcido para contraste
-        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL; alpha = 220 }
-        canvas.drawRoundRect(dest, size/4f, size/4f, bgPaint)
-        canvas.drawBitmap(icon, null, dest, null)
+        // Desenha botões rápidos (DELETE, ROUND, STROKE, DUP) alinhados no topo direito
+        val btnRects = getQuickButtonRects(rect)
+        btnRects.forEach { (btn, dest) ->
+            // Fundo
+            val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL; alpha = 230 }
+            canvas.drawRoundRect(dest, dest.width()/5f, dest.height()/5f, bgPaint)
+            when (btn) {
+                QuickBtn.DELETE -> {
+                    val icon = deleteIconBitmap
+                    if (icon != null) canvas.drawBitmap(icon, null, dest, null) else drawXIcon(canvas, dest, Color.RED)
+                }
+                QuickBtn.ROUND -> {
+                    drawRoundIcon(canvas, dest)
+                }
+                QuickBtn.STROKE -> {
+                    val enabled = (action as? Action.Shape)?.strokeEnabled ?: true
+                    drawStrokeIcon(canvas, dest, enabled)
+                }
+                QuickBtn.DUP -> {
+                    drawDuplicateIcon(canvas, dest)
+                }
+            }
+        }
     }
+
+    private fun getQuickButtonRects(bounds: RectF): Map<QuickBtn, RectF> {
+        val margin = dp(4f) / max(0.001f, scale)
+        val size = dp(28f) / max(0.001f, scale)
+        val gap = dp(6f) / max(0.001f, scale)
+        var right = bounds.right
+        val top = bounds.top - size - margin
+        val map = linkedMapOf<QuickBtn, RectF>()
+        fun add(btn: QuickBtn) {
+            val left = right - size
+            map[btn] = RectF(left, top, right, top + size)
+            right = left - gap
+        }
+        add(QuickBtn.DELETE)
+        add(QuickBtn.ROUND)
+        add(QuickBtn.STROKE)
+        add(QuickBtn.DUP)
+        return map
+    }
+
+    // Simple glyph icons
+    private fun drawXIcon(canvas: Canvas, r: RectF, color: Int) {
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color; style = Paint.Style.STROKE; strokeWidth = r.width() * 0.12f }
+        canvas.drawLine(r.left + r.width()*0.2f, r.top + r.height()*0.2f, r.right - r.width()*0.2f, r.bottom - r.height()*0.2f, p)
+        canvas.drawLine(r.right - r.width()*0.2f, r.top + r.height()*0.2f, r.left + r.width()*0.2f, r.bottom - r.height()*0.2f, p)
+    }
+
+    private fun drawRoundIcon(canvas: Canvas, r: RectF) {
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = "#0D99FF".toColorInt(); style = Paint.Style.STROKE; strokeWidth = r.width()*0.12f }
+        canvas.drawRoundRect(RectF(r.left + r.width()*0.22f, r.top + r.height()*0.22f, r.right - r.width()*0.22f, r.bottom - r.height()*0.22f), r.width()*0.2f, r.height()*0.2f, p)
+    }
+
+    private fun drawStrokeIcon(canvas: Canvas, r: RectF, enabled: Boolean) {
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = if (enabled) Color.BLACK else Color.LTGRAY; style = Paint.Style.STROKE; strokeWidth = r.width()*0.12f }
+        canvas.drawRect(RectF(r.left + r.width()*0.25f, r.top + r.height()*0.25f, r.right - r.width()*0.25f, r.bottom - r.height()*0.25f), p)
+        if (!enabled) {
+            val cut = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.RED; style = Paint.Style.STROKE; strokeWidth = r.width()*0.12f }
+            canvas.drawLine(r.left + r.width()*0.25f, r.bottom - r.height()*0.25f, r.right - r.width()*0.25f, r.top + r.height()*0.25f, cut)
+        }
+    }
+
+    private fun drawDuplicateIcon(canvas: Canvas, r: RectF) {
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.DKGRAY; style = Paint.Style.STROKE; strokeWidth = r.width()*0.10f }
+        val inset = r.width()*0.20f
+        val back = RectF(r.left + inset*0.6f, r.top + inset*0.6f, r.right - inset*1.4f, r.bottom - inset*1.4f)
+        val front = RectF(r.left + inset*1.0f, r.top + inset*1.0f, r.right - inset*0.6f, r.bottom - inset*0.6f)
+        canvas.drawRect(back, p)
+        canvas.drawRect(front, p)
+    }
+
+    // Hit test for quick buttons and delete dialog/action
+    private fun handleQuickButtonsTap(world: PointF): Boolean {
+        val selectedAct = actions.firstOrNull { when (it) { is Action.Shape -> it.selected; is Action.Poi -> it.selected; else -> false } } ?: return false
+        val bounds = getActionBounds(selectedAct) ?: return false
+        val map = getQuickButtonRects(bounds)
+        val hit = map.entries.firstOrNull { (_, r) -> world.x in r.left..r.right && world.y in r.top..r.bottom } ?: return false
+        when (hit.key) {
+            QuickBtn.DELETE -> {
+                AlertDialog.Builder(context)
+                    .setTitle("Deseja excluir?")
+                    .setMessage("Esta ação removerá o item do mapa.")
+                    .setNegativeButton("Cancelar", null)
+                    .setPositiveButton("Excluir") { _, _ ->
+                        val idx = actions.indexOf(selectedAct)
+                        if (idx >= 0) {
+                            actions.removeAt(idx)
+                            pushOp(DeleteOp(selectedAct, idx))
+                            selectionListener?.onShapeDeselected()
+                            invalidate()
+                        }
+                    }
+                    .show()
+            }
+            QuickBtn.ROUND -> {
+                if (selectedAct is Action.Shape && (selectedAct.type == Action.ShapeType.RECTANGLE || selectedAct.type == Action.ShapeType.SQUARE)) {
+                    val b = bounds
+                    val w = (b.right - b.left)
+                    val h = (b.bottom - b.top)
+                    val target = (min(w, h) * 0.2f).coerceAtLeast(dp(6f) / max(0.001f, scale))
+                    selectedAct.cornerRadius = if (selectedAct.cornerRadius <= 0f) target else 0f
+                    selectionListener?.onShapeSelected(shapeToProperties(selectedAct))
+                    invalidate()
+                }
+            }
+            QuickBtn.STROKE -> {
+                if (selectedAct is Action.Shape) {
+                    selectedAct.strokeEnabled = !selectedAct.strokeEnabled
+                    selectionListener?.onShapeSelected(shapeToProperties(selectedAct))
+                    invalidate()
+                }
+            }
+            QuickBtn.DUP -> {
+                val offset = dp(12f) / max(0.001f, scale)
+                val copy = when (selectedAct) {
+                    is Action.Shape -> {
+                        val s = selectedAct
+                        val dup = com.example.indoorar.ui.Action.Shape(
+                            start = PointF(s.start.x + offset, s.start.y + offset),
+                            end = PointF(s.end.x + offset, s.end.y + offset),
+                            selected = false,
+                            fillColor = s.fillColor,
+                            rotation = s.rotation,
+                            isWalkable = s.isWalkable,
+                            nome = s.nome,
+                            type = s.type,
+                            cornerRadius = s.cornerRadius,
+                            strokeEnabled = s.strokeEnabled
+                        )
+                        dup
+                    }
+                    is Action.Poi -> {
+                        val p = selectedAct
+                        com.example.indoorar.ui.Action.Poi(
+                            x = p.x + offset,
+                            y = p.y + offset,
+                            width = p.width,
+                            height = p.height,
+                            iconRes = p.iconRes
+                        )
+                    }
+                    else -> null
+                }
+                if (copy != null) {
+                    addAction(copy)
+                    invalidate()
+                }
+            }
+        }
+        return true
+    }
+
+    // ===== MÉTODOS AUXILIARES RESTAURADOS =====
 
     // Retângulo da lixeira em coordenadas do mundo para hit test
     private fun getDeleteRectForAction(action: Action): RectF? {
@@ -790,7 +946,7 @@ class MapEditorView @JvmOverloads constructor(
             else -> null
         } ?: return null
         val margin = dp(4f) / max(0.001f, scale)
-        val size = dp(24f) / max(0.001f, scale)
+        val size = dp(32f) / max(0.001f, scale) // hit maior
         val left = rect.right - size
         val top = rect.top - size - margin
         return RectF(left, top, left + size, top + size)
@@ -799,17 +955,14 @@ class MapEditorView @JvmOverloads constructor(
     private fun drawGrid(canvas: Canvas) {
         val spacing = pxPerMeter
         val radius = 2f
-        // Compute visible world bounds based on current camera transform
         val worldLeft = -offsetX / scale
         val worldTop = -offsetY / scale
         val worldRight = (width - offsetX) / scale
         val worldBottom = (height - offsetY) / scale
-
         val startCol = kotlin.math.floor(worldLeft / spacing).toInt() - 2
         val endCol = kotlin.math.ceil(worldRight / spacing).toInt() + 2
         val startRow = kotlin.math.floor(worldTop / spacing).toInt() - 2
         val endRow = kotlin.math.ceil(worldBottom / spacing).toInt() + 2
-
         for (i in startCol..endCol) {
             val x = i * spacing
             for (j in startRow..endRow) {
@@ -819,18 +972,13 @@ class MapEditorView @JvmOverloads constructor(
         }
     }
 
-    // ===== MÉTODOS AUXILIARES (Mantidos do seu código, com ajustes para o cache) =====
+    private fun getPoiCacheKey(poi: Action.Poi): String = "${'$'}{poi.iconRes}:${'$'}{poi.width}x${'$'}{poi.height}"
 
-    // Gera uma chave única para o cache baseado no ícone e no tamanho solicitado.
-    private fun getPoiCacheKey(poi: Action.Poi): String = "${poi.iconRes}:${poi.width}x${poi.height}"
-
-    // Obtém (ou cria) o bitmap já escalado para o tamanho do POI, e calcula as bordas do conteúdo opaco.
     private fun getBitmapForPoi(poi: Action.Poi): Bitmap? {
         val key = getPoiCacheKey(poi)
         poiBitmapCache[key]?.let { return it }
         return try {
             val drawable = ContextCompat.getDrawable(context, poi.iconRes) ?: return null
-
             val baseBmp = if (drawable is BitmapDrawable) {
                 drawable.bitmap
             } else {
@@ -844,23 +992,17 @@ class MapEditorView @JvmOverloads constructor(
                 drawable.draw(c)
                 bitmap
             }
-
             val targetW = max(1, poi.width.toInt())
             val targetH = max(1, poi.height.toInt())
             val scaled = if (baseBmp.width == targetW && baseBmp.height == targetH) baseBmp
             else Bitmap.createScaledBitmap(baseBmp, targetW, targetH, true)
-
-            // Calcula e armazena o retângulo do conteúdo (pixels com alpha > limiar)
             val contentRect = computeOpaqueBounds(scaled)
             poiBitmapCache[key] = scaled
             poiContentBoundsCache[key] = contentRect
             scaled
-        } catch (e: Exception) {
-            null
-        }
+        } catch (e: Exception) { null }
     }
 
-    // Calcula o menor retângulo que contém todos os pixels com alpha acima do limiar.
     private fun computeOpaqueBounds(bmp: Bitmap, alphaThreshold: Int = 10): Rect {
         val w = bmp.width
         val h = bmp.height
@@ -884,7 +1026,6 @@ class MapEditorView @JvmOverloads constructor(
         return if (right >= left && bottom >= top) Rect(left, top, right + 1, bottom + 1) else Rect(0, 0, w, h)
     }
 
-    // Retorna o retângulo do conteúdo do POI em coordenadas do mundo (canvas), considerando o centro em (poi.x, poi.y).
     private fun getPoiContentRectInWorld(poi: Action.Poi): RectF? {
         val bmp = getBitmapForPoi(poi) ?: return null
         val key = getPoiCacheKey(poi)

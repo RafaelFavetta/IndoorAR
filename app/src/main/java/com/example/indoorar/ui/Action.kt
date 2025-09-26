@@ -34,6 +34,9 @@ sealed class Action {
         var rotation: Float = 0f,
         var isWalkable: Boolean = true,
         var nome: String = "",
-        var type: ShapeType = ShapeType.RECTANGLE
+        var type: ShapeType = ShapeType.RECTANGLE,
+        // Novos atributos opcionais de edição visual
+        var cornerRadius: Float = 0f,          // em coordenadas do canvas (mesma unidade de start/end)
+        var strokeEnabled: Boolean = true      // exibir traçado (contorno) ao desenhar
     ) : Action()
 }

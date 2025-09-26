@@ -40,7 +40,6 @@ class BrushEditor(private val host: MapEditorView) {
                 host.invalidate()
             }
         }
-
         return true
     }
 

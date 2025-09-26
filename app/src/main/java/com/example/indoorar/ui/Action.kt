@@ -49,6 +49,12 @@ sealed class Action {
         var type: ShapeType = ShapeType.RECTANGLE,
         // Novos atributos opcionais de edição visual
         var cornerRadius: Float = 0f,          // em coordenadas do canvas (mesma unidade de start/end)
-        var strokeEnabled: Boolean = true      // exibir traçado (contorno) ao desenhar
+        var strokeEnabled: Boolean = true,     // exibir traçado (contorno) ao desenhar
+        var manualCornerModified: Boolean = false, // se o usuário alterou manualmente (não auto-ajustar)
+        // Flags de bordas (para merge automático de contornos). Só usadas em retângulos/quadrados.
+        var edgeTop: Boolean = true,
+        var edgeRight: Boolean = true,
+        var edgeBottom: Boolean = true,
+        var edgeLeft: Boolean = true
     ) : Action()
 }

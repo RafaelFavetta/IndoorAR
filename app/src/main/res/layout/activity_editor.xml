@@ -42,6 +42,43 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPreviewMode"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="16dp"
+            android:contentDescription="Ativar preview"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:checkable="true"
+            app:icon="@drawable/ic_eye_preview_toggle"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconSize="28dp"
+            app:cornerRadius="24dp"
+            app:backgroundTint="@color/eye_toggle_bg_tint"
+            app:layout_constraintEnd_toStartOf="@id/btnSalvarMapa"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnMergeShapes"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="#3B6E22"
+            android:paddingHorizontal="16dp"
+            android:text="Merge"
+            android:textAllCaps="false"
+            android:textColor="#FDFDFD"
+            android:textStyle="bold"
+            app:cornerRadius="8dp"
+            app:layout_constraintEnd_toStartOf="@id/btnPreviewMode"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/materialCardView"
             android:layout_width="350dp"
@@ -695,12 +732,6 @@
                     android:orientation="vertical">
 
                     <!-- separador -->
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="12dp"
-                        android:layout_marginBottom="12dp"
-                        android:background="#E0E0E0" />
 
                     <LinearLayout
                         android:id="@+id/layoutIsWalkable"
@@ -735,12 +766,6 @@
                     </LinearLayout>
 
                     <!-- separador -->
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="12dp"
-                        android:layout_marginBottom="12dp"
-                        android:background="#E0E0E0" />
 
                     <LinearLayout
                         android:id="@+id/layoutStartQR"

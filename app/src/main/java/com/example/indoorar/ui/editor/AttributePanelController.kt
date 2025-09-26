@@ -65,7 +65,20 @@ class AttributePanelController(
         checkboxIsWalkable?.setOnCheckedChangeListener { _, isChecked ->
             if (isProgrammatic) return@setOnCheckedChangeListener
             val shape = editor.actions.firstOrNull { it is Action.Shape && it.selected } as? Action.Shape
-            shape?.isWalkable = isChecked
+            shape?.let {
+                it.isWalkable = isChecked
+                // Ajusta cor base automaticamente conforme estilo definido
+                if (isChecked) {
+                    // Caminho walkable escuro
+                    it.fillColor = android.graphics.Color.parseColor("#1F2023")
+                } else {
+                    // Sala clara
+                    it.fillColor = android.graphics.Color.parseColor("#ECECEC")
+                }
+                edtCor.setText(String.format("#%06X", (0xFFFFFF and it.fillColor)))
+                updateColorPreview(String.format("#%06X", (0xFFFFFF and it.fillColor)))
+                editor.invalidate()
+            }
         }
     }
 

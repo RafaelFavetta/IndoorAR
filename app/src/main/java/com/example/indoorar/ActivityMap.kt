@@ -450,11 +450,11 @@ class ActivityMap : BaseActivity() {
         pois.forEach { p ->
             val x = (p.get("x") as? Number)?.toFloat() ?: 0f
             val z = (p.get("y") as? Number)?.toFloat() ?: 0f
-            minimapView.addPoi(x, z)
-            val name = p.getString("name") ?: "POI"
             val iconRes = resolvePoiIconRes(p)
-            val id = p.getString("id") ?: (name + x + z)
             val isStart = (p.get("isStartQR") as? Boolean) == true
+            minimapView.addPoi(x, z, colorForPoiIconRes(iconRes), iconRes, isStart)
+            val name = p.getString("name") ?: "POI"
+            val id = p.getString("id") ?: (name + x + z)
             destinos += DestinoPoi(id, name, x, z, iconRes, isStart)
         }
         if (oldSize > 0) destinoAdapter.notifyItemRangeRemoved(0, oldSize)
@@ -489,9 +489,19 @@ class ActivityMap : BaseActivity() {
         }
     }
 
+    private fun colorForPoiIconRes(iconRes: Int): Int = when (iconRes) {
+        R.drawable.ic_door_azul, R.drawable.ic_banheiro_azul -> 0xFF32357A.toInt() // azul
+        R.drawable.ic_stairs_azul -> 0xFFFF9800.toInt() // laranja
+        R.drawable.ic_extintor_azul -> 0xFFF44336.toInt() // vermelho
+        R.drawable.ic_elevator_azul -> 0xFF4CAF50.toInt() // verde
+        else -> 0xFF32357A.toInt() // fallback azul
+    }
+
     private fun resolvePoiIconRes(p: DocumentSnapshot): Int {
         val iconName = p.getString("iconName") ?: p.getString("icon")
-        return when (iconName?.lowercase()) {
+        val iconResNum = (p.get("iconRes") as? Number)?.toInt()
+        // Primeiro tenta via nome semântico
+        val byName = when (iconName?.lowercase()) {
             "porta", "door" -> R.drawable.ic_door_azul
             "banheiro", "bathroom" -> R.drawable.ic_banheiro_azul
             "escada", "stairs" -> R.drawable.ic_stairs_azul
@@ -500,8 +510,24 @@ class ActivityMap : BaseActivity() {
             "circulo", "circle" -> R.drawable.ic_circle_azul
             "quadrado", "square" -> R.drawable.ic_square_azul
             "triangulo", "triangle" -> R.drawable.ic_triangle_azul
-            else -> R.drawable.ic_poi_default
+            else -> null
         }
+        if (byName != null) return byName
+        // Fallback: tentar usar o iconRes persistido (mapas antigos sem iconName)
+        if (iconResNum != null) {
+            return when (iconResNum) {
+                R.drawable.ic_door_azul -> R.drawable.ic_door_azul
+                R.drawable.ic_banheiro_azul -> R.drawable.ic_banheiro_azul
+                R.drawable.ic_stairs_azul -> R.drawable.ic_stairs_azul
+                R.drawable.ic_elevator_azul -> R.drawable.ic_elevator_azul
+                R.drawable.ic_extintor_azul -> R.drawable.ic_extintor_azul
+                R.drawable.ic_circle_azul -> R.drawable.ic_circle_azul
+                R.drawable.ic_square_azul -> R.drawable.ic_square_azul
+                R.drawable.ic_triangle_azul -> R.drawable.ic_triangle_azul
+                else -> R.drawable.ic_poi_default
+            }
+        }
+        return R.drawable.ic_poi_default
     }
 
     private fun calcularRotaAStar(dest: DestinoPoi) {

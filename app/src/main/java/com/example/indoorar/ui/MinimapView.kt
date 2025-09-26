@@ -22,10 +22,12 @@ class MinimapView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private data class Forma(val x: Float, val z: Float, val w: Float, val h: Float, val color: Int)
-    private data class Poi(val x: Float, val z: Float)
+    private data class Poi(val x: Float, val z: Float, val color: Int, val iconRes: Int?, val isStart: Boolean)
 
     private val formas = mutableListOf<Forma>()
     private val pois = mutableListOf<Poi>()
+    private val miniIconCache = mutableMapOf<Long, android.graphics.Bitmap>()
+
     private var route: MutableList<Pair<Float, Float>> = mutableListOf()
     private var userX: Float = 0f
     private var userZ: Float = 0f
@@ -63,13 +65,32 @@ class MinimapView @JvmOverloads constructor(
     }
 
     fun addForma(x: Float, z: Float, w: Float, h: Float, color: Int) { formas += Forma(x, z, w, h, color) }
-    fun addPoi(x: Float, z: Float) { pois += Poi(x, z) }
+    fun addPoi(x: Float, z: Float) { pois += Poi(x, z, Color.YELLOW, null, false) }
+    fun addPoi(x: Float, z: Float, color: Int) { pois += Poi(x, z, color, null, false) }
+    fun addPoi(x: Float, z: Float, color: Int, iconRes: Int?, isStart: Boolean) { pois += Poi(x, z, color, iconRes, isStart) }
+    fun clearPois() { pois.clear(); invalidate() }
 
     fun setRoute(points: List<Pair<Float, Float>>) { route.clear(); route.addAll(points); invalidate() }
     fun clearRoute() { route.clear(); invalidate() }
 
     fun updateUserPosition(x: Float, z: Float) {
         userX = x; userZ = z; invalidate()
+    }
+
+    private fun getMiniIcon(iconRes: Int, size: Int, tint: Int): android.graphics.Bitmap? {
+        if (iconRes == 0) return null
+        val key = (iconRes.toLong() shl 32) or (size.toLong() and 0xFFFFFFFFL) or ((tint.toLong() and 0xFFFFFFFFL) shl 16)
+        miniIconCache[key]?.let { return it }
+        return try {
+            val dr = context.getDrawable(iconRes) ?: return null
+            val bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+            val c = android.graphics.Canvas(bmp)
+            try { dr.mutate(); dr.setTint(tint) } catch (_: Exception) {}
+            dr.setBounds(0, 0, size, size)
+            dr.draw(c)
+            miniIconCache[key] = bmp
+            bmp
+        } catch (_: Exception) { null }
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -79,6 +100,11 @@ class MinimapView @JvmOverloads constructor(
         val worldW = maxX - minX; val worldH = maxZ - minZ
         if (worldW <= 0f || worldH <= 0f) return
         val scaleX = wView / worldW; val scaleY = hView / worldH
+        val worldDiag = kotlin.math.sqrt(worldW * worldW + worldH * worldH)
+        val basePin = 14f
+        val referenceDiag = 50f
+        val dynamicFactor = (referenceDiag / worldDiag).coerceIn(0.6f, 1.6f)
+        val pinHeightBase = basePin * dynamicFactor
 
         // fundo
         paint.style = Paint.Style.FILL; paint.color = Color.argb(80, 0, 0, 0)
@@ -132,12 +158,54 @@ class MinimapView @JvmOverloads constructor(
             canvas.drawCircle((dx - minX) * scaleX, (dz - minZ) * scaleY, 5f, paint)
         }
 
-        // POIs
-        paint.color = Color.YELLOW
+        // POIs (mini pins com ícone e destaque)
         pois.forEach { p ->
-            val cx = (p.x - minX) * scaleX
-            val cy = (p.z - minZ) * scaleY
-            canvas.drawCircle(cx, cy, 4f, paint)
+            val tipX = (p.x - minX) * scaleX
+            val tipY = (p.z - minZ) * scaleY
+            val pinHeight = pinHeightBase
+            val r = pinHeight * 0.35f
+            val centerY = tipY - (pinHeight - r)
+            val centerX = tipX
+            val path = Path()
+            val startAngle = 200f
+            val sweep = 140f
+            val radStart = Math.toRadians(startAngle.toDouble())
+            val p1x = (centerX + r * kotlin.math.cos(radStart)).toFloat()
+            val p1y = (centerY + r * kotlin.math.sin(radStart)).toFloat()
+            path.moveTo(tipX, tipY)
+            path.lineTo(p1x, p1y)
+            path.addArc(centerX - r, centerY - r, centerX + r, centerY + r, startAngle, sweep)
+            path.close()
+            // Fill
+            paint.style = Paint.Style.FILL
+            paint.color = p.color
+            canvas.drawPath(path, paint)
+            // Outer stroke (white)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 1.2f
+            paint.color = Color.WHITE
+            canvas.drawPath(path, paint)
+            // Extra highlight ring se for start
+            if (p.isStart) {
+                paint.style = Paint.Style.STROKE
+                paint.strokeWidth = 2.6f
+                paint.color = 0xFFFFD54F.toInt() // amarelo suave (gold) para destaque
+                canvas.drawCircle(centerX, centerY, r * 0.95f, paint)
+            }
+            // Inner circle
+            paint.style = Paint.Style.FILL
+            paint.color = Color.WHITE
+            val innerR = r * 0.60f
+            canvas.drawCircle(centerX, centerY, innerR, paint)
+            // Ícone interno
+            if (p.iconRes != null) {
+                val iconSize = (innerR * 1.3f).toInt().coerceAtLeast(6)
+                getMiniIcon(p.iconRes, iconSize, p.color)?.let { bmp ->
+                    val left = (centerX - bmp.width / 2f)
+                    val top = (centerY - bmp.height / 2f)
+                    canvas.drawBitmap(bmp, left, top, null)
+                }
+            }
         }
 
         // usuário (ponto azul com brilho pulsando)

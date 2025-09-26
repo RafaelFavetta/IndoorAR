@@ -16,7 +16,6 @@ import com.example.indoorar.ui.editor.MapEditorView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import kotlin.math.abs
-import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
 import com.google.firebase.auth.FirebaseAuth
@@ -37,6 +36,8 @@ class ActivityEditor : BaseActivity() {
     private lateinit var formasCard: MaterialCardView
     private lateinit var brushCard: MaterialCardView
     private lateinit var cursorCard: MaterialCardView
+    private lateinit var btnMergeShapes: MaterialButton
+    private lateinit var btnPreviewMode: MaterialButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +56,10 @@ class ActivityEditor : BaseActivity() {
         alignCardAbove(R.id.cardFormas, R.id.linearformas)
         alignCardAbove(R.id.cardPoi, R.id.linearpoi)
 
+        // modo edição (preview desligado)
+        btnPreviewMode.isChecked = false
+        btnPreviewMode.contentDescription = "Ativar preview"
+
         // Listener para a View avisar a Activity quando a ferramenta mudar
         mapEditor.onToolChangedListener = { newTool ->
             updateSelectedButtonUI(newTool)
@@ -71,8 +76,44 @@ class ActivityEditor : BaseActivity() {
             }
         }
 
-        btnSalvarMapa.setOnClickListener {
-            salvarMapa()
+        btnSalvarMapa.setOnClickListener { salvarMapa() }
+
+        btnMergeShapes.setOnClickListener {
+            mapEditor.mergeEdgesAndAdjustCorners()
+            Toast.makeText(this, "Merge aplicado", Toast.LENGTH_SHORT).show()
+        }
+        btnPreviewMode.setOnClickListener {
+            // Toggle do estado
+            val enablePreview = !mapEditor.isPreviewMode()
+            mapEditor.setPreviewMode(enablePreview)
+            btnPreviewMode.isChecked = enablePreview
+            if (enablePreview) {
+                // Entrando em preview
+                mapEditor.setTool(Tool.CURSOR)
+                // Limpa seleção
+                mapEditor.actions.forEach { act ->
+                    when (act) {
+                        is Action.Shape -> act.selected = false
+                        is Action.Poi -> act.selected = false
+                        is Action.Text -> act.selected = false
+                        else -> {}
+                    }
+                }
+                // Fecha cards de ferramentas
+                poiCard.visibility = View.GONE
+                formasCard.visibility = View.GONE
+                brushCard.visibility = View.GONE
+                cursorCard.visibility = View.GONE
+                // Oculta painel de atributos
+                findViewById<View>(R.id.painelAtributos)?.visibility = View.GONE
+                btnPreviewMode.contentDescription = "Desativar preview"
+                Toast.makeText(this, "Preview ativo", Toast.LENGTH_SHORT).show()
+            } else {
+                btnPreviewMode.contentDescription = "Ativar preview"
+                // Voltando para edição
+                // Mantém painel de atributos oculto até o usuário selecionar algo novamente
+                Toast.makeText(this, "Preview desligado", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -149,13 +190,10 @@ class ActivityEditor : BaseActivity() {
 
         val mapaData = mapOf(
             "criadorUid" to uid,
-            // Somente 'nomeAutor' será persistido
             "nomeAutor" to autorNome,
             "dataCriacao" to com.google.firebase.Timestamp.now(),
             "nome" to nomeMapa,
-            // Mantém descrição vazia por enquanto (poderá ter outro diálogo futuramente)
             "descricao" to "",
-            // Escala para conversão px <-> m (fundamental para ZXing/ARCore/A*)
             "pxPerMeter" to mapEditor.pxPerMeter
         )
 
@@ -195,9 +233,9 @@ class ActivityEditor : BaseActivity() {
             val poiDoc = mapaRef.collection("pois").document(poi.id)
             val dataPoi = mapOf(
                 "id" to poi.id,
-                // não persistir nome/descricao para POI
                 "x" to mapEditor.pxToMeters(poi.x),
                 "y" to mapEditor.pxToMeters(poi.y),
+                "iconName" to iconResToName(poi.iconRes),
                 "iconRes" to poi.iconRes,
                 "isStartQR" to poi.isStartQR
             )
@@ -289,7 +327,14 @@ class ActivityEditor : BaseActivity() {
         return edges
     }
 
-
+    private fun iconResToName(resId: Int): String = when (resId) {
+        R.drawable.ic_door_azul -> "door"
+        R.drawable.ic_stairs_azul -> "stairs"
+        R.drawable.ic_elevator_azul -> "elevator"
+        R.drawable.ic_banheiro_azul -> "bathroom"
+        R.drawable.ic_extintor_azul -> "fire_extinguisher"
+        else -> "poi"
+    }
 
     private fun bindViews() {
         mapEditor = findViewById(R.id.mapEditor)
@@ -301,6 +346,8 @@ class ActivityEditor : BaseActivity() {
         formasCard = findViewById(R.id.cardFormas)
         brushCard = findViewById(R.id.cardBrush)
         cursorCard = findViewById(R.id.cardCursor)
+        btnMergeShapes = findViewById(R.id.btnMergeShapes)
+        btnPreviewMode = findViewById(R.id.btnPreviewMode)
     }
 
 

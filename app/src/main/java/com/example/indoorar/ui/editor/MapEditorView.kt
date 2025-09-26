@@ -74,8 +74,42 @@ class MapEditorView @JvmOverloads constructor(
 
     // ===== CONFIGURAÇÕES VISUAIS =====
     var showGrid = true
+    // Preview mode: oculta grid, seleção, handles e quick buttons
+    private var previewMode: Boolean = false
+    fun setPreviewMode(enabled: Boolean) { previewMode = enabled; invalidate() }
+    fun isPreviewMode() = previewMode
     var showBrush = true // Mantido do seu código original
     var showPois = true  // Mantido do seu código original
+    private val neutralBackgroundColor = Color.parseColor("#C7CCD1")
+    private var canvasPatternPaint: Paint? = null
+
+    private fun buildCanvasPatternPaint(): Paint {
+        val tile = dp(32f).toInt().coerceAtLeast(8)
+        val bmp = Bitmap.createBitmap(tile, tile, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        // fundo branco
+        c.drawColor(Color.WHITE)
+        // bolinha sutil (como canvas de design) – usar cinza claro #E2E5E9
+        val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#E2E5E9")
+            style = Paint.Style.FILL
+        }
+        val r = dp(1.2f)
+        // padrão com uma bolinha central e quatro deslocadas para suavizar repetição
+        val mid = tile / 2f
+        c.drawCircle(mid, mid, r, dotPaint)
+        c.drawCircle(mid, r * 2f, r, dotPaint)
+        c.drawCircle(r * 2f, mid, r, dotPaint)
+        c.drawCircle(tile - r * 2f, mid, r, dotPaint)
+        c.drawCircle(mid, tile - r * 2f, r, dotPaint)
+        return Paint().apply { shader = BitmapShader(bmp, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT) }
+    }
+
+    private fun ensurePattern() {
+        if (canvasPatternPaint == null) {
+            canvasPatternPaint = buildCanvasPatternPaint()
+        }
+    }
 
     // Suavização do snap/alinhamento (ajustado para ficar mais leve)
     private var baseSnapThresholdPx = 14f // antes 10f: aumenta levemente o alcance do snap suave
@@ -153,6 +187,8 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     init {
+        // Permite sombras suaves em shapes (necessário para setShadowLayer)
+        setLayerType(LAYER_TYPE_SOFTWARE, null)
         brushPaint.apply {
             color = Color.rgb(50, 100, 255)
             style = Paint.Style.STROKE
@@ -242,7 +278,6 @@ class MapEditorView @JvmOverloads constructor(
         invalidate()
     }
 
-    /** Move the currently selected item to the front (end of draw order). */
     fun bringSelectedToFront() {
         val sel = actions.firstOrNull { it is Action.Shape && it.selected || it is Action.Poi && it.selected || it is Action.Text && it.selected }
         if (sel != null) {
@@ -252,7 +287,6 @@ class MapEditorView @JvmOverloads constructor(
         }
     }
 
-    /** Move the currently selected item to the back (start of draw order). */
     fun sendSelectedToBack() {
         val sel = actions.firstOrNull { it is Action.Shape && it.selected || it is Action.Poi && it.selected || it is Action.Text && it.selected }
         if (sel != null) {
@@ -262,7 +296,6 @@ class MapEditorView @JvmOverloads constructor(
         }
     }
 
-    // ===== UNDO STACK (robusto) =====
     private sealed class EditorOp { abstract fun undo(host: MapEditorView) }
     private class AddOp(private val action: Action) : EditorOp() {
         override fun undo(host: MapEditorView) { host.actions.remove(action); host.invalidate() }
@@ -435,6 +468,10 @@ class MapEditorView @JvmOverloads constructor(
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleDetector.onTouchEvent(event)
         if (scaleDetector.isInProgress) return true
+        if (previewMode) { // somente pan/zoom no preview
+            gestureDetector.onTouchEvent(event)
+            return true
+        }
 
         val world = screenToWorld(event.x, event.y)
 
@@ -810,20 +847,24 @@ class MapEditorView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        // Fill background to avoid transparency when panning far from origin
-        canvas.drawColor(Color.WHITE)
+        if (previewMode) {
+            // modo preview: plano cinza neutro
+            canvas.drawColor(neutralBackgroundColor)
+        } else {
+            // modo edição: fundo canvas
+            ensurePattern()
+            canvasPatternPaint?.let { canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), it) }
+        }
+        // Agora conteúdo do mundo (aplica transformações)
         canvas.withTranslation(offsetX, offsetY) {
             scale(scale, scale)
-            if (showGrid) drawGrid(this)
-            // Desenha guides de alinhamento
-            alignmentGuides.forEach { (p1, p2) ->
-                drawLine(p1.x, p1.y, p2.x, p2.y, guidePaint)
-            }
+            if (!previewMode && showGrid) drawGrid(this)
+            if (!previewMode) alignmentGuides.forEach { (p1, p2) -> drawLine(p1.x, p1.y, p2.x, p2.y, guidePaint) }
+            updateAutoCornerRadii()
             drawActions(this)
-            if (currentTool == Tool.BRUSH) brushEditor.onDrawTemp(this)
-            if (currentTool == Tool.FORMAS) shapeEditor.onDrawTemp(this)
-            // Desenhar sobreposição (após os elementos, para aparecer por cima)
-            drawOverlapOverlay(this)
+            if (!previewMode && currentTool == Tool.BRUSH) brushEditor.onDrawTemp(this)
+            if (!previewMode && currentTool == Tool.FORMAS) shapeEditor.onDrawTemp(this)
+            if (!previewMode) drawOverlapOverlay(this)
         }
     }
 
@@ -858,20 +899,19 @@ class MapEditorView @JvmOverloads constructor(
         actions.forEach { action ->
             when (action) {
                 is Action.BrushStroke -> {
-                    if (action.points.size > 1) {
-                        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                            color = action.color
-                            style = Paint.Style.STROKE
-                            strokeWidth = action.strokeWidth
-                            strokeCap = Paint.Cap.ROUND
-                            strokeJoin = Paint.Join.ROUND
-                        }
-                        val path = Path().apply {
-                            moveTo(action.points.first().x, action.points.first().y)
-                            for (i in 1 until action.points.size) lineTo(action.points[i].x, action.points[i].y)
-                        }
-                        canvas.drawPath(path, paint)
+                    if (previewMode) return@forEach
+                    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = action.color
+                        style = Paint.Style.STROKE
+                        strokeWidth = action.strokeWidth
+                        strokeCap = Paint.Cap.ROUND
+                        strokeJoin = Paint.Join.ROUND
                     }
+                    val path = Path().apply {
+                        moveTo(action.points.first().x, action.points.first().y)
+                        for (i in 1 until action.points.size) lineTo(action.points[i].x, action.points[i].y)
+                    }
+                    canvas.drawPath(path, paint)
                 }
                 is Action.Shape -> {
                     val left = min(action.start.x, action.end.x)
@@ -880,41 +920,83 @@ class MapEditorView @JvmOverloads constructor(
                     val bottom = max(action.start.y, action.end.y)
                     val w = right - left
                     val h = bottom - top
-                    val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = action.fillColor; style = Paint.Style.FILL }
-                    val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = dp(1f) / max(0.001f, scale) }
+                    val walkFill = Color.parseColor("#1F2023")
+                    val roomFill = Color.parseColor("#ECECEC")
+                    val walkStrokeColor = Color.WHITE
+                    val roomStrokeColor = Color.parseColor("#C5C8CC")
+                    val isWalk = action.isWalkable
+                    val fillColor = if (isWalk) walkFill else roomFill
+                    val strokeColor = if (isWalk) walkStrokeColor else roomStrokeColor
+                    val baseStrokeDp = if (isWalk) 2f else 1f
+                    val strokeWidthPx = (dp(baseStrokeDp) / max(0.001f, scale)).coerceIn(0.6f, 4f)
+                    val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = fillColor
+                        style = Paint.Style.FILL
+                        if (isWalk) {
+                            val shadowR = (dp(6f) / max(0.6f, scale)).coerceAtLeast(2f)
+                            setShadowLayer(shadowR, dp(2f)/scale, dp(2f)/scale, 0x44000000)
+                        }
+                    }
+                    val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = strokeColor
+                        style = Paint.Style.STROKE
+                        strokeWidth = strokeWidthPx
+                        strokeCap = Paint.Cap.SQUARE
+                    }
                     when (action.type) {
                         Action.ShapeType.RECTANGLE, Action.ShapeType.SQUARE -> {
                             val r = RectF(left, top, right, bottom)
-                            if (action.cornerRadius > 0f) {
-                                canvas.drawRoundRect(r, action.cornerRadius, action.cornerRadius, fill)
-                                if (action.strokeEnabled) canvas.drawRoundRect(r, action.cornerRadius, action.cornerRadius, stroke)
+                            val radius = action.cornerRadius
+                            // Preenche sempre (independente de flags)
+                            if (radius > 0f && action.edgeTop && action.edgeRight && action.edgeBottom && action.edgeLeft) {
+                                canvas.drawRoundRect(r, radius, radius, fillPaint)
                             } else {
-                                canvas.drawRect(r, fill)
-                                if (action.strokeEnabled) canvas.drawRect(r, stroke)
+                                canvas.drawRect(r, fillPaint)
+                            }
+                            if (action.strokeEnabled) {
+                                val allEdges = action.edgeTop && action.edgeRight && action.edgeBottom && action.edgeLeft
+                                if (allEdges) {
+                                    if (radius > 0f) {
+                                        canvas.drawRoundRect(r, radius, radius, strokePaint)
+                                    } else {
+                                        canvas.drawRect(r, strokePaint)
+                                    }
+                                } else {
+                                    // Desenha somente as bordas marcadas (sem cantos arredondados para manter simples)
+                                    if (action.edgeTop) canvas.drawLine(left, top, right, top, strokePaint)
+                                    if (action.edgeRight) canvas.drawLine(right, top, right, bottom, strokePaint)
+                                    if (action.edgeBottom) canvas.drawLine(right, bottom, left, bottom, strokePaint)
+                                    if (action.edgeLeft) canvas.drawLine(left, bottom, left, top, strokePaint)
+                                }
                             }
                         }
                         Action.ShapeType.CIRCLE -> {
-                            val cx = (left + right) / 2f
-                            val cy = (top + bottom) / 2f
+                            val cx = (left + right) / 2f; val cy = (top + bottom) / 2f
                             val radius = min(w, h) / 2f
-                            canvas.drawCircle(cx, cy, radius, fill)
-                            if (action.strokeEnabled) canvas.drawCircle(cx, cy, radius, stroke)
+                            canvas.drawCircle(cx, cy, radius, fillPaint)
+                            if (action.strokeEnabled) canvas.drawCircle(cx, cy, radius, strokePaint)
                         }
                         Action.ShapeType.TRIANGLE -> {
-                            val path = Path()
-                            path.moveTo((left + right) / 2f, top)
-                            path.lineTo(left, bottom)
-                            path.lineTo(right, bottom)
-                            path.close()
-                            canvas.drawPath(path, fill)
-                            if (action.strokeEnabled) canvas.drawPath(path, stroke)
+                            val path = Path().apply {
+                                moveTo((left + right)/2f, top)
+                                lineTo(left, bottom)
+                                lineTo(right, bottom)
+                                close()
+                            }
+                            canvas.drawPath(path, fillPaint)
+                            if (action.strokeEnabled) canvas.drawPath(path, strokePaint)
                         }
                         Action.ShapeType.LINE -> {
-                            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = dp(2f) / max(0.001f, scale) }
-                            canvas.drawLine(action.start.x, action.start.y, action.end.x, action.end.y, paint)
+                            val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                                color = strokeColor
+                                style = Paint.Style.STROKE
+                                strokeCap = Paint.Cap.ROUND
+                                strokeWidth = ((if (isWalk) dp(2.5f) else dp(2f)) / max(0.001f, scale)).coerceIn(0.6f, 4.5f)
+                            }
+                            canvas.drawLine(action.start.x, action.start.y, action.end.x, action.end.y, p)
                         }
                     }
-                    if (action.selected) {
+                    if (!previewMode && action.selected) {
                         val b = RectF(left, top, right, bottom)
                         drawSelectionEnvelope(canvas, b)
                         drawHandles(canvas, b)
@@ -928,25 +1010,76 @@ class MapEditorView @JvmOverloads constructor(
                         val top = action.y - bmp.height / 2f
                         canvas.drawBitmap(bmp, left, top, null)
                     }
-                    if (action.selected) {
+                    if (!previewMode && action.selected) {
                         val b = getPoiContentRectInWorld(action) ?: getActionBounds(action)
                         if (b != null) {
                             drawSelectionEnvelope(canvas, b)
-                            // no handles for POIs; only drag-drop is allowed
                             drawQuickButtons(canvas, action, b)
                         }
                     }
                 }
                 is Action.Text -> {
-                    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = action.color; textSize = dp(action.sizeSp) }
-                    canvas.drawText(action.text, action.x, action.y, paint)
-                    if (action.selected) getActionBounds(action)?.let { b ->
-                        // Blue envelope around text (no handles by request)
+                    val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = action.color; textSize = dp(action.sizeSp) }
+                    canvas.drawText(action.text, action.x, action.y, p)
+                    if (!previewMode && action.selected) getActionBounds(action)?.let { b ->
                         drawSelectionEnvelope(canvas, b)
                         drawQuickButtons(canvas, action, b)
                     }
                 }
             }
+        }
+    }
+
+    private fun updateAutoCornerRadii() {
+        val epsilon = 3f
+        val candidates = actions.filterIsInstance<Action.Shape>().filter {
+            it.isWalkable && !it.manualCornerModified && (it.type == Action.ShapeType.RECTANGLE || it.type == Action.ShapeType.SQUARE)
+        }
+        candidates.forEach { shape ->
+            val left = min(shape.start.x, shape.end.x)
+            val top = min(shape.start.y, shape.end.y)
+            val right = max(shape.start.x, shape.end.x)
+            val bottom = max(shape.start.y, shape.end.y)
+            var contactLeft = false; var contactRight = false; var contactTop = false; var contactBottom = false
+            var contactLeftLoose = false; var contactRightLoose = false; var contactTopLoose = false; var contactBottomLoose = false
+            candidates.forEach { other ->
+                if (other === shape) return@forEach
+                val oL = min(other.start.x, other.end.x)
+                val oT = min(other.start.y, other.end.y)
+                val oR = max(other.start.x, other.end.x)
+                val oB = max(other.start.y, other.end.y)
+                val heightOverlap = (min(bottom, oB) - max(top, oT))
+                val widthOverlap = (min(right, oR) - max(left, oL))
+                val verticalOverlapStrict = heightOverlap > (min(bottom-top, oB-oT) * 0.18f)
+                val horizontalOverlapStrict = widthOverlap > (min(right-left, oR-oL) * 0.18f)
+                val verticalOverlapLoose = heightOverlap > (min(bottom-top, oB-oT) * 0.05f)
+                val horizontalOverlapLoose = widthOverlap > (min(right-left, oR-oL) * 0.05f)
+                if (verticalOverlapStrict) {
+                    if (kotlin.math.abs(oR - left) <= epsilon) contactLeft = true
+                    if (kotlin.math.abs(oL - right) <= epsilon) contactRight = true
+                }
+                if (horizontalOverlapStrict) {
+                    if (kotlin.math.abs(oB - top) <= epsilon) contactTop = true
+                    if (kotlin.math.abs(oT - bottom) <= epsilon) contactBottom = true
+                }
+                if (verticalOverlapLoose) {
+                    if (kotlin.math.abs(oR - left) <= epsilon) contactLeftLoose = true
+                    if (kotlin.math.abs(oL - right) <= epsilon) contactRightLoose = true
+                }
+                if (horizontalOverlapLoose) {
+                    if (kotlin.math.abs(oB - top) <= epsilon) contactTopLoose = true
+                    if (kotlin.math.abs(oT - bottom) <= epsilon) contactBottomLoose = true
+                }
+            }
+            val width = right - left
+            val height = bottom - top
+            val minDim = min(width, height)
+            // Ajuste: agora também arredonda em junções em T (versão 'loose')
+            val hasStrict = (contactLeft || contactRight) && (contactTop || contactBottom)
+            val hasT = (contactLeftLoose || contactRightLoose) && (contactTopLoose || contactBottomLoose)
+            val externalEdgesCount = listOf(shape.edgeTop, shape.edgeRight, shape.edgeBottom, shape.edgeLeft).count { it }
+            val shouldRound = (hasStrict || hasT) && externalEdgesCount >= 2 && minDim > dp(12f)/max(0.001f, scale)
+            shape.cornerRadius = if (shouldRound) (minDim * 0.22f).coerceAtMost(minDim/2f) else 0f
         }
     }
 
@@ -967,6 +1100,7 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     private fun drawQuickButtons(canvas: Canvas, action: Action, bounds: RectF) {
+        if (previewMode) return
         val buttons: List<QuickBtn> = when (action) {
             is Action.Text -> listOf(QuickBtn.DUP, QuickBtn.T_INC, QuickBtn.T_DEC, QuickBtn.RENAME, QuickBtn.DELETE)
             is Action.Shape -> listOf(QuickBtn.DUP, QuickBtn.STROKE, QuickBtn.ROUND, QuickBtn.DELETE)
@@ -1081,6 +1215,7 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     private fun handleQuickButtonsTap(world: PointF): Boolean {
+        if (previewMode) return false
         val selectedAct = actions.firstOrNull { when (it) { is Action.Shape -> it.selected; is Action.Poi -> it.selected; is Action.Text -> it.selected; else -> false } } ?: return false
         val bounds = getActionBounds(selectedAct) ?: return false
         val buttons: List<QuickBtn> = when (selectedAct) {
@@ -1110,10 +1245,10 @@ class MapEditorView @JvmOverloads constructor(
             }
             QuickBtn.ROUND -> {
                 if (selectedAct is Action.Shape && (selectedAct.type == Action.ShapeType.RECTANGLE || selectedAct.type == Action.ShapeType.SQUARE)) {
-                    val w = bounds.width()
-                    val h = bounds.height()
+                    val w = bounds.width(); val h = bounds.height()
                     val target = (min(w, h) * 0.2f).coerceAtLeast(dp(6f) / max(0.001f, scale))
                     selectedAct.cornerRadius = if (selectedAct.cornerRadius <= 0f) target else 0f
+                    selectedAct.manualCornerModified = true
                     selectionListener?.onShapeSelected(shapeToProperties(selectedAct))
                     invalidate()
                 }
@@ -1140,7 +1275,12 @@ class MapEditorView @JvmOverloads constructor(
                             nome = s.nome,
                             type = s.type,
                             cornerRadius = s.cornerRadius,
-                            strokeEnabled = s.strokeEnabled
+                            strokeEnabled = s.strokeEnabled,
+                            manualCornerModified = s.manualCornerModified,
+                            edgeTop = s.edgeTop,
+                            edgeRight = s.edgeRight,
+                            edgeBottom = s.edgeBottom,
+                            edgeLeft = s.edgeLeft
                         )
                     }
                     is Action.Poi -> {
@@ -1244,34 +1384,75 @@ class MapEditorView @JvmOverloads constructor(
         }
     }
 
-    private fun getPoiCacheKey(poi: Action.Poi): String = "${'$'}{poi.iconRes}:${'$'}{poi.width}x${'$'}{poi.height}"
+    private fun getPoiCacheKey(poi: Action.Poi): String {
+        return try {
+            val entry = context.resources.getResourceEntryName(poi.iconRes)
+            "${entry}:${poi.width.toInt()}x${poi.height.toInt()}"
+        } catch (_: Exception) {
+            "res_${poi.iconRes}:${poi.width.toInt()}x${poi.height.toInt()}"
+        }
+    }
+
+    private fun colorForPoiIcon(resId: Int): Int = try {
+        when (resId) {
+            com.example.indoorar.R.drawable.ic_door_azul, com.example.indoorar.R.drawable.ic_banheiro_azul -> Color.parseColor("#32357A") // azul
+            com.example.indoorar.R.drawable.ic_stairs_azul -> Color.parseColor("#FF9800") // laranja
+            com.example.indoorar.R.drawable.ic_extintor_azul -> Color.parseColor("#F44336") // vermelho
+            com.example.indoorar.R.drawable.ic_elevator_azul -> Color.parseColor("#4CAF50") // verde
+            else -> Color.parseColor("#32357A")
+        }
+    } catch (_: Exception) { Color.parseColor("#32357A") }
 
     private fun getBitmapForPoi(poi: Action.Poi): Bitmap? {
-        val key = getPoiCacheKey(poi)
-        poiBitmapCache[key]?.let { return it }
+        val styleKey = getPoiCacheKey(poi) + "::pinV1"
+        poiBitmapCache[styleKey]?.let { return it }
         return try {
-            val drawable = ContextCompat.getDrawable(context, poi.iconRes) ?: return null
-            val baseBmp = if (drawable is BitmapDrawable) {
-                drawable.bitmap
-            } else {
-                val bitmap = Bitmap.createBitmap(
-                    max(1, drawable.intrinsicWidth),
-                    max(1, drawable.intrinsicHeight),
-                    Bitmap.Config.ARGB_8888
-                )
-                val c = Canvas(bitmap)
-                drawable.setBounds(0, 0, c.width, c.height)
-                drawable.draw(c)
-                bitmap
-            }
             val targetW = max(1, poi.width.toInt())
             val targetH = max(1, poi.height.toInt())
-            val scaled = if (baseBmp.width == targetW && baseBmp.height == targetH) baseBmp
-            else Bitmap.createScaledBitmap(baseBmp, targetW, targetH, true)
-            val contentRect = computeOpaqueBounds(scaled)
-            poiBitmapCache[key] = scaled
-            poiContentBoundsCache[key] = contentRect
-            scaled
+            if (targetW <= 2 || targetH <= 4) return null
+            val bmp = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
+            val c = Canvas(bmp)
+            val pinColor = colorForPoiIcon(poi.iconRes)
+            val paintFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = pinColor; style = Paint.Style.FILL }
+            val paintStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = targetW * 0.05f }
+            val cx = targetW / 2f
+            val topPadding = targetH * 0.04f
+            val r = min(targetW * 0.42f, (targetH * 0.50f)) * 0.9f
+            val cy = topPadding + r
+            val bottomTipY = targetH.toFloat() - paintStroke.strokeWidth * 0.6f
+            val angleStart = 200f
+            val sweep = 140f
+            val radStart = Math.toRadians(angleStart.toDouble())
+            val p1x = (cx + r * kotlin.math.cos(radStart)).toFloat()
+            val p1y = (cy + r * kotlin.math.sin(radStart)).toFloat()
+            val path = Path().apply {
+                moveTo(cx, bottomTipY)
+                lineTo(p1x, p1y)
+                addArc(RectF(cx - r, cy - r, cx + r, cy + r), angleStart, sweep)
+                lineTo(cx, bottomTipY)
+                close()
+            }
+            c.drawPath(path, paintFill)
+            c.drawPath(path, paintStroke)
+            val innerR = r * 0.60f
+            val innerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL }
+            c.drawCircle(cx, cy, innerR, innerPaint)
+            val drawable = try { ContextCompat.getDrawable(context, poi.iconRes) } catch (_: Exception) { null }
+                ?: ContextCompat.getDrawable(context, com.example.indoorar.R.drawable.ic_poi_default)
+            drawable?.let { dr ->
+                val iconSize = (innerR * 1.4f).coerceAtMost(innerR * 1.8f)
+                val iconLeft = (cx - iconSize / 2f).toInt()
+                val iconTop = (cy - iconSize / 2f).toInt()
+                val iconRight = (iconLeft + iconSize).toInt()
+                val iconBottom = (iconTop + iconSize).toInt()
+                try { dr.mutate(); dr.setTint(pinColor) } catch (_: Exception) {}
+                dr.setBounds(iconLeft, iconTop, iconRight, iconBottom)
+                dr.draw(c)
+            }
+            val contentRect = computeOpaqueBounds(bmp)
+            poiBitmapCache[styleKey] = bmp
+            poiContentBoundsCache[styleKey] = contentRect
+            bmp
         } catch (e: Exception) { null }
     }
 
@@ -1299,9 +1480,9 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     private fun getPoiContentRectInWorld(poi: Action.Poi): RectF? {
-        val bmp = getBitmapForPoi(poi) ?: return null
-        val key = getPoiCacheKey(poi)
-        val content = poiContentBoundsCache[key] ?: return null
+        val styleKey = getPoiCacheKey(poi) + "::pinV1"
+        val bmp = poiBitmapCache[styleKey] ?: getBitmapForPoi(poi) ?: return null
+        val content = poiContentBoundsCache[styleKey] ?: return null
         val left = poi.x - bmp.width / 2f + content.left
         val top = poi.y - bmp.height / 2f + content.top
         val right = left + content.width()
@@ -1385,5 +1566,55 @@ class MapEditorView @JvmOverloads constructor(
         actions.add(action)
         pushOp(AddOp(action))
         invalidate()
+    }
+
+    /** Merge edges of adjacent rectangle shapes and adjust corner radii. */
+    fun mergeEdgesAndAdjustCorners() {
+        mergeRectShapeEdges()
+        // Corner radii serão recalculados no próximo onDraw (ou chamamos explicitamente)
+        updateAutoCornerRadii()
+        invalidate()
+    }
+
+    private fun mergeRectShapeEdges(tolerance: Float = 3f, overlapFrac: Float = 0.85f) {
+        val rects = actions.filterIsInstance<Action.Shape>().filter { it.type == Action.ShapeType.RECTANGLE || it.type == Action.ShapeType.SQUARE }
+        // Reset
+        rects.forEach { s -> s.edgeTop = true; s.edgeRight = true; s.edgeBottom = true; s.edgeLeft = true }
+        for (i in 0 until rects.size) {
+            val a = rects[i]
+            val aL = min(a.start.x, a.end.x)
+            val aT = min(a.start.y, a.end.y)
+            val aR = max(a.start.x, a.end.x)
+            val aB = max(a.start.y, a.end.y)
+            val aH = aB - aT
+            val aW = aR - aL
+            for (j in i+1 until rects.size) {
+                val b = rects[j]
+                val bL = min(b.start.x, b.end.x)
+                val bT = min(b.start.y, b.end.y)
+                val bR = max(b.start.x, b.end.x)
+                val bB = max(b.start.y, b.end.y)
+                val bH = bB - bT
+                val bW = bR - bL
+                // Horizontal adjacency (vertical shared edge)
+                if (kotlin.math.abs(aR - bL) <= tolerance || kotlin.math.abs(bR - aL) <= tolerance) {
+                    val overlap = min(aB, bB) - max(aT, bT)
+                    val minH = min(aH, bH)
+                    if (overlap >= minH * overlapFrac) {
+                        if (kotlin.math.abs(aR - bL) <= tolerance) { a.edgeRight = false; b.edgeLeft = false }
+                        if (kotlin.math.abs(bR - aL) <= tolerance) { b.edgeRight = false; a.edgeLeft = false }
+                    }
+                }
+                // Vertical adjacency (horizontal shared edge)
+                if (kotlin.math.abs(aB - bT) <= tolerance || kotlin.math.abs(bB - aT) <= tolerance) {
+                    val overlap = min(aR, bR) - max(aL, bL)
+                    val minW = min(aW, bW)
+                    if (overlap >= minW * overlapFrac) {
+                        if (kotlin.math.abs(aB - bT) <= tolerance) { a.edgeBottom = false; b.edgeTop = false }
+                        if (kotlin.math.abs(bB - aT) <= tolerance) { b.edgeBottom = false; a.edgeTop = false }
+                    }
+                }
+            }
+        }
     }
 }

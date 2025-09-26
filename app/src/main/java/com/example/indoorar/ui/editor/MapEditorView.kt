@@ -9,6 +9,7 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewConfiguration
+import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.toColorInt
@@ -89,7 +90,7 @@ class MapEditorView @JvmOverloads constructor(
     private enum class Handle { TOP_LEFT, TOP, TOP_RIGHT, RIGHT, BOTTOM_RIGHT, BOTTOM, BOTTOM_LEFT, LEFT }
 
     // Quick action buttons next to delete
-    private enum class QuickBtn { DELETE, ROUND, STROKE, DUP }
+    private enum class QuickBtn { DELETE, ROUND, STROKE, DUP, T_INC, T_DEC, RENAME }
 
     // Handle visuals
     private val handleFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL }
@@ -838,47 +839,41 @@ class MapEditorView @JvmOverloads constructor(
         // Desenha handles
         drawHandles(canvas, rect)
 
-        // Desenha botões rápidos (DELETE, ROUND, STROKE, DUP) alinhados no topo direito
-        val btnRects = getQuickButtonRects(rect)
+        // Botões rápidos dependem do tipo
+        val buttons: List<QuickBtn> = when (action) {
+            is Action.Text -> listOf(QuickBtn.DELETE, QuickBtn.RENAME, QuickBtn.T_INC, QuickBtn.T_DEC, QuickBtn.DUP)
+            is Action.Shape, is Action.Poi -> listOf(QuickBtn.DELETE, QuickBtn.ROUND, QuickBtn.STROKE, QuickBtn.DUP)
+            else -> emptyList()
+        }
+        val btnRects = getQuickButtonRects(rect, buttons)
         btnRects.forEach { (btn, dest) ->
             // Fundo
             val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL; alpha = 230 }
             canvas.drawRoundRect(dest, dest.width()/5f, dest.height()/5f, bgPaint)
             when (btn) {
-                QuickBtn.DELETE -> {
-                    val icon = deleteIconBitmap
-                    if (icon != null) canvas.drawBitmap(icon, null, dest, null) else drawXIcon(canvas, dest, Color.RED)
-                }
-                QuickBtn.ROUND -> {
-                    drawRoundIcon(canvas, dest)
-                }
-                QuickBtn.STROKE -> {
-                    val enabled = (action as? Action.Shape)?.strokeEnabled ?: true
-                    drawStrokeIcon(canvas, dest, enabled)
-                }
-                QuickBtn.DUP -> {
-                    drawDuplicateIcon(canvas, dest)
-                }
+                QuickBtn.DELETE -> { val icon = deleteIconBitmap; if (icon != null) canvas.drawBitmap(icon, null, dest, null) else drawXIcon(canvas, dest, Color.RED) }
+                QuickBtn.ROUND -> { drawRoundIcon(canvas, dest) }
+                QuickBtn.STROKE -> { val enabled = (action as? Action.Shape)?.strokeEnabled ?: true; drawStrokeIcon(canvas, dest, enabled) }
+                QuickBtn.DUP -> { drawDuplicateIcon(canvas, dest) }
+                QuickBtn.T_INC -> { drawPlusIcon(canvas, dest) }
+                QuickBtn.T_DEC -> { drawMinusIcon(canvas, dest) }
+                QuickBtn.RENAME -> { drawRenameIcon(canvas, dest) }
             }
         }
     }
 
-    private fun getQuickButtonRects(bounds: RectF): Map<QuickBtn, RectF> {
+    private fun getQuickButtonRects(bounds: RectF, buttons: List<QuickBtn>): Map<QuickBtn, RectF> {
         val margin = dp(4f) / max(0.001f, scale)
         val size = dp(28f) / max(0.001f, scale)
         val gap = dp(6f) / max(0.001f, scale)
         var right = bounds.right
         val top = bounds.top - size - margin
         val map = linkedMapOf<QuickBtn, RectF>()
-        fun add(btn: QuickBtn) {
+        buttons.forEach { btn ->
             val left = right - size
             map[btn] = RectF(left, top, right, top + size)
             right = left - gap
         }
-        add(QuickBtn.DELETE)
-        add(QuickBtn.ROUND)
-        add(QuickBtn.STROKE)
-        add(QuickBtn.DUP)
         return map
     }
 
@@ -912,11 +907,48 @@ class MapEditorView @JvmOverloads constructor(
         canvas.drawRect(front, p)
     }
 
+    private fun drawPlusIcon(canvas: Canvas, r: RectF) {
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = r.width()*0.12f }
+        val cx = (r.left + r.right) / 2f
+        val cy = (r.top + r.bottom) / 2f
+        val len = r.width()*0.35f
+        canvas.drawLine(cx - len, cy, cx + len, cy, p)
+        canvas.drawLine(cx, cy - len, cx, cy + len, p)
+    }
+
+    private fun drawMinusIcon(canvas: Canvas, r: RectF) {
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = r.width()*0.12f }
+        val cx = (r.left + r.right) / 2f
+        val cy = (r.top + r.bottom) / 2f
+        val len = r.width()*0.35f
+        canvas.drawLine(cx - len, cy, cx + len, cy, p)
+    }
+
+    private fun drawRenameIcon(canvas: Canvas, r: RectF) {
+        // Desenha um "T" simples
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = r.width()*0.10f }
+        val inset = r.width()*0.22f
+        val top = r.top + inset
+        val bottom = r.bottom - inset
+        val left = r.left + inset
+        val right = r.right - inset
+        val cx = (left + right) / 2f
+        // Barra horizontal do T
+        canvas.drawLine(left, top, right, top, p)
+        // Haste vertical do T
+        canvas.drawLine(cx, top, cx, bottom, p)
+    }
+
     // Hit test for quick buttons and delete dialog/action
     private fun handleQuickButtonsTap(world: PointF): Boolean {
         val selectedAct = actions.firstOrNull { when (it) { is Action.Shape -> it.selected; is Action.Poi -> it.selected; is Action.Text -> it.selected; else -> false } } ?: return false
         val bounds = getActionBounds(selectedAct) ?: return false
-        val map = getQuickButtonRects(bounds)
+        val buttons: List<QuickBtn> = when (selectedAct) {
+            is Action.Text -> listOf(QuickBtn.DELETE, QuickBtn.RENAME, QuickBtn.T_INC, QuickBtn.T_DEC, QuickBtn.DUP)
+            is Action.Shape, is Action.Poi -> listOf(QuickBtn.DELETE, QuickBtn.ROUND, QuickBtn.STROKE, QuickBtn.DUP)
+            else -> emptyList()
+        }
+        val map = getQuickButtonRects(bounds, buttons)
         val hit = map.entries.firstOrNull { (_, r) -> world.x in r.left..r.right && world.y in r.top..r.bottom } ?: return false
         when (hit.key) {
             QuickBtn.DELETE -> {
@@ -997,6 +1029,33 @@ class MapEditorView @JvmOverloads constructor(
                 if (copy != null) {
                     addAction(copy)
                     invalidate()
+                }
+            }
+            QuickBtn.T_INC -> {
+                if (selectedAct is Action.Text) {
+                    selectedAct.sizeSp = (selectedAct.sizeSp + 2f).coerceAtMost(72f)
+                    invalidate()
+                }
+            }
+            QuickBtn.T_DEC -> {
+                if (selectedAct is Action.Text) {
+                    selectedAct.sizeSp = (selectedAct.sizeSp - 2f).coerceAtLeast(8f)
+                    invalidate()
+                }
+            }
+            QuickBtn.RENAME -> {
+                if (selectedAct is Action.Text) {
+                    val input = EditText(context).apply { setText(selectedAct.text) }
+                    AlertDialog.Builder(context)
+                        .setTitle("Renomear texto")
+                        .setView(input)
+                        .setPositiveButton("OK") { d, _ ->
+                            selectedAct.text = input.text?.toString().orEmpty()
+                            d.dismiss()
+                            invalidate()
+                        }
+                        .setNegativeButton("Cancelar") { d, _ -> d.dismiss() }
+                        .show()
                 }
             }
         }

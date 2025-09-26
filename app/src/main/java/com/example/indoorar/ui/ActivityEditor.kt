@@ -417,14 +417,14 @@ class ActivityEditor : BaseActivity() {
             Toast.makeText(this, "Pincel fino ativo. Desenhe no mapa.", Toast.LENGTH_SHORT).show()
         }
         findViewById<LinearLayout>(R.id.brushMedium).setOnClickListener {
-            mapEditor.getBrushPaint().strokeWidth = mapEditor.dp(4f)
+            mapEditor.getBrushPaint().strokeWidth = mapEditor.dp(6f)
             mapEditor.getBrushPaint().color = currentColor()
             mapEditor.setTool(Tool.BRUSH)
             brushCard.visibility = View.GONE
             Toast.makeText(this, "Pincel médio ativo. Desenhe no mapa.", Toast.LENGTH_SHORT).show()
         }
         findViewById<LinearLayout>(R.id.brushThick).setOnClickListener {
-            mapEditor.getBrushPaint().strokeWidth = mapEditor.dp(8f)
+            mapEditor.getBrushPaint().strokeWidth = mapEditor.dp(12f)
             mapEditor.getBrushPaint().color = currentColor()
             mapEditor.setTool(Tool.BRUSH)
             brushCard.visibility = View.GONE
@@ -442,8 +442,9 @@ class ActivityEditor : BaseActivity() {
                 .setPositiveButton("OK") { dialog, _ ->
                     val txt = input.text?.toString()?.trim().orEmpty()
                     if (txt.isNotEmpty()) {
-                        val color = currentColor()
-                        val sizeSp = 14f
+                        // Padrão solicitado: tamanho um pouco maior e cor preta
+                        val color = "#000000".toColorInt()
+                        val sizeSp = 18f
                         mapEditor.setTool(Tool.BRUSH)
                         mapEditor.primeForTextCreation(txt, sizeSp, color)
                         Toast.makeText(this, "Toque no mapa para posicionar o texto", Toast.LENGTH_SHORT).show()

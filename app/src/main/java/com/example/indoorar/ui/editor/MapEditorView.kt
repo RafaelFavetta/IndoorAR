@@ -50,6 +50,8 @@ class MapEditorView @JvmOverloads constructor(
     private var pendingPoiResId: Int? = null
     private data class PendingText(val text: String, val size: Float, val color: Int)
     private var pendingText: PendingText? = null
+    // Cursor extras
+    private var eraserEnabled: Boolean = false
 
     // ===== CONTROLE DE CÂMERA E TOQUE =====
     var scale = 1f
@@ -232,6 +234,32 @@ class MapEditorView @JvmOverloads constructor(
             pendingPoiResId = null
         }
         invalidate()
+    }
+
+    /** Enable/disable eraser behavior in cursor tool. */
+    fun setEraserEnabled(enabled: Boolean) {
+        eraserEnabled = enabled
+        invalidate()
+    }
+
+    /** Move the currently selected item to the front (end of draw order). */
+    fun bringSelectedToFront() {
+        val sel = actions.firstOrNull { it is Action.Shape && it.selected || it is Action.Poi && it.selected || it is Action.Text && it.selected }
+        if (sel != null) {
+            actions.remove(sel)
+            actions.add(sel)
+            invalidate()
+        }
+    }
+
+    /** Move the currently selected item to the back (start of draw order). */
+    fun sendSelectedToBack() {
+        val sel = actions.firstOrNull { it is Action.Shape && it.selected || it is Action.Poi && it.selected || it is Action.Text && it.selected }
+        if (sel != null) {
+            actions.remove(sel)
+            actions.add(0, sel)
+            invalidate()
+        }
     }
 
     // ===== UNDO STACK (robusto) =====
@@ -438,6 +466,27 @@ class MapEditorView @JvmOverloads constructor(
             }
         }
 
+        // Cursor tool: eraser support (delete on tap without confirmation)
+        if (eraserEnabled) {
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    val hit = hitTestObjects(world)
+                    if (hit != null) {
+                        val idx = actions.indexOf(hit)
+                        if (idx >= 0) {
+                            actions.removeAt(idx)
+                            pushOp(DeleteOp(hit, idx))
+                            selectionListener?.onShapeDeselected()
+                            invalidate()
+                            return true
+                        }
+                    }
+                }
+                MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {}
+            }
+            // fall through to allow panning/scroll if nothing hit
+        }
+
         if (draggingObject == null) { gestureDetector.onTouchEvent(event) }
 
         when (event.actionMasked) {
@@ -447,7 +496,7 @@ class MapEditorView @JvmOverloads constructor(
                 hasMovedBeyondSlop = false
 
                 // Botões rápidos (delete/round/stroke/dup) têm prioridade
-                if (handleQuickButtonsTap(world)) return true
+                if (!eraserEnabled && handleQuickButtonsTap(world)) return true
 
                 // Se já existe um selecionado, verifica clique na lixeirinha primeiro
                 val currentlySelected = actions.firstOrNull { act ->

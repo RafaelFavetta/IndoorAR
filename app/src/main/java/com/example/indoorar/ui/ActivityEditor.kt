@@ -35,6 +35,7 @@ class ActivityEditor : BaseActivity() {
     private lateinit var poiCard: MaterialCardView
     private lateinit var formasCard: MaterialCardView
     private lateinit var brushCard: MaterialCardView
+    private lateinit var cursorCard: MaterialCardView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,6 +47,7 @@ class ActivityEditor : BaseActivity() {
         setupPoiClicks()
         setupFormasClicks()
         setupBrushClicks()
+        setupCursorClicks()
 
         // Listener para a View avisar a Activity quando a ferramenta mudar
         mapEditor.onToolChangedListener = { newTool ->
@@ -54,6 +56,13 @@ class ActivityEditor : BaseActivity() {
             poiCard.visibility = if (newTool == Tool.POI) View.VISIBLE else View.GONE
             formasCard.visibility = if (newTool == Tool.FORMAS) View.VISIBLE else View.GONE
             brushCard.visibility = if (newTool == Tool.BRUSH) View.VISIBLE else View.GONE
+            // Hide cursor card on generic tool change; toggled explicitly on click
+            if (newTool != Tool.CURSOR) {
+                cursorCard.visibility = View.GONE
+                // also ensure eraser off when leaving cursor
+                findViewById<android.widget.Switch>(R.id.cursorEraserSwitch)?.isChecked = false
+                mapEditor.setEraserEnabled(false)
+            }
         }
 
         btnSalvarMapa.setOnClickListener {
@@ -285,6 +294,7 @@ class ActivityEditor : BaseActivity() {
         poiCard = findViewById(R.id.cardPoi)
         formasCard = findViewById(R.id.cardFormas)
         brushCard = findViewById(R.id.cardBrush)
+        cursorCard = findViewById(R.id.cardCursor)
     }
 
 
@@ -350,12 +360,30 @@ class ActivityEditor : BaseActivity() {
                             poiCard.visibility = View.GONE
                         }
                     }
+                    Tool.CURSOR -> {
+                        if (mapEditor.currentTool == Tool.CURSOR) {
+                            val visible = cursorCard.visibility == View.VISIBLE
+                            cursorCard.visibility = if (visible) View.GONE else View.VISIBLE
+                            // hide others
+                            formasCard.visibility = View.GONE
+                            poiCard.visibility = View.GONE
+                            brushCard.visibility = View.GONE
+                        } else {
+                            mapEditor.setTool(Tool.CURSOR)
+                            cursorCard.visibility = View.VISIBLE
+                            // hide others
+                            formasCard.visibility = View.GONE
+                            poiCard.visibility = View.GONE
+                            brushCard.visibility = View.GONE
+                        }
+                    }
                     else -> {
                         mapEditor.setTool(tool)
                         // Oculta quaisquer cards quando mudar para outras ferramentas
                         poiCard.visibility = View.GONE
                         formasCard.visibility = View.GONE
                         brushCard.visibility = View.GONE
+                        cursorCard.visibility = View.GONE
                     }
                 }
             }
@@ -454,6 +482,21 @@ class ActivityEditor : BaseActivity() {
                 }
                 .setNegativeButton("Cancelar") { dialog, _ -> dialog.dismiss() }
                 .show()
+        }
+    }
+
+    private fun setupCursorClicks() {
+        // Eraser switch: delete on tap without confirmation
+        findViewById<android.widget.Switch>(R.id.cursorEraserSwitch)?.setOnCheckedChangeListener { _, isChecked ->
+            mapEditor.setEraserEnabled(isChecked)
+        }
+        // Bring selected to front
+        findViewById<LinearLayout>(R.id.cursorBringFront).setOnClickListener {
+            mapEditor.bringSelectedToFront()
+        }
+        // Send selected to back
+        findViewById<LinearLayout>(R.id.cursorSendBack).setOnClickListener {
+            mapEditor.sendSelectedToBack()
         }
     }
 

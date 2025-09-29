@@ -92,7 +92,9 @@
             tools:replace="android:theme" />
         <activity
             android:name=".ActivityMap"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
         <activity
             android:name=".ActivityMeusMapas"
             android:exported="false" />

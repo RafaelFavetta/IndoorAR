@@ -90,11 +90,12 @@ dependencies {
     implementation("androidx.camera:camera-extensions:1.5.0")
 
     // AR / SceneView
-    implementation("io.github.sceneview:arsceneview:2.3.0")
     implementation("com.google.ar:core:1.50.0")
+    implementation("io.github.sceneview:sceneview:2.3.0")
+    implementation("io.github.sceneview:arsceneview:2.3.0")
 
     // Input masks
-    implementation("com.redmadrobot:input-mask-android:6.1.0")
+    implementation("com.redmadrobot:input-mask-android:6.2.4")
 
     // Compose
     implementation("androidx.activity:activity-compose:1.10.1")

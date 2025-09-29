@@ -89,9 +89,8 @@ dependencies {
     implementation("androidx.camera:camera-view:1.5.0")
     implementation("androidx.camera:camera-extensions:1.5.0")
 
-    // AR / SceneForm
-    implementation("com.gorisse.thomas.sceneform:sceneform:1.23.0")
-    implementation("com.gorisse.thomas.sceneform:ux:1.23.0")
+    // AR / SceneView
+    implementation("io.github.sceneview:arsceneview:2.3.0")
     implementation("com.google.ar:core:1.50.0")
 
     // Input masks

@@ -3,13 +3,11 @@ package com.example.indoorar
 import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Environment
-import android.provider.MediaStore
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.core.content.FileProvider
 import androidx.core.graphics.toColorInt
@@ -22,9 +20,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.itextpdf.text.Document
-import com.itextpdf.text.Image
-import com.itextpdf.text.pdf.PdfWriter
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import java.io.File
@@ -40,7 +35,6 @@ import com.google.firebase.firestore.FieldValue
 
 class ActivityMeusMapas : BaseActivity() {
 
-    private lateinit var recycler: RecyclerView
     private val adapter = MapasAdapter { mapa -> onMapaClicked(mapa) }
     private var mapaSelecionado: MapaResumo? = null
 
@@ -61,7 +55,7 @@ class ActivityMeusMapas : BaseActivity() {
 
         // Busca ao vivo dos mapas do usuário logado
         db.collection("mapas")
-            .whereEqualTo("userId", userId)
+            .whereEqualTo("criadorUid", userId)
             .addSnapshotListener { snapshots, error ->
                 if (error != null) {
                     Toast.makeText(this, "Erro ao buscar mapas", Toast.LENGTH_SHORT).show()
@@ -160,7 +154,7 @@ class ActivityMeusMapas : BaseActivity() {
 
         // Carregar formas e pois do Firestore
         val db = FirebaseFirestore.getInstance()
-        val mapaRef = db.collection("mapas").document(m.id)
+        val mapaRef = db.collection("mapas").document(m.id ?: "")
         mapaRef.collection("formas").get().addOnSuccessListener { formasSnap ->
             mapaRef.collection("pois").get().addOnSuccessListener { poisSnap ->
                 val formas = formasSnap.documents
@@ -187,11 +181,11 @@ class ActivityMeusMapas : BaseActivity() {
             cardDownloadQRCode.visibility = View.VISIBLE
         }
         btnDownloadPDF.setOnClickListener {
-            gerarQRCode(m, true)
+            mostrarDialogAcaoQRCode(m, true)
             cardDownloadQRCode.visibility = View.GONE
         }
         btnDownloadPNG.setOnClickListener {
-            gerarQRCode(m, false)
+            mostrarDialogAcaoQRCode(m, false)
             cardDownloadQRCode.visibility = View.GONE
         }
 
@@ -296,7 +290,7 @@ class ActivityMeusMapas : BaseActivity() {
                 val fonteTitulo = com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 16f, com.itextpdf.text.Font.BOLD, azul)
                 val fonteNormal = com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 12f, com.itextpdf.text.Font.NORMAL)
                 // Título antes do QR
-                document.add(com.itextpdf.text.Paragraph(nomeMapa, fonteTitulo))
+                document.add(com.itextpdf.text.Paragraph(nomeMapa ?: "Mapa sem nome", fonteTitulo))
                 // QR
                 val stream = java.io.ByteArrayOutputStream()
                 qrBmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
@@ -328,7 +322,7 @@ class ActivityMeusMapas : BaseActivity() {
                 paintText.textSize = tituloSize
                 paintText.color = 0xFF32357A.toInt()
                 val tituloBaseline = padding + tituloSize
-                canvas.drawText(nomeMapa, centerX, tituloBaseline, paintText)
+                canvas.drawText(nomeMapa ?: "Mapa sem nome", centerX, tituloBaseline, paintText)
                 // QR
                 val qrTop = (topSectionHeight).toInt()
                 canvas.drawBitmap(qrBmp, 0f, qrTop.toFloat(), null)
@@ -348,6 +342,75 @@ class ActivityMeusMapas : BaseActivity() {
         }
     }
 
+    private fun salvarQRCodeNoDispositivo(mapa: MapaResumo, pdf: Boolean) {
+        val mapId = mapa.id
+        val nomeMapa = mapa.nome
+        val frase = "Me escaneie para ter o seu próprio guia!"
+        val writer = QRCodeWriter()
+        val qrSize = 512
+        val bitMatrix = writer.encode(mapId, BarcodeFormat.QR_CODE, qrSize, qrSize)
+        val qrBmp = Bitmap.createBitmap(qrSize, qrSize, Bitmap.Config.RGB_565)
+        for (x in 0 until qrSize) {
+            for (y in 0 until qrSize) {
+                qrBmp.setPixel(x, y, if (bitMatrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+            }
+        }
+        if (pdf) {
+            try {
+                val file = File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "qrcode_${mapId}_download.pdf")
+                val document = com.itextpdf.text.Document()
+                val writerPdf = com.itextpdf.text.pdf.PdfWriter.getInstance(document, FileOutputStream(file))
+                document.open()
+                val azul = com.itextpdf.text.BaseColor(0x32,0x35,0x7A)
+                val fonteTitulo = com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 16f, com.itextpdf.text.Font.BOLD, azul)
+                val fonteNormal = com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 12f, com.itextpdf.text.Font.NORMAL)
+                document.add(com.itextpdf.text.Paragraph(nomeMapa ?: "Mapa sem nome", fonteTitulo))
+                val stream = java.io.ByteArrayOutputStream()
+                qrBmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                val img = com.itextpdf.text.Image.getInstance(stream.toByteArray())
+                img.alignment = com.itextpdf.text.Element.ALIGN_CENTER
+                document.add(img)
+                document.add(com.itextpdf.text.Paragraph("\n$frase", fonteNormal))
+                document.close(); writerPdf.close()
+                Toast.makeText(this, "PDF salvo em: ${file.absolutePath}", Toast.LENGTH_LONG).show()
+            } catch (_: Exception) {
+                Toast.makeText(this, "Erro ao salvar PDF", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            try {
+                val padding = 24
+                val lineSpacing = 16
+                val tituloSize = 42f
+                val fraseSize = 30f
+                val topSectionHeight = (padding + tituloSize + lineSpacing)
+                val phraseBlockHeight = (lineSpacing + fraseSize + padding)
+                val totalHeight = (topSectionHeight + qrSize + phraseBlockHeight).toInt()
+                val outBmp = Bitmap.createBitmap(qrSize, totalHeight, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(outBmp)
+                canvas.drawColor(android.graphics.Color.WHITE)
+                val centerX = qrSize / 2f
+                val paintText = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+                paintText.textSize = tituloSize
+                paintText.color = 0xFF32357A.toInt()
+                val tituloBaseline = padding + tituloSize
+                canvas.drawText(nomeMapa ?: "Mapa sem nome", centerX, tituloBaseline, paintText)
+                val qrTop = (topSectionHeight).toInt()
+                canvas.drawBitmap(qrBmp, 0f, qrTop.toFloat(), null)
+                paintText.textSize = fraseSize
+                paintText.color = android.graphics.Color.BLACK
+                val fraseBaseline = qrTop + qrSize + lineSpacing + fraseSize
+                canvas.drawText(frase, centerX, fraseBaseline, paintText)
+                val file = File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "qrcode_${mapId}_download.png")
+                val stream = FileOutputStream(file)
+                outBmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                stream.close()
+                Toast.makeText(this, "PNG salvo em: ${file.absolutePath}", Toast.LENGTH_LONG).show()
+            } catch (_: Exception) {
+                Toast.makeText(this, "Erro ao salvar PNG", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     private fun abrirShareSheet(file: File, mimeType: String) {
         val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
         val shareIntent = Intent(Intent.ACTION_SEND)
@@ -360,15 +423,28 @@ class ActivityMeusMapas : BaseActivity() {
     private fun getUidMaker(): String {
         return FirebaseAuth.getInstance().currentUser?.uid ?: ""
     }
+
+    private fun mostrarDialogAcaoQRCode(mapa: MapaResumo, pdf: Boolean) {
+        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+        builder.setTitle("Escolha a ação")
+        builder.setMessage("O que deseja fazer com o QR Code?")
+        builder.setPositiveButton("Compartilhar") { _, _ ->
+            gerarQRCode(mapa, pdf)
+        }
+        builder.setNegativeButton("Salvar no dispositivo") { _, _ ->
+            salvarQRCodeNoDispositivo(mapa, pdf)
+        }
+        builder.show()
+    }
 }
 
 data class MapaResumo(
-    val id: String,
-    val nome: String,
-    val descricao: String,
-    val autorUid: String,
-    val autorNome: String,
-    val dataCriacao: Timestamp?
+    val id: String? = null,
+    val nome: String? = null,
+    val descricao: String? = null,
+    val autorUid: String? = null,
+    val autorNome: String? = null,
+    val dataCriacao: Timestamp? = null
 )
 
 class MapasAdapter(

@@ -36,7 +36,7 @@ class RecentesAdapter(
         } else {
             val lower = q.lowercase()
             itensFiltrados.addAll(itens.filter { m ->
-                m.nome.lowercase().contains(lower) || m.descricao.lowercase().contains(lower)
+                (m.nome?.lowercase() ?: "").contains(lower) || (m.descricao?.lowercase() ?: "").contains(lower)
             })
         }
         notifyDataSetChanged()
@@ -58,7 +58,7 @@ class RecentesAdapter(
         private val txtDesc = itemView.findViewById<TextView>(R.id.txtDescricaoMapaRecente)
         fun bind(m: MapaResumo, onClick: (MapaResumo) -> Unit) {
             txtNome.text = m.nome
-            txtDesc.text = m.descricao.ifBlank { "Sem descrição" }
+            txtDesc.text = m.descricao?.ifBlank { "Sem descrição" } ?: "Sem descrição"
             itemView.setOnClickListener { onClick(m) }
         }
     }

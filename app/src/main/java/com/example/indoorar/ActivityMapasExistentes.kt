@@ -81,7 +81,7 @@ class ActivityMapasExistentes : BaseActivity() {
         ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
 
         val db = FirebaseFirestore.getInstance()
-        val mapaRef = db.collection("mapas").document(m.id)
+        val mapaRef = db.collection("mapas").document(m.id ?: "")
         ivPreview.post {
             val w = ivPreview.width
             val h = ivPreview.height
@@ -98,7 +98,7 @@ class ActivityMapasExistentes : BaseActivity() {
             launching = true
             btnIniciar.isEnabled = false
             dialog.dismiss()
-            val id = m.id
+            val id = m.id ?: ""
             if (id.isBlank()) {
                 Toast.makeText(this, "ID de mapa inválido", Toast.LENGTH_SHORT).show()
                 launching = false
@@ -201,7 +201,7 @@ class ActivityMapasExistentes : BaseActivity() {
     private fun gerarQRCode(mapa: MapaResumo, pdf: Boolean) {
         val mapId = mapa.id
         val nomeMapa = mapa.nome
-        val descricao = mapa.descricao.ifBlank { "Sem descrição" }
+        val descricao = mapa.descricao?.ifBlank { "Sem descrição" } ?: "Sem descrição"
         val frase = "Me escaneie para ter o seu próprio guia!"
         val writer = QRCodeWriter()
         val qrSize = 512
@@ -254,7 +254,7 @@ class ActivityMapasExistentes : BaseActivity() {
                 var curY = qrSize + padding + tituloSize
                 paintText.textSize = tituloSize
                 paintText.color = 0xFF32357A.toInt()
-                canvas.drawText(nomeMapa, centerX, curY, paintText)
+                canvas.drawText(nomeMapa ?: "Mapa sem nome", centerX, curY, paintText)
                 curY += lineSpacing + descSize
                 paintText.textSize = descSize
                 paintText.color = android.graphics.Color.BLACK

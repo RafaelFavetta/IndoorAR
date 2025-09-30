@@ -6,8 +6,6 @@ import android.widget.ImageView
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.example.indoorar.BaseActivity
-import com.google.firebase.auth.FirebaseAuth
 
 class ActivityHomeComum : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,13 +25,10 @@ class ActivityHomeComum : BaseActivity() {
             startActivity(Intent(this, ActivityScanQR::class.java))
         }
 
-        // Botão Logout
-        val btnSignOut = findViewById<ImageView>(R.id.btnSignOut)
-        btnSignOut.setOnClickListener {
-            FirebaseAuth.getInstance().signOut()
-            startActivity(Intent(this, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            })
+        // Botão Perfil
+        val btnPerfil = findViewById<ImageView>(R.id.btnPerfil)
+        btnPerfil.setOnClickListener {
+            startActivity(Intent(this, ActivityPerfil::class.java))
         }
 
         // Botão Mapas Existentes

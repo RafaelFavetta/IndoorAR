@@ -3,6 +3,8 @@ package com.example.indoorar
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
@@ -22,7 +24,6 @@ import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
-import com.redmadrobot.inputmask.MaskedTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
@@ -36,6 +37,7 @@ class ActivityCriar2 : BaseActivity() {
     private var telefoneBruto: String = ""
 
     private lateinit var btnGoogle: MaterialButton
+    private lateinit var senhaField: EditText
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,7 +50,33 @@ class ActivityCriar2 : BaseActivity() {
         val nomeField = findViewById<EditText>(R.id.editNome)
         val emailField = findViewById<EditText>(R.id.editEmail)
         telefoneField = findViewById(R.id.editTelefone)
-        val senhaField = findViewById<EditText>(R.id.editSenha)
+        senhaField = findViewById(R.id.editSenha)
+
+        // Máscara manual para telefone brasileiro
+        telefoneField.addTextChangedListener(object : TextWatcher {
+            private var isUpdating = false
+            private val mask = "(##) #####-####"
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                if (isUpdating) return
+                isUpdating = true
+                val digits = s.toString().replace(Regex("[^\\d]"), "")
+                telefoneBruto = digits // Atualiza telefoneBruto com só os dígitos
+                var masked = ""
+                var i = 0
+                for (m in mask) {
+                    if (m == '#') {
+                        if (i < digits.length) masked += digits[i++] else break
+                    } else {
+                        if (i < digits.length) masked += m
+                    }
+                }
+                s?.replace(0, s.length, masked)
+                isUpdating = false
+            }
+        })
+
         btnCadastrar = findViewById(R.id.btnCadastro)
         progressBar = findViewById(R.id.progressBar)
         btnGoogle = findViewById(R.id.btnGoogle)
@@ -61,16 +89,6 @@ class ActivityCriar2 : BaseActivity() {
             finish()
         }
 
-        // Máscara de telefone
-        MaskedTextChangedListener.installOn(
-            editText = telefoneField,
-            primaryFormat = "+55 ([00]) [00000]-[0000]",
-            valueListener = object : MaskedTextChangedListener.ValueListener {
-                override fun onTextChanged(maskFilled: Boolean, extractedValue: String, formattedValue: String) {
-                    telefoneBruto = extractedValue
-                }
-            }
-        )
 
         // Google Sign-In via Credential Manager
         btnGoogle.setOnClickListener {

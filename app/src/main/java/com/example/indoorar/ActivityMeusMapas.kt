@@ -47,13 +47,31 @@ class ActivityMeusMapas : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_meus_mapas)
-        recycler = findViewById(R.id.recyclerMapas)
-        recycler.layoutManager = LinearLayoutManager(this)
-        recycler.adapter = adapter
-        // Executa migração antes de carregar a lista
-        migrarNomeAutorDoUsuarioAtual {
-            carregarMapas()
+
+        val recyclerView = findViewById<RecyclerView>(R.id.recyclerMapas)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = adapter
+
+        val db = FirebaseFirestore.getInstance()
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId == null) {
+            Toast.makeText(this, "Usuário não logado", Toast.LENGTH_SHORT).show()
+            return
         }
+
+        // Busca ao vivo dos mapas do usuário logado
+        db.collection("mapas")
+            .whereEqualTo("userId", userId)
+            .addSnapshotListener { snapshots, error ->
+                if (error != null) {
+                    Toast.makeText(this, "Erro ao buscar mapas", Toast.LENGTH_SHORT).show()
+                    return@addSnapshotListener
+                }
+                val listaMapas = snapshots?.documents?.mapNotNull { doc ->
+                    doc.toObject(MapaResumo::class.java)
+                } ?: emptyList()
+                adapter.submit(listaMapas)
+            }
     }
 
     private fun migrarNomeAutorDoUsuarioAtual(onDone: () -> Unit) {

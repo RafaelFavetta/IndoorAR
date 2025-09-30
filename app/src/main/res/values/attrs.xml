@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Define custom attributes here if needed -->
+    <declare-styleable name="ArcView">
+        <attr name="arcDepthPercent" format="float" />
+    </declare-styleable>
+</resources>
+

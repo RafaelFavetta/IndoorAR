@@ -94,8 +94,6 @@ dependencies {
     implementation("io.github.sceneview:sceneview:2.3.0")
     implementation("io.github.sceneview:arsceneview:2.3.0")
 
-    // Input masks
-    implementation("com.redmadrobot:input-mask-android:6.2.4")
 
     // Compose
     implementation("androidx.activity:activity-compose:1.10.1")
@@ -134,6 +132,7 @@ dependencies {
 
     // iTextPDF para geração de PDF
     implementation("com.itextpdf:itextg:5.5.10")
+
 
     testImplementation("junit:junit:4.13.2")
 }

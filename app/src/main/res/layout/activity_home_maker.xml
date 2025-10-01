@@ -7,29 +7,18 @@
     android:layout_height="match_parent"
     android:background="@color/colorPrimary"
     android:fitsSystemWindows="true"
-    tools:context=".ActivityHomeComum">
+    tools:context=".ActivityHomeMaker">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/header"
-        android:layout_width="0dp"
-        android:layout_height="400dp"
+        android:layout_width="422dp"
+        android:layout_height="436dp"
+        android:background="@drawable/bg_header_arco"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHeight_percent="0.35">
+        app:layout_constraintTop_toTopOf="parent">
 
-        <!-- ArcView desenha o arco azul -->
-        <com.example.indoorar.ArcView
-            android:id="@+id/arcView"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            app:arcDepthPercent="0.45"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
-
-        <!-- Conteúdo sobreposto ao arco -->
         <ImageView
             android:id="@+id/logo"
             android:layout_width="36dp"
@@ -74,7 +63,7 @@
             android:layout_marginTop="84dp"
             android:layout_marginEnd="20dp"
             android:fontFamily="@font/staatliches"
-            android:text="Bem-vindo Carlos,"
+            android:text="Bem-vindo!"
             android:textColor="@color/colorPrimary"
             android:textSize="40sp"
             android:textStyle="bold"
@@ -95,32 +84,41 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/txtBemVindo" />
 
-        <!-- Cards agora dentro do header -->
+        <View
+            android:id="@+id/backgroundCards"
+            android:layout_width="0dp"
+            android:layout_height="75dp"
+            android:background="#32357A"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/layoutCards" />
+
         <LinearLayout
             android:id="@+id/layoutCards"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="96dp"
             android:layout_marginBottom="64dp"
-            android:paddingStart="24dp"
-            android:paddingEnd="24dp"
             android:gravity="center"
             android:orientation="horizontal"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/txtSubtitulo"
-            app:layout_constraintVertical_bias="0.384">
+            app:layout_constraintVertical_bias="1.0">
 
-            <!-- Card 1 ampliado -->
             <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
                 android:layout_height="150dp"
                 android:layout_weight="1"
                 android:layout_margin="8dp"
                 android:foreground="?attr/selectableItemBackground"
-                app:cardCornerRadius="14dp"
-                app:cardElevation="6dp">
+                app:cardCornerRadius="18dp"
+                app:cardElevation="16dp"
+                android:background="@drawable/bg_card_3d">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -161,15 +159,15 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Card 2 ampliado -->
             <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
                 android:layout_height="150dp"
                 android:layout_weight="1"
                 android:layout_margin="8dp"
                 android:foreground="?attr/selectableItemBackground"
-                app:cardCornerRadius="14dp"
-                app:cardElevation="6dp">
+                app:cardCornerRadius="18dp"
+                app:cardElevation="16dp"
+                android:background="@drawable/bg_card_3d">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -210,15 +208,15 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Card 3 ampliado -->
             <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
                 android:layout_height="150dp"
                 android:layout_weight="1"
                 android:layout_margin="8dp"
                 android:foreground="?attr/selectableItemBackground"
-                app:cardCornerRadius="14dp"
-                app:cardElevation="6dp">
+                app:cardCornerRadius="18dp"
+                app:cardElevation="16dp"
+                android:background="@drawable/bg_card_3d">
 
                 <LinearLayout
                     android:layout_width="match_parent"

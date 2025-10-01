@@ -10,12 +10,16 @@
     tools:context=".ActivityHomeComum">
 
     <!-- HEADER -->
+
+    <!-- Recentes e RecyclerView -->
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/header"
-        android:layout_width="0dp"
-        android:layout_height="350dp"
-        android:background="#32357A"
+        android:layout_width="422dp"
+        android:layout_height="436dp"
+        android:background="@drawable/bg_header_arco"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -93,9 +97,9 @@
             android:layout_width="0dp"
             android:layout_height="75dp"
             android:background="#32357A"
-            app:layout_constraintTop_toTopOf="@id/layoutCards"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintTop_toTopOf="@id/layoutCards" />
 
         <!-- CARDS -->
         <LinearLayout
@@ -104,25 +108,26 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="96dp"
             android:layout_marginBottom="64dp"
-            android:paddingStart="24dp"
-            android:paddingEnd="24dp"
             android:gravity="center"
             android:orientation="horizontal"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/txtSubtitulo"
-            app:layout_constraintVertical_bias="0.384">
+            app:layout_constraintVertical_bias="1.0">
 
-            <!-- Card Ver Mapas -->
             <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
                 android:layout_height="150dp"
                 android:layout_weight="1"
                 android:layout_margin="8dp"
                 android:foreground="?attr/selectableItemBackground"
-                app:cardCornerRadius="14dp"
-                app:cardElevation="6dp">
+                app:cardCornerRadius="18dp"
+                app:cardElevation="16dp"
+                android:background="@drawable/bg_card_3d">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -170,8 +175,9 @@
                 android:layout_weight="1"
                 android:layout_margin="8dp"
                 android:foreground="?attr/selectableItemBackground"
-                app:cardCornerRadius="14dp"
-                app:cardElevation="6dp">
+                app:cardCornerRadius="18dp"
+                app:cardElevation="16dp"
+                android:background="@drawable/bg_card_3d">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -197,7 +203,7 @@
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent"
-                            app:srcCompat="@drawable/ic_qr_inicial_azul" />
+                            app:srcCompat="@drawable/ic_scanner_azul" />
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
                     <TextView
@@ -219,8 +225,9 @@
                 android:layout_weight="1"
                 android:layout_margin="8dp"
                 android:foreground="?attr/selectableItemBackground"
-                app:cardCornerRadius="14dp"
-                app:cardElevation="6dp">
+                app:cardCornerRadius="18dp"
+                app:cardElevation="16dp"
+                android:background="@drawable/bg_card_3d">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -263,7 +270,6 @@
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Recentes e RecyclerView -->
     <TextView
         android:id="@+id/txtMapasFavoritos"
         android:layout_width="wrap_content"
@@ -317,15 +323,17 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerRecentes"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="407dp"
+        android:layout_height="261dp"
         android:layout_marginTop="12dp"
         android:clipToPadding="false"
         android:paddingBottom="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/txtMapasFavoritos"
+        app:layout_constraintVertical_bias="0.0"
         tools:listitem="@layout/item_mapa_recente" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

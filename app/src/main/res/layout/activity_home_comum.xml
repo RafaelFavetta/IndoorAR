@@ -9,24 +9,17 @@
     android:fitsSystemWindows="true"
     tools:context=".ActivityHomeComum">
 
+    <!-- HEADER -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/header"
         android:layout_width="0dp"
-        android:layout_height="400dp"
+        android:layout_height="350dp"
+        android:background="#32357A"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <com.example.indoorar.ArcView
-            android:id="@+id/arcView"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            app:arcDepthPercent="0.45"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
-
+        <!-- Logo -->
         <ImageView
             android:id="@+id/logo"
             android:layout_width="36dp"
@@ -38,6 +31,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/logo_branca" />
 
+        <!-- Botões -->
         <ImageView
             android:id="@+id/btnConfig"
             android:layout_width="36dp"
@@ -63,6 +57,7 @@
             app:srcCompat="@drawable/account_circle"
             app:tint="@color/colorPrimary" />
 
+        <!-- Textos -->
         <TextView
             android:id="@+id/txtBemVindo"
             android:layout_width="0dp"
@@ -92,6 +87,17 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/txtBemVindo" />
 
+        <!-- QUADRADO AZUL ATRÁS DOS CARDS (metade da altura) -->
+        <View
+            android:id="@+id/backgroundCards"
+            android:layout_width="0dp"
+            android:layout_height="75dp"
+            android:background="#32357A"
+            app:layout_constraintTop_toTopOf="@id/layoutCards"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- CARDS -->
         <LinearLayout
             android:id="@+id/layoutCards"
             android:layout_width="match_parent"
@@ -108,7 +114,7 @@
             app:layout_constraintTop_toBottomOf="@id/txtSubtitulo"
             app:layout_constraintVertical_bias="0.384">
 
-            <!-- Card 1: Meus mapas -->
+            <!-- Card Ver Mapas -->
             <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
                 android:layout_height="150dp"
@@ -157,7 +163,7 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Card 2: QR Code -->
+            <!-- Card Escanear -->
             <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
                 android:layout_height="150dp"
@@ -206,7 +212,7 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Card 3: Favoritos -->
+            <!-- Card Favoritos -->
             <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
                 android:layout_height="150dp"
@@ -257,6 +263,7 @@
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <!-- Recentes e RecyclerView -->
     <TextView
         android:id="@+id/txtMapasFavoritos"
         android:layout_width="wrap_content"
@@ -320,4 +327,5 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/txtMapasFavoritos"
         tools:listitem="@layout/item_mapa_recente" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

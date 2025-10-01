@@ -34,7 +34,9 @@ class ActivityMapasExistentes : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_mapas_existentes)
-        val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
+        val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
+        val btnVoltar = findViewById<android.widget.ImageButton>(R.id.btnVoltar)
+        btnVoltar.setOnClickListener { finish() }
         toolbar.setNavigationIcon(R.drawable.ic_voltar_branco)
         toolbar.setNavigationOnClickListener {
             startActivity(Intent(this, ActivityHomeComum::class.java).apply { flags = Intent.FLAG_ACTIVITY_CLEAR_TOP })

@@ -41,6 +41,11 @@ class ActivityMeusMapas : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_meus_mapas)
+        val btnVoltar = findViewById<android.widget.ImageButton>(R.id.btnVoltar)
+        btnVoltar.setOnClickListener {
+            startActivity(Intent(this, ActivityHomeMaker::class.java).apply { flags = Intent.FLAG_ACTIVITY_CLEAR_TOP })
+            finish()
+        }
 
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerMapas)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -143,6 +148,10 @@ class ActivityMeusMapas : BaseActivity() {
     }
 
     private fun onMapaClicked(m: MapaResumo) {
+        if (m.id.isNullOrEmpty()) {
+            Toast.makeText(this, "Mapa inválido. Não foi possível abrir.", Toast.LENGTH_SHORT).show()
+            return
+        }
         mapaSelecionado = m
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.bottomsheet_mapa_preview, null, false)

@@ -20,6 +20,23 @@ class ActivityPerfil : BaseActivity() {
             insets
         }
 
+        val txtNomeUsuario = findViewById<android.widget.TextView>(R.id.txtNomeUsuario)
+        val txtEmailUsuario = findViewById<android.widget.TextView>(R.id.txtEmailUsuario)
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user != null) {
+            txtEmailUsuario.text = user.email ?: "Email não disponível"
+            val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            db.collection("usuarios").document(user.uid).get().addOnSuccessListener { doc ->
+                val nome = doc.getString("nome") ?: "Nome não disponível"
+                txtNomeUsuario.text = nome
+            }.addOnFailureListener {
+                txtNomeUsuario.text = "Nome não disponível"
+            }
+        } else {
+            txtNomeUsuario.text = "Usuário não logado"
+            txtEmailUsuario.text = "Usuário não logado"
+        }
+
         // Botão Sair
         val itemSair = findViewById<LinearLayout>(R.id.itemSair)
         itemSair.setOnClickListener {

@@ -41,6 +41,8 @@ class ActivityMeusMapas : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_meus_mapas)
+        val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
+        toolbar.navigationIcon = null
         val btnVoltar = findViewById<android.widget.ImageButton>(R.id.btnVoltar)
         btnVoltar.setOnClickListener {
             startActivity(Intent(this, ActivityHomeMaker::class.java).apply { flags = Intent.FLAG_ACTIVITY_CLEAR_TOP })

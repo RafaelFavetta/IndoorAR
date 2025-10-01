@@ -1365,7 +1365,7 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     private fun drawGrid(canvas: Canvas) {
-        val spacing = pxPerMeter
+        val spacing = pxPerMeter * 4 // Espaçamento maior para bolinhas tipo Figma
         val radius = 2f
         val worldLeft = -offsetX / scale
         val worldTop = -offsetY / scale

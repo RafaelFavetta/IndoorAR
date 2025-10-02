@@ -12,10 +12,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.bumptech.glide.request.RequestOptions
 import com.google.firebase.auth.FirebaseAuth
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
+import androidx.core.net.toUri
+import androidx.core.content.edit
+import com.yalantis.ucrop.UCrop
 
 class ActivityPerfil : BaseActivity() {
     private lateinit var userImage: ImageView
@@ -36,20 +40,36 @@ class ActivityPerfil : BaseActivity() {
             null
         }
     }
-    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let {
-            val imagePath = saveImageToInternalStorage(it)
+    private val cropImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val resultUri = UCrop.getOutput(result.data!!)
+        if (result.resultCode == RESULT_OK && resultUri != null) {
+            val imagePath = saveImageToInternalStorage(resultUri)
             if (imagePath != null) {
                 com.bumptech.glide.Glide.with(this)
                     .load(imagePath)
+                    .apply(RequestOptions.circleCropTransform())
                     .placeholder(R.drawable.account_circle)
                     .error(R.drawable.account_circle)
                     .into(userImage)
                 val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                prefs.edit().putString(KEY_IMAGE_PATH, imagePath).remove(KEY_IMAGE_URI).apply()
+                prefs.edit { putString(KEY_IMAGE_PATH, imagePath).remove(KEY_IMAGE_URI) }
             } else {
                 userImage.setImageResource(R.drawable.account_circle)
             }
+        }
+    }
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            // Inicia o cropper
+            val destinationUri = Uri.fromFile(File(cacheDir, "cropped_profile_image.jpg"))
+            val uCrop = UCrop.of(it, destinationUri)
+                .withAspectRatio(1f, 1f)
+                .withOptions(UCrop.Options().apply {
+                    setCircleDimmedLayer(true)
+                    setShowCropFrame(false)
+                    setShowCropGrid(false)
+                })
+            cropImageLauncher.launch(uCrop.getIntent(this))
         }
     }
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,6 +108,7 @@ class ActivityPerfil : BaseActivity() {
             Log.d("Perfil", "Carregando imagem do caminho: $savedPath")
             com.bumptech.glide.Glide.with(this)
                 .load(savedPath)
+                .apply(RequestOptions.circleCropTransform())
                 .placeholder(R.drawable.account_circle)
                 .error(R.drawable.account_circle)
                 .into(userImage)
@@ -95,21 +116,16 @@ class ActivityPerfil : BaseActivity() {
             try {
                 Log.d("Perfil", "Tentando carregar imagem URI: $savedUri")
                 com.bumptech.glide.Glide.with(this)
-                    .load(Uri.parse(savedUri))
+                    .load(savedUri.toUri())
+                    .apply(RequestOptions.circleCropTransform())
                     .placeholder(R.drawable.account_circle)
                     .error(R.drawable.account_circle)
                     .into(userImage)
             } catch (e: Exception) {
-                Log.e("Perfil", "Erro ao carregar imagem URI", e)
                 userImage.setImageResource(R.drawable.account_circle)
             }
-        } else if (user != null && user.photoUrl != null) {
-            com.bumptech.glide.Glide.with(this)
-                .load(user.photoUrl)
-                .placeholder(R.drawable.account_circle)
-                .error(R.drawable.account_circle)
-                .into(userImage)
         } else {
+            // Nenhuma foto salva, mostra ícone padrão
             userImage.setImageResource(R.drawable.account_circle)
         }
 
@@ -122,7 +138,7 @@ class ActivityPerfil : BaseActivity() {
                     when (which) {
                         0 -> { // Remover foto de perfil
                             val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                            prefs.edit().remove(KEY_IMAGE_PATH).remove(KEY_IMAGE_URI).apply()
+                            prefs.edit { remove(KEY_IMAGE_PATH).remove(KEY_IMAGE_URI) }
                             userImage.setImageResource(R.drawable.account_circle)
                         }
                         1 -> { // Escolher da galeria
@@ -164,6 +180,12 @@ class ActivityPerfil : BaseActivity() {
                 startActivity(Intent(this, ActivityHomeComum::class.java))
                 finish()
             }
+        }
+
+        // Configurações
+        val itemConfiguracoes = findViewById<LinearLayout>(R.id.itemConfiguracoes)
+        itemConfiguracoes.setOnClickListener {
+            startActivity(Intent(this, ActivityConfigConta::class.java))
         }
     }
 }

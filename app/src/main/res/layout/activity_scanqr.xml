@@ -7,164 +7,111 @@
     android:layout_height="match_parent"
     android:background="#fdfdfd">
 
-    <ScrollView
+    <!-- HEADER with blue arc, btnVoltar left, logo right -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/header"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="200dp"
+        android:background="@drawable/bg_header_arco"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnVoltar"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Voltar"
+            android:src="@drawable/ic_voltar_branco"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/logoTopo"
+            android:layout_width="36dp"
+            android:layout_height="46dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="16dp"
+            android:contentDescription="Logo"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/logo_branca" />
+
+        <TextView
+            android:id="@+id/txtInstruction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:fontFamily="@font/inter"
+            android:text="Aponte a câmera e escaneie"
+            android:textColor="#fdfdfd"
+            android:textSize="20sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.496"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/logoTopo" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="-16dp"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintVertical_bias="0.173">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="320dp"
+            android:layout_height="320dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="48dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="6dp">
+
+            <androidx.camera.view.PreviewView
+                android:id="@+id/previewView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#fdfdfd">
+
+                <ImageView
+                    android:id="@+id/imageViewArc"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="camera"
+                    android:scaleType="centerCrop" />
+            </androidx.camera.view.PreviewView>
+        </androidx.cardview.widget.CardView>
+
+        <Button
+            android:id="@+id/btnResult"
+            android:layout_width="198dp"
+            android:layout_height="60dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="24dp"
+            android:background="@drawable/btn_arredondado3_ripple"
+            android:backgroundTint="#BDBDBD"
+            android:elevation="4dp"
+            android:enabled="false"
+            android:fontFamily="@font/inter"
+            android:text="ESCANEAR"
+            android:textColor="#fdfdfd"
+            android:textSize="16sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <!-- Topo azul com curvatura -->
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:background="#32357A">
-
-                <ImageView
-                    android:id="@+id/logo"
-                    android:layout_width="36dp"
-                    android:layout_height="46dp"
-                    android:layout_marginStart="28dp"
-                    android:layout_marginTop="28dp"
-                    android:contentDescription="logo"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srcCompat="@drawable/logo_branca" />
-
-                <TextView
-                    android:id="@+id/txtInstruction"
-                    android:layout_marginStart="70dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="84dp"
-                    android:fontFamily="@font/inter"
-                    android:text="Aponte a câmera e escaneie"
-                    android:textColor="#fdfdfd"
-                    android:textSize="20dp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintHorizontal_bias="1.0"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"  android:layout_width="0dp"/>
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <!-- Preview da câmera quadrado e centralizado -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="220dp"
-                android:layout_height="220dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="6dp"
-                android:layout_gravity="center"
-                android:layout_marginTop="-60dp"
-                android:layout_marginBottom="16dp">
-
-                <androidx.camera.view.PreviewView
-                    android:id="@+id/previewView"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="#fdfdfd">
-
-                    <ImageView
-                        android:id="@+id/imageViewArc"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:contentDescription="camera"
-                        android:scaleType="centerCrop" />
-                </androidx.camera.view.PreviewView>
-            </androidx.cardview.widget.CardView>
-
-            <!-- Botão clean centralizado -->
-            <Button
-                android:id="@+id/btnResult"
-                android:layout_width="198dp"
-                android:layout_height="60dp"
-                android:layout_gravity="center"
-                android:layout_marginBottom="24dp"
-                android:backgroundTint="#BDBDBD"
-                android:elevation="4dp"
-                android:enabled="false"
-                android:fontFamily="@font/inter"
-                android:text="ESCANEAR"
-                android:textColor="#fdfdfd"
-                android:textSize="16sp" />
-
-            <!-- Cards estilo home em grid responsivo -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:weightSum="2.5">
-
-                <androidx.cardview.widget.CardView
-                    android:layout_width="0dp"
-                    android:layout_height="120dp"
-                    android:layout_margin="8dp"
-                    android:layout_weight="1"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="6dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:background="@drawable/ripple_clickable"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center"
-                        android:orientation="vertical">
-
-                        <ImageView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:contentDescription="Meus Mapas"
-                            android:src="@drawable/ic_meus_mapas" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Meus Mapas"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
-
-                <androidx.cardview.widget.CardView
-                    android:layout_width="0dp"
-                    android:layout_height="120dp"
-                    android:layout_margin="8dp"
-                    android:layout_weight="1"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="6dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:background="@drawable/ripple_clickable"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:orientation="vertical">
-
-                        <ImageView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:contentDescription="Estatísticas"
-                            android:src="@drawable/ic_estatisticas_azul" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Estatísticas"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
-            </LinearLayout>
-
-        </LinearLayout>
-    </ScrollView>
-
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:weightSum="2.5"/>
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

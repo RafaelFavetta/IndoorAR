@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
+    android:id="@+id/main"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -17,40 +18,23 @@
             android:id="@+id/btnVoltar"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:layout_marginStart="20dp"
+            android:layout_marginStart="16dp"
             android:background="@android:color/transparent"
             android:contentDescription="Voltar"
             android:scaleType="centerInside"
             android:src="@drawable/ic_voltar_branco"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.079" />
-
-        <ImageView
-            android:id="@+id/logoTopo"
-            android:layout_width="40dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="20dp"
-            android:contentDescription="Logo"
-            android:scaleType="fitCenter"
-            android:src="@drawable/logo_branca"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="1.0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.079" />
+            app:layout_constraintVertical_bias="0.138" />
 
         <TextView
             android:id="@+id/tituloConfigConta"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Configurações da Conta"
+            android:text="Configure sua conta"
             android:textColor="@color/design_default_color_on_primary"
-            android:textSize="30sp"
+            android:textSize="25sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

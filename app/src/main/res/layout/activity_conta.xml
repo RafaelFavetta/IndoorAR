@@ -20,24 +20,44 @@
         android:src="@drawable/ic_voltar_azul"
         app:layout_constraintBottom_toTopOf="@+id/txtTipoUsuario2"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.019"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.77" />
+        app:layout_constraintVertical_bias="1.0" />
+
+    <TextView
+        android:id="@+id/txtTipoUsuario2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="27dp"
+        android:layout_marginBottom="5dp"
+        android:fontFamily="@font/staatliches"
+        android:gravity="start"
+        android:text="ESCOLHA O TIPO\nDE USUÁRIO"
+        android:textAlignment="viewStart"
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="42.5sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/cardComum"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.116"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardComum"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="32dp"
         app:cardBackgroundColor="@color/colorPrimaryDark"
         app:cardCornerRadius="16dp"
         app:cardElevation="8dp"
-        app:layout_constraintBottom_toTopOf="@+id/cardMaker"
+        app:layout_constraintTop_toBottomOf="@id/txtTipoUsuario2"
+        app:layout_constraintBottom_toTopOf="@id/textView8"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.76">
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="-8dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -94,7 +114,7 @@
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnComum"
-                android:layout_width="320dp"
+                android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginTop="12dp"
                 android:background="@drawable/btn_arredondado3_ripple"
@@ -107,20 +127,37 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
+    <TextView
+        android:id="@+id/textView8"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ou"
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginTop="-8dp"
+        android:layout_marginBottom="-8dp"
+        app:layout_constraintBottom_toTopOf="@+id/cardMaker"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/cardComum"
+        app:layout_constraintVertical_bias="0.5" />
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardMaker"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="32dp"
         app:cardBackgroundColor="@color/colorPrimaryDark"
         app:cardCornerRadius="16dp"
         app:cardElevation="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textView8"
+        app:layout_constraintBottom_toTopOf="@id/termsLabel2"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.88">
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="-8dp"
+        android:layout_marginBottom="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -177,7 +214,7 @@
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnMaker"
-                android:layout_width="320dp"
+                android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginTop="12dp"
                 android:background="@drawable/btn_arredondado3_ripple"
@@ -190,76 +227,20 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-
-
     <TextView
         android:id="@+id/termsLabel2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="391dp"
+        android:layout_height="29dp"
         android:fontFamily="@font/inter"
         android:gravity="center"
-        android:padding="16dp"
         android:text="Ao criar uma conta, você aceita os Termos e Condições e a Política de Privacidade."
         android:textAlignment="center"
         android:textColor="@color/colorPrimaryDark"
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintVertical_bias="0.994" />
 
-    <TextView
-        android:id="@+id/textView8"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="ou"
-        android:textColor="@color/colorPrimaryDark"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/cardMaker"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cardComum"
-        app:layout_constraintVertical_bias="0.512" />
-
-
-    <TextView
-        android:id="@+id/txtTipoUsuario"
-        android:layout_width="wrap_content"
-        android:layout_height="58dp"
-        android:layout_margin="27dp"
-        android:layout_marginTop="27dp"
-        android:layout_marginBottom="5dp"
-        android:fontFamily="@font/staatliches"
-        android:gravity="bottom"
-        android:text="DE USUÁRIO"
-        android:textColor="@color/colorPrimaryDark"
-        android:textSize="50sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/cardComum"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/txtTipoUsuario2"
-        app:layout_constraintVertical_bias="0.484" />
-
-    <TextView
-        android:id="@+id/txtTipoUsuario2"
-        android:layout_width="wrap_content"
-        android:layout_height="58dp"
-        android:layout_margin="27dp"
-        android:fontFamily="@font/staatliches"
-        android:text="ESCOLHA O TIPO"
-        android:textAlignment="center"
-        android:textColor="@color/colorPrimaryDark"
-        android:textSize="50sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/cardComum"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.387" />
 </androidx.constraintlayout.widget.ConstraintLayout>

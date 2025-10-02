@@ -2,12 +2,6 @@ pluginManagement {
     repositories {
         google()
         mavenCentral()
-        gradlePluginPortal() // Plugins externos
-    }
-
-    plugins {
-        id("com.google.gms.google-services") version "4.4.3"
-        id("org.jetbrains.kotlin.android") version "2.2.20"
     }
 }
 

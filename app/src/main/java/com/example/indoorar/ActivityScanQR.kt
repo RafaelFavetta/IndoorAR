@@ -48,6 +48,14 @@ class ActivityScanQR : BaseActivity() {
         previewView = findViewById(R.id.previewView)
         btnResult = findViewById(R.id.btnResult)
 
+        val btnVoltar = findViewById<android.widget.ImageButton>(R.id.btnVoltar)
+        btnVoltar.setOnClickListener {
+            val intent = Intent(this, ActivityHomeComum::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            startActivity(intent)
+            finish()
+        }
+
         // Estado inicial: desabilitado e cinza
         btnResult.isEnabled = false
         btnResult.text = "ESCANEAR"
@@ -60,7 +68,7 @@ class ActivityScanQR : BaseActivity() {
             handleResult(value)
         }
 
-        // Block scanning entirely only on devices without ARCore support
+        // Block scanning entirely on devices without ARCore support
         if (!checkArCoreSupport()) return
 
         ensureCameraPermissionAndStart()

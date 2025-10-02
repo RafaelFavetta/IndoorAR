@@ -13,7 +13,6 @@ import androidx.core.content.FileProvider
 import androidx.core.graphics.toColorInt
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
 import com.google.firebase.firestore.DocumentSnapshot
@@ -34,8 +33,6 @@ class ActivityMapasExistentes : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_mapas_existentes)
-        val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
-        toolbar.navigationIcon = null
         val btnVoltar = findViewById<android.widget.ImageButton>(R.id.btnVoltar)
         btnVoltar.setOnClickListener { finish() }
         recycler = findViewById(R.id.recyclerMapas)

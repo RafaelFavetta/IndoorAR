@@ -38,11 +38,6 @@ class ActivityMapasExistentes : BaseActivity() {
         toolbar.navigationIcon = null
         val btnVoltar = findViewById<android.widget.ImageButton>(R.id.btnVoltar)
         btnVoltar.setOnClickListener { finish() }
-        toolbar.setNavigationIcon(R.drawable.ic_voltar_branco)
-        toolbar.setNavigationOnClickListener {
-            startActivity(Intent(this, ActivityHomeComum::class.java).apply { flags = Intent.FLAG_ACTIVITY_CLEAR_TOP })
-            finish()
-        }
         recycler = findViewById(R.id.recyclerMapas)
         recycler.layoutManager = LinearLayoutManager(this)
         recycler.adapter = adapter

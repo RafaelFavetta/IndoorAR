@@ -36,17 +36,6 @@
             app:srcCompat="@drawable/logo_branca" />
 
         <!-- Botões -->
-        <ImageView
-            android:id="@+id/btnConfig"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginEnd="70dp"
-            android:background="@drawable/ripple_clickable"
-            android:contentDescription="Configurações"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_settings_branco" />
 
         <ImageView
             android:id="@+id/btnPerfil"
@@ -55,10 +44,10 @@
             android:layout_marginTop="20dp"
             android:layout_marginEnd="20dp"
             android:background="@drawable/ripple_clickable"
-            android:contentDescription="Perfil"
+            android:contentDescription="Configurações"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/account_circle"
+            app:srcCompat="@drawable/ic_settings_branco"
             app:tint="@color/colorPrimary" />
 
         <!-- Textos -->

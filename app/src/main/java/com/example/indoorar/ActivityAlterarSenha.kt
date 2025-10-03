@@ -61,7 +61,7 @@ class ActivityAlterarSenha : BaseActivity() {
         }
 
         tvGoogleCadastro.setOnClickListener {
-            val intent = Intent(this, CriarSenhaActivity::class.java)
+            val intent = Intent(this, ActivityCriarSenha::class.java)
             startActivity(intent)
         }
     }

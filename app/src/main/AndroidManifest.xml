@@ -108,6 +108,7 @@
         <activity android:name=".ActivityEditarNome" android:exported="false" />
         <activity android:name=".ActivityAlterarEmail" android:exported="false" />
         <activity android:name=".ActivityAlterarSenha" android:exported="false" />
+        <activity android:name=".ActivityCriarSenha" android:exported="false" />
 
         <!-- Provider para compartilhar o QR Code -->
         <provider

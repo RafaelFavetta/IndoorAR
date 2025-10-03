@@ -3,6 +3,7 @@ package com.example.indoorar
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.ImageView
 import com.example.indoorar.BaseActivity
 import androidx.activity.enableEdgeToEdge
@@ -23,7 +24,7 @@ class ActivityConta : BaseActivity() {
             insets
         }
 
-        val btnVoltar = findViewById<ImageView>(R.id.btnVoltar)
+        val btnVoltar = findViewById<ImageButton>(R.id.btnVoltar)
         btnVoltar.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -31,9 +32,8 @@ class ActivityConta : BaseActivity() {
             finish()
         }
 
-
 // Botão para ir para Cadastro Comum (ActivityCriar)
-        val btnComum = findViewById<Button>(R.id.btnComum)
+        val btnComum = findViewById<androidx.appcompat.widget.AppCompatButton>(R.id.btnComum)
         btnComum.setOnClickListener {
             val intent = Intent(this, ActivityCriar::class.java)
             startActivity(intent)

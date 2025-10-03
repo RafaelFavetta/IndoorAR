@@ -47,18 +47,30 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.079" />
 
-        <ImageView
-            android:id="@+id/userImage"
+        <FrameLayout
             android:layout_width="100dp"
             android:layout_height="100dp"
-            android:contentDescription="Foto de perfil"
-            android:src="@drawable/account_circle"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.498"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.193" />
+            app:layout_constraintVertical_bias="0.193">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/circle_border_white"
+                android:contentDescription="Borda branca" />
+
+            <ImageView
+                android:id="@+id/userImage"
+                android:layout_width="88dp"
+                android:layout_height="88dp"
+                android:layout_gravity="center"
+                android:contentDescription="Foto de perfil"
+                android:src="@drawable/account_circle" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/txtNomeUsuario"

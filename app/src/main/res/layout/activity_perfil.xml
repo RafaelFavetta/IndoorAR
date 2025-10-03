@@ -343,12 +343,14 @@
         android:id="@+id/txtNomeUsuario"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
         android:fontFamily="@font/staatliches"
         android:gravity="center"
         android:text="Fernando Pires"
         android:textColor="#32357A"
         android:textSize="32sp"
         android:textStyle="bold"
-        tools:layout_editor_absoluteX="114dp"
-        tools:layout_editor_absoluteY="226dp" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/header" />
 </androidx.constraintlayout.widget.ConstraintLayout>

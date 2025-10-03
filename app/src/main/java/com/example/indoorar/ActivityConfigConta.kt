@@ -1,10 +1,11 @@
 package com.example.indoorar
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.cardview.widget.CardView
 
 class ActivityConfigConta : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,6 +23,18 @@ class ActivityConfigConta : BaseActivity() {
             intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
             startActivity(intent)
             finish()
+        }
+        val cardEditarNome = findViewById<CardView>(R.id.cardEditarNome)
+        cardEditarNome?.setOnClickListener {
+            startActivity(Intent(this, ActivityEditarNome::class.java))
+        }
+        val cardAlterarEmail = findViewById<CardView>(R.id.cardAlterarEmail)
+        cardAlterarEmail?.setOnClickListener {
+            startActivity(Intent(this, ActivityAlterarEmail::class.java))
+        }
+        val cardAlterarSenha = findViewById<CardView>(R.id.cardAlterarSenha)
+        cardAlterarSenha?.setOnClickListener {
+            startActivity(Intent(this, ActivityAlterarSenha::class.java))
         }
     }
 }

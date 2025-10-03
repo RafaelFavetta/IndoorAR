@@ -33,15 +33,16 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <EditText
-        android:id="@+id/editNovoNome"
+        android:id="@+id/editNovaSenha"
         android:layout_width="0dp"
         android:layout_height="48dp"
         android:layout_marginStart="24dp"
         android:layout_marginTop="20dp"
         android:layout_marginEnd="24dp"
         android:background="@drawable/btn_arredondado3"
-        android:fontFamily="@font/staatliches"
-        android:hint="Digite o novo nome"
+        android:fontFamily="@font/inter"
+        android:hint="Digite a senha"
+        android:inputType="textPassword"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:textColor="#121212"
@@ -49,52 +50,16 @@
         android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/txtSubEditarNome" />
-
-    <TextView
-        android:id="@+id/txtEditarNome"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="32dp"
-        android:layout_marginEnd="24dp"
-        android:fontFamily="@font/staatliches"
-        android:gravity="start"
-        android:letterSpacing="0.05"
-        android:text="Edite seu usuário"
-        android:textColor="#32357A"
-        android:textSize="38sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnVoltar" />
-
-    <TextView
-        android:id="@+id/txtSubEditarNome"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginEnd="24dp"
-        android:fontFamily="@font/inter"
-        android:gravity="start"
-        android:text="Digite o novo nome de usuário."
-        android:textColor="#32357A"
-        android:textSize="16sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/txtEditarNome" />
+        app:layout_constraintTop_toBottomOf="@id/txtSubCriarSenha" />
 
     <Button
-        android:id="@+id/btnSalvarNome"
+        android:id="@+id/btnSalvarSenha"
         android:layout_width="0dp"
         android:layout_height="48dp"
         android:layout_marginStart="24dp"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="24dp"
         android:layout_marginEnd="24dp"
         android:background="@drawable/btn_arredondado"
         android:backgroundTint="#32357A"
@@ -104,8 +69,66 @@
         android:textColor="@android:color/white"
         android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/editNovoNome" />
+        app:layout_constraintTop_toBottomOf="@id/editConfirmarNovaSenha" />
+
+    <TextView
+        android:id="@+id/txtCriarSenha"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="36dp"
+        android:layout_marginEnd="24dp"
+        android:fontFamily="@font/staatliches"
+        android:gravity="start"
+        android:letterSpacing="0.05"
+        android:text="Criar Senha"
+        android:textColor="#32357A"
+        android:textSize="38sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnVoltar" />
+
+    <TextView
+        android:id="@+id/txtSubCriarSenha"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="24dp"
+        android:fontFamily="@font/inter"
+        android:gravity="start"
+        android:text="Crie sua senha pela primeira vez."
+        android:textColor="#32357A"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/txtCriarSenha" />
+
+    <EditText
+        android:id="@+id/editConfirmarNovaSenha"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="24dp"
+        android:background="@drawable/btn_arredondado3"
+        android:fontFamily="@font/inter"
+        android:hint="Confirme a senha"
+        android:inputType="textPassword"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:textColor="#121212"
+        android:textColorHint="#80121212"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/editNovaSenha" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

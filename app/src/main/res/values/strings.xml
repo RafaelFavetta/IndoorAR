@@ -10,4 +10,12 @@
     <string name="distance_meters">Distância: %1$.2f m</string>
     <string name="distance_arrived">Distância: Chegou</string>
     <string name="distance_placeholder">Distância: —</string>
+
+    <!-- activity_config_conta.xml strings -->
+    <string name="voltar">Voltar</string>
+    <string name="configure_sua_conta">Configure sua conta</string>
+    <string name="editar_nome">Editar Nome</string>
+    <string name="alterar_email">Alterar Email</string>
+    <string name="alterar_senha">Alterar Senha</string>
+    <string name="seta">Seta</string>
 </resources>

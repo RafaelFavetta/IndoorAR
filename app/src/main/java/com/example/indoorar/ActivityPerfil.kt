@@ -41,18 +41,23 @@ class ActivityPerfil : BaseActivity() {
         }
     }
     private val cropImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val resultUri = UCrop.getOutput(result.data!!)
-        if (result.resultCode == RESULT_OK && resultUri != null) {
-            val imagePath = saveImageToInternalStorage(resultUri)
-            if (imagePath != null) {
-                com.bumptech.glide.Glide.with(this)
-                    .load(imagePath)
-                    .apply(RequestOptions.circleCropTransform())
-                    .placeholder(R.drawable.account_circle)
-                    .error(R.drawable.account_circle)
-                    .into(userImage)
-                val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                prefs.edit { putString(KEY_IMAGE_PATH, imagePath).remove(KEY_IMAGE_URI) }
+        val data = result.data
+        if (result.resultCode == RESULT_OK && data != null) {
+            val resultUri = UCrop.getOutput(data)
+            if (resultUri != null) {
+                val imagePath = saveImageToInternalStorage(resultUri)
+                if (imagePath != null) {
+                    com.bumptech.glide.Glide.with(this)
+                        .load(imagePath)
+                        .apply(RequestOptions.circleCropTransform())
+                        .placeholder(R.drawable.account_circle)
+                        .error(R.drawable.account_circle)
+                        .into(userImage)
+                    val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                    prefs.edit { putString(KEY_IMAGE_PATH, imagePath).remove(KEY_IMAGE_URI) }
+                } else {
+                    userImage.setImageResource(R.drawable.account_circle)
+                }
             } else {
                 userImage.setImageResource(R.drawable.account_circle)
             }
@@ -60,16 +65,27 @@ class ActivityPerfil : BaseActivity() {
     }
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
-            // Inicia o cropper
-            val destinationUri = Uri.fromFile(File(cacheDir, "cropped_profile_image.jpg"))
-            val uCrop = UCrop.of(it, destinationUri)
-                .withAspectRatio(1f, 1f)
-                .withOptions(UCrop.Options().apply {
-                    setCircleDimmedLayer(true)
-                    setShowCropFrame(false)
-                    setShowCropGrid(false)
-                })
-            cropImageLauncher.launch(uCrop.getIntent(this))
+            try {
+                val destinationFile = File(getExternalFilesDir(null), "cropped_profile_image.jpg")
+                val destinationUri = Uri.fromFile(destinationFile)
+                val uCrop = UCrop.of(it, destinationUri)
+                    .withAspectRatio(1f, 1f)
+                    .withOptions(UCrop.Options().apply {
+                        setCircleDimmedLayer(true)
+                        setShowCropFrame(false)
+                        setShowCropGrid(false)
+                    })
+                cropImageLauncher.launch(uCrop.getIntent(this))
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(this, "Erro ao abrir editor de corte", android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    private val requestMediaImagesPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            pickImageLauncher.launch("image/*")
+        } else {
+            android.widget.Toast.makeText(this, "Permissão para acessar imagens negada", android.widget.Toast.LENGTH_LONG).show()
         }
     }
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -142,7 +158,11 @@ class ActivityPerfil : BaseActivity() {
                             userImage.setImageResource(R.drawable.account_circle)
                         }
                         1 -> { // Escolher da galeria
-                            pickImageLauncher.launch("image/*")
+                            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                                requestMediaImagesPermissionLauncher.launch(android.Manifest.permission.READ_MEDIA_IMAGES)
+                            } else {
+                                pickImageLauncher.launch("image/*")
+                            }
                         }
                     }
                 }

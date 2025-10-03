@@ -22,7 +22,7 @@ import com.google.ar.core.ArCoreApk
 class ActivityScanQR : BaseActivity() {
 
     private lateinit var previewView: PreviewView
-    private lateinit var btnResult: Button
+    private lateinit var btnEscanear: Button
     private lateinit var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>
     private var lastScanned: String? = null
     private var cameraBound = false
@@ -46,7 +46,7 @@ class ActivityScanQR : BaseActivity() {
         setContentView(R.layout.activity_scanqr)
 
         previewView = findViewById(R.id.previewView)
-        btnResult = findViewById(R.id.btnResult)
+        btnEscanear = findViewById(R.id.btnEscanear)
 
         val btnVoltar = findViewById<android.widget.ImageButton>(R.id.btnVoltar)
         btnVoltar.setOnClickListener {
@@ -57,14 +57,14 @@ class ActivityScanQR : BaseActivity() {
         }
 
         // Estado inicial: desabilitado e cinza
-        btnResult.isEnabled = false
-        btnResult.text = "ESCANEAR"
-        btnResult.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#BDBDBD"))
-        btnResult.setOnClickListener {
+        btnEscanear.isEnabled = false
+        btnEscanear.text = "ESCANEAR"
+        btnEscanear.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#BDBDBD"))
+        btnEscanear.setOnClickListener {
             val value = lastScanned ?: return@setOnClickListener
             if (navigating) return@setOnClickListener
             navigating = true
-            btnResult.isEnabled = false
+            btnEscanear.isEnabled = false
             handleResult(value)
         }
 
@@ -147,9 +147,9 @@ class ActivityScanQR : BaseActivity() {
                         if (result.text != lastScanned) {
                             lastScanned = result.text
                             // Update UI: enable and turn blue with ESCANEAR
-                            btnResult.isEnabled = true
-                            btnResult.text = "ESCANEAR"
-                            btnResult.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#32357A"))
+                            btnEscanear.isEnabled = true
+                            btnEscanear.text = "ESCANEAR"
+                            btnEscanear.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#32357A"))
                         }
                     } catch (_: NotFoundException) {
                         // nada encontrado no frame
@@ -196,7 +196,7 @@ class ActivityScanQR : BaseActivity() {
             // Falha em interpretar o QR
             Toast.makeText(this, "QR inválido", Toast.LENGTH_SHORT).show()
             navigating = false
-            btnResult.isEnabled = true
+            btnEscanear.isEnabled = true
             return
         }
 

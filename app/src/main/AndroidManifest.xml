@@ -101,6 +101,8 @@
         <activity
             android:name=".ActivityMapasExistentes"
             android:exported="false" />
+        <activity android:name=".ActivityConfigConta"
+            android:exported="false"/>
 
         <!-- Provider para compartilhar o QR Code -->
         <provider

@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
 
     <uses-feature
         android:name="android.hardware.camera.any"
@@ -103,6 +105,9 @@
             android:exported="false" />
         <activity android:name=".ActivityConfigConta"
             android:exported="false"/>
+        <activity android:name=".ActivityAlterarNome" android:exported="false" />
+        <activity android:name=".ActivityAlterarEmail" android:exported="false" />
+        <activity android:name=".ActivityAlterarSenha" android:exported="false" />
 
         <!-- Provider para compartilhar o QR Code -->
         <provider

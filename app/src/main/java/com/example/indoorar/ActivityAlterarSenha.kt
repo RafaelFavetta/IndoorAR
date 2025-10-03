@@ -1,9 +1,11 @@
 package com.example.indoorar
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
@@ -20,6 +22,7 @@ class ActivityAlterarSenha : BaseActivity() {
         val editNovaSenha = findViewById<EditText>(R.id.editNovaSenha)
         val editConfirmarNovaSenha = findViewById<EditText>(R.id.editConfirmarNovaSenha)
         val btnSalvarSenha = findViewById<Button>(R.id.btnSalvarSenha)
+        val tvGoogleCadastro = findViewById<TextView>(R.id.tvGoogleCadastro)
 
         btnSalvarSenha.setOnClickListener {
             val senhaAtual = editSenhaAtual.text.toString()
@@ -56,6 +59,10 @@ class ActivityAlterarSenha : BaseActivity() {
                     Toast.makeText(this, "Falha na reautenticação: ${it.message}", Toast.LENGTH_SHORT).show()
                 }
         }
+
+        tvGoogleCadastro.setOnClickListener {
+            val intent = Intent(this, CriarSenhaActivity::class.java)
+            startActivity(intent)
+        }
     }
 }
-

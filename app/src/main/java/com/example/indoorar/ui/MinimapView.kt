@@ -69,6 +69,7 @@ class MinimapView @JvmOverloads constructor(
     fun addPoi(x: Float, z: Float, color: Int) { pois += Poi(x, z, color, null, false) }
     fun addPoi(x: Float, z: Float, color: Int, iconRes: Int?, isStart: Boolean) { pois += Poi(x, z, color, iconRes, isStart) }
     fun clearPois() { pois.clear(); invalidate() }
+    fun clearFormas() { formas.clear(); invalidate() }
 
     fun setRoute(points: List<Pair<Float, Float>>) { route.clear(); route.addAll(points); invalidate() }
     fun clearRoute() { route.clear(); invalidate() }
@@ -118,6 +119,23 @@ class MinimapView @JvmOverloads constructor(
             val right = left + f.w * scaleX
             val bottom = top + f.h * scaleY
             canvas.drawRect(left, top, right, bottom, paint)
+        }
+
+        // Nova: linha base da rota (contínua) antes das setas para garantir visibilidade
+        if (route.size >= 2) {
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 4f
+            paint.color = Color.WHITE
+            var prev = route.first()
+            for (i in 1 until route.size) {
+                val cur = route[i]
+                val x1 = (prev.first - minX) * scaleX
+                val y1 = (prev.second - minZ) * scaleY
+                val x2 = (cur.first - minX) * scaleX
+                val y2 = (cur.second - minZ) * scaleY
+                canvas.drawLine(x1, y1, x2, y2, paint)
+                prev = cur
+            }
         }
 
         // rota (setas azuis)

@@ -47,16 +47,20 @@ class ActivityMapasExistentes : BaseActivity() {
             .orderBy("dataCriacao", Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener { snap ->
-                val itens = snap.documents.map { doc ->
-                    MapaResumo(
-                        id = doc.id,
-                        nome = doc.getString("nome") ?: "Mapa sem nome",
-                        descricao = doc.getString("descricao") ?: "Sem descrição",
-                        autorUid = doc.getString("criadorUid") ?: "Desconhecido",
-                        autorNome = doc.getString("nomeAutor") ?: "Desconhecido",
-                        dataCriacao = doc.getTimestamp("dataCriacao")
-                    )
+                val itens = snap.documents.mapNotNull { doc ->
+                    val id = doc.id
+                    if (id.isNullOrBlank()) null else {
+                        MapaResumo(
+                            id = id,
+                            nome = doc.getString("nome") ?: "Mapa sem nome",
+                            descricao = doc.getString("descricao") ?: "Sem descrição",
+                            autorUid = doc.getString("criadorUid") ?: "Desconhecido",
+                            autorNome = doc.getString("nomeAutor") ?: "Desconhecido",
+                            dataCriacao = doc.getTimestamp("dataCriacao")
+                        )
+                    }
                 }
+                Toast.makeText(this, "Mapas encontrados: ${itens.size}", Toast.LENGTH_LONG).show()
                 adapter.submit(itens)
             }
             .addOnFailureListener {
@@ -66,14 +70,19 @@ class ActivityMapasExistentes : BaseActivity() {
 
     private fun onMapaClicked(m: MapaResumo) {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.bottomsheet_mapa_preview, null, false)
+        val view = layoutInflater.inflate(R.layout.bottomsheet_mapa_preview, null)
         val txtTitulo = view.findViewById<TextView>(R.id.txtTituloMapa)
         val txtDesc = view.findViewById<TextView>(R.id.txtDescricaoMapa)
         val ivPreview = view.findViewById<ImageView>(R.id.ivPreview)
         val btnIniciar = view.findViewById<Button>(R.id.btnIniciarNavegacao)
+        val btnBaixarQRCode = view.findViewById<Button>(R.id.btnBaixarQRCode)
+        val cardDownloadQRCode = view.findViewById<MaterialCardView>(R.id.cardDownloadQRCode)
+        val btnDownloadPDF = view.findViewById<Button>(R.id.btnDownloadPDF)
+        val btnDownloadPNG = view.findViewById<Button>(R.id.btnDownloadPNG)
         txtTitulo.text = m.nome
         txtDesc.text = m.descricao
         ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
+        cardDownloadQRCode.visibility = View.GONE
 
         val db = FirebaseFirestore.getInstance()
         val mapaRef = db.collection("mapas").document(m.id ?: "")
@@ -102,12 +111,6 @@ class ActivityMapasExistentes : BaseActivity() {
             }
             startActivity(Intent(this, ActivityMap::class.java).putExtra("MAP_ID", id))
         }
-
-        val btnBaixarQRCode = view.findViewById<Button>(R.id.btnBaixarQRCode)
-        val cardDownloadQRCode = view.findViewById<MaterialCardView>(R.id.cardDownloadQRCode)
-        val btnDownloadPDF = view.findViewById<Button>(R.id.btnDownloadPDF)
-        val btnDownloadPNG = view.findViewById<Button>(R.id.btnDownloadPNG)
-        cardDownloadQRCode.visibility = View.GONE
         btnBaixarQRCode.setOnClickListener { cardDownloadQRCode.visibility = View.VISIBLE }
         btnDownloadPDF.setOnClickListener {
             gerarQRCode(m, true)

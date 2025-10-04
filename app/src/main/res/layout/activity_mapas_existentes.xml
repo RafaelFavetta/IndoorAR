@@ -45,24 +45,6 @@
                 app:layout_scrollFlags="scroll|enterAlways" />
 
             <TextView
-                android:id="@+id/txtSubMapasExistentes"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginEnd="24dp"
-                android:fontFamily="@font/inter"
-                android:gravity="start"
-                android:text="Veja todos os mapas disponíveis para navegação."
-                android:textColor="#32357A"
-                android:textSize="16sp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tituloMapasExistentes"
-                app:layout_scrollFlags="scroll|enterAlways" />
-
-            <TextView
                 android:id="@+id/tituloMapasExistentes"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -81,17 +63,38 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/btnVoltar" />
 
+            <TextView
+                android:id="@+id/txtSubMapasExistentes"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="24dp"
+                android:fontFamily="@font/inter"
+                android:gravity="start"
+                android:text="Veja todos os mapas disponíveis para navegação."
+                android:textColor="#32357A"
+                android:textSize="16sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tituloMapasExistentes"
+                app:layout_scrollFlags="scroll|enterAlways" />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- RecyclerView com comportamento de scroll -->
+    <!-- RecyclerView para exibir a lista de mapas -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerMapasExistentes"
+        android:id="@+id/recyclerMapas"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="12dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:layout_marginTop="8dp"
         android:clipToPadding="false"
-        android:scrollbars="vertical" />
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="16dp"
+        android:scrollbars="vertical"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

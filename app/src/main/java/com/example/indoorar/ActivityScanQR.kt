@@ -68,21 +68,16 @@ class ActivityScanQR : BaseActivity() {
             handleResult(value)
         }
 
-        // Block scanning entirely on devices without ARCore support
-        if (!checkArCoreSupport()) return
-
+        // Antes bloqueava. Agora apenas avisa e segue com o scanner mesmo sem ARCore.
+        warnIfNoArCoreSupport()
         ensureCameraPermissionAndStart()
     }
 
-    // ARCore availability
-    private fun checkArCoreSupport(): Boolean {
+    private fun warnIfNoArCoreSupport() {
         val availability = ArCoreApk.getInstance().checkAvailability(this)
         if (availability.isUnsupported) {
-            Toast.makeText(this, "Seu dispositivo não contém suporte ao ARCore.", Toast.LENGTH_LONG).show()
-            finish()
-            return false
+            Toast.makeText(this, "Dispositivo sem ARCore. Você ainda pode escanear o QR, porém recursos AR avançados podem ficar limitados.", Toast.LENGTH_LONG).show()
         }
-        return true
     }
 
     override fun onPause() {

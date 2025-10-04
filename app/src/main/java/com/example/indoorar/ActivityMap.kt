@@ -41,6 +41,7 @@ class ActivityMap : BaseActivity() {
     private var isArReady = false
     private var arInstallRequested = false
     private var lastArPose: Pose? = null
+    private var arSupported: Boolean = false
 
     // Rota (marcadores simples - apenas coordenadas, sem anchors enquanto migramos de Sceneform)
     private val routeNodes = mutableListOf<RoutePoint>()
@@ -134,16 +135,18 @@ class ActivityMap : BaseActivity() {
 
         // Inicialização ARCore
         val availability = ArCoreApk.getInstance().checkAvailability(this)
-        if (availability.isSupported) {
+        arSupported = availability.isSupported
+        if (arSupported) {
             try {
                 val arSession = com.google.ar.core.Session(this)
                 Toast.makeText(this, "ARCore está funcionando na ActivityMap!", Toast.LENGTH_LONG).show()
                 arSession.close()
             } catch (e: Exception) {
                 Toast.makeText(this, "Erro ao iniciar ARCore: ${e.message}", Toast.LENGTH_LONG).show()
+                arSupported = false
             }
         } else {
-            Toast.makeText(this, "ARCore não está disponível neste dispositivo.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Dispositivo sem ARCore. Modo somente minimapa.", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -297,6 +300,9 @@ class ActivityMap : BaseActivity() {
         if (minX == Float.MAX_VALUE) { minX = 0f; minZ = 0f; maxX = 10f; maxZ = 10f }
         minimapView.setWorldBounds(minX, minZ, maxX, maxZ)
 
+        // Limpa formas anteriores para evitar sobreposição duplicada
+        try { minimapView.clearFormas() } catch (_: Exception) {}
+
         // Render somente no minimap (remoção de cubos 3D para simplificar migração). Pode ser reimplementado depois com modelos GLB.
         formas.forEach { f ->
             val pos = f.get("posicao") as? List<*> ?: return@forEach
@@ -309,7 +315,13 @@ class ActivityMap : BaseActivity() {
             val z = (pos.getOrNull(1) as? Number)?.toFloat() ?: 0f
             val h = (tam.getOrNull(0) as? Number)?.toFloat() ?: 0.1f
             val w = (tam.getOrNull(1) as? Number)?.toFloat() ?: 0.1f
-            minimapView.addForma(x, z, w, h, android.graphics.Color.rgb(r, g, b))
+            val isWalkable = when (val any = f.get("isWalkable")) {
+                is Boolean -> any
+                is Number -> any.toInt() != 0
+                else -> true
+            }
+            val corFinal = if (isWalkable) android.graphics.Color.BLACK else android.graphics.Color.rgb(r, g, b)
+            minimapView.addForma(x, z, w, h, corFinal)
         }
 
         val oldSize = destinos.size
@@ -362,8 +374,10 @@ class ActivityMap : BaseActivity() {
             cardDestino.visibility = View.GONE
             destinoSelecionado = poi
             if (!graphLoaded) { Toast.makeText(this, "Grafo não carregado", Toast.LENGTH_SHORT).show(); return@DestinoPoiAdapter }
-            startArCoreSession() // Inicializa ARCore e exibe câmera ao vivo
+            // Calcula rota primeiro (independente de AR)
             calcularRotaAStar(poi)
+            // Só tenta iniciar AR se suportado
+            if (arSupported) startArCoreSession()
         }
         recyclerDestino.adapter = destinoAdapter
     }
@@ -661,19 +675,17 @@ class ActivityMap : BaseActivity() {
 
     // ---- ARCore session control ----
     private fun startArCoreSession() {
+        if (!arSupported) return // não tentar / não spammar Toast
         if (arSession == null) {
-            val availability = ArCoreApk.getInstance().checkAvailability(this)
-            if (availability.isSupported) {
-                try {
-                    arSession = com.google.ar.core.Session(this)
-                    arSceneView.visibility = View.VISIBLE
-                    cameraPreview.visibility = View.GONE
-                    Toast.makeText(this, "ARCore e câmera ao vivo iniciados!", Toast.LENGTH_LONG).show()
-                } catch (e: Exception) {
-                    Toast.makeText(this, "Erro ao iniciar ARCore: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            } else {
-                Toast.makeText(this, "ARCore não está disponível neste dispositivo.", Toast.LENGTH_LONG).show()
+            try {
+                arSession = com.google.ar.core.Session(this)
+                arSceneView.visibility = View.VISIBLE
+                cameraPreview.visibility = View.GONE
+                isArReady = true
+                Toast.makeText(this, "AR iniciado", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, "Erro AR: ${e.message}", Toast.LENGTH_LONG).show()
+                arSupported = false
             }
         }
     }

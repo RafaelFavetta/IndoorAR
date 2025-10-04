@@ -126,16 +126,19 @@ class ActivityMeusMapas : BaseActivity() {
                     val autorUid = doc.getString("criadorUid") ?: ""
                     db.collection("usuarios").document(autorUid).get().addOnSuccessListener { userDoc ->
                         val nomeAutor = userDoc.getString("nome") ?: autorUid
-                        listaResumo.add(
-                            MapaResumo(
-                                id = doc.id,
-                                nome = doc.getString("nome") ?: "FATEC Araras Antonio Brambilla",
-                                descricao = doc.getString("descricao") ?: "Mapa da FATEC Araras 2025",
-                                autorUid = autorUid,
-                                autorNome = nomeAutor,
-                                dataCriacao = doc.getTimestamp("dataCriacao")
+                        val id = doc.id
+                        if (!id.isNullOrBlank()) {
+                            listaResumo.add(
+                                MapaResumo(
+                                    id = id,
+                                    nome = doc.getString("nome") ?: "FATEC Araras Antonio Brambilla",
+                                    descricao = doc.getString("descricao") ?: "Mapa da FATEC Araras 2025",
+                                    autorUid = autorUid,
+                                    autorNome = nomeAutor,
+                                    dataCriacao = doc.getTimestamp("dataCriacao")
+                                )
                             )
-                        )
+                        }
                         count++
                         if (count == mapas.size) {
                             adapter.submit(listaResumo)
@@ -149,53 +152,55 @@ class ActivityMeusMapas : BaseActivity() {
     }
 
     private fun onMapaClicked(m: MapaResumo) {
-        if (m.id.isNullOrEmpty()) {
-            Toast.makeText(this, "Mapa inválido. Não foi possível abrir.", Toast.LENGTH_SHORT).show()
-            return
-        }
-        mapaSelecionado = m
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.bottomsheet_mapa_preview, null, false)
-
-        view.findViewById<TextView>(R.id.txtTituloMapa).text = m.nome
-        view.findViewById<TextView>(R.id.txtDescricaoMapa).text = m.descricao
+        val view = layoutInflater.inflate(R.layout.bottomsheet_mapa_preview, null)
+        val txtTitulo = view.findViewById<TextView>(R.id.txtTituloMapa)
+        val txtDesc = view.findViewById<TextView>(R.id.txtDescricaoMapa)
         val ivPreview = view.findViewById<ImageView>(R.id.ivPreview)
-        ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
-
-        // Carregar formas e pois do Firestore
-        val db = FirebaseFirestore.getInstance()
-        val mapaRef = db.collection("mapas").document(m.id ?: "")
-        mapaRef.collection("formas").get().addOnSuccessListener { formasSnap ->
-            mapaRef.collection("pois").get().addOnSuccessListener { poisSnap ->
-                val formas = formasSnap.documents
-                val pois = poisSnap.documents
-                ivPreview.setImageBitmap(gerarMinimapaBitmap(formas, pois, ivPreview.width, ivPreview.height))
-            }
-        }
-
-        // Botão de navegação
-        view.findViewById<Button>(R.id.btnIniciarNavegacao).setOnClickListener {
-            dialog.dismiss()
-            val itn = android.content.Intent(this, ActivityMap::class.java)
-            itn.putExtra("MAP_ID", m.id)
-            startActivity(itn)
-        }
-
-        // Botão de baixar QR Code e card/modal
+        val btnIniciar = view.findViewById<Button>(R.id.btnIniciarNavegacao)
         val btnBaixarQRCode = view.findViewById<Button>(R.id.btnBaixarQRCode)
         val cardDownloadQRCode = view.findViewById<MaterialCardView>(R.id.cardDownloadQRCode)
         val btnDownloadPDF = view.findViewById<Button>(R.id.btnDownloadPDF)
         val btnDownloadPNG = view.findViewById<Button>(R.id.btnDownloadPNG)
+        txtTitulo.text = m.nome
+        txtDesc.text = m.descricao
+        ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
         cardDownloadQRCode.visibility = View.GONE
-        btnBaixarQRCode.setOnClickListener {
-            cardDownloadQRCode.visibility = View.VISIBLE
+
+        val db = FirebaseFirestore.getInstance()
+        val mapaRef = db.collection("mapas").document(m.id ?: "")
+        ivPreview.post {
+            val w = ivPreview.width
+            val h = ivPreview.height
+            mapaRef.collection("formas").get().addOnSuccessListener { formasSnap ->
+                mapaRef.collection("pois").get().addOnSuccessListener { poisSnap ->
+                    ivPreview.setImageBitmap(gerarMinimapaBitmap(formasSnap.documents, poisSnap.documents, w, h))
+                }
+            }
         }
+
+        var launching = false
+        btnIniciar.setOnClickListener {
+            if (launching) return@setOnClickListener
+            launching = true
+            btnIniciar.isEnabled = false
+            dialog.dismiss()
+            val id = m.id ?: ""
+            if (id.isBlank()) {
+                Toast.makeText(this, "ID de mapa inválido", Toast.LENGTH_SHORT).show()
+                launching = false
+                btnIniciar.isEnabled = true
+                return@setOnClickListener
+            }
+            startActivity(Intent(this, ActivityMap::class.java).putExtra("MAP_ID", id))
+        }
+        btnBaixarQRCode.setOnClickListener { cardDownloadQRCode.visibility = View.VISIBLE }
         btnDownloadPDF.setOnClickListener {
-            mostrarDialogAcaoQRCode(m, true)
+            gerarQRCode(m, true)
             cardDownloadQRCode.visibility = View.GONE
         }
         btnDownloadPNG.setOnClickListener {
-            mostrarDialogAcaoQRCode(m, false)
+            gerarQRCode(m, false)
             cardDownloadQRCode.visibility = View.GONE
         }
 
@@ -445,47 +450,5 @@ class ActivityMeusMapas : BaseActivity() {
             salvarQRCodeNoDispositivo(mapa, pdf)
         }
         builder.show()
-    }
-}
-
-data class MapaResumo(
-    val id: String? = null,
-    val nome: String? = null,
-    val descricao: String? = null,
-    val autorUid: String? = null,
-    val autorNome: String? = null,
-    val dataCriacao: Timestamp? = null
-)
-
-class MapasAdapter(
-    private val onClick: (MapaResumo) -> Unit
-) : RecyclerView.Adapter<MapasAdapter.VH>() {
-    private val itens = mutableListOf<MapaResumo>()
-    fun submit(novos: List<MapaResumo>) {
-        itens.clear()
-        itens.addAll(novos)
-        notifyDataSetChanged()
-    }
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        val v = LayoutInflater.from(parent.context).inflate(R.layout.item_mapa, parent, false)
-        return VH(v)
-    }
-    override fun getItemCount() = itens.size
-    override fun onBindViewHolder(holder: VH, position: Int) {
-        holder.bind(itens[position], onClick)
-    }
-    class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val card = itemView.findViewById<MaterialCardView>(R.id.cardMapa)
-        private val txtNome = itemView.findViewById<TextView>(R.id.txtNome)
-        private val txtDescricao = itemView.findViewById<TextView>(R.id.txtDescricao)
-        private val txtData = itemView.findViewById<TextView>(R.id.txtData)
-        fun bind(m: MapaResumo, onClick: (MapaResumo) -> Unit) {
-            txtNome.text = m.nome
-            txtDescricao.text = m.descricao
-            val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-            val dataFmt = m.dataCriacao?.let { sdf.format(it.toDate()) } ?: "data desconhecida"
-            txtData.text = "Data: $dataFmt"
-            card.setOnClickListener { onClick(m) }
-        }
     }
 }

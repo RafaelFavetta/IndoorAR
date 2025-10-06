@@ -1,4 +1,4 @@
 <ripple xmlns:android="http://schemas.android.com/apk/res/android"
     android:color="#fdfdfd"> <!-- sombra ao clicar -->
-    <item android:drawable="@drawable/btn_arredondado3"/>
+    <item android:drawable="@drawable/btn_arredondado5"/>
 </ripple>

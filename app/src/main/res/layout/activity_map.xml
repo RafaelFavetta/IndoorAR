@@ -7,11 +7,13 @@
     android:layout_height="match_parent"
     android:background="#FDFDFD">
 
-    <io.github.sceneview.SceneView
+    <!-- ARSceneView agora visível por padrão e mantém tela ligada -->
+    <io.github.sceneview.ar.ARSceneView
         android:id="@+id/arSceneView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone"
+        android:keepScreenOn="true"
+        android:visibility="visible"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -119,7 +121,7 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Minimap será uma View customizada no canto inferior direito -->
+    <!-- Minimap -->
     <com.example.indoorar.ui.MinimapView
         android:id="@+id/minimap"
         android:layout_width="150dp"

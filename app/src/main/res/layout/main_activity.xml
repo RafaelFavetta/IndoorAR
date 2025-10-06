@@ -30,19 +30,7 @@
         android:background="#32357A"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <ImageView
-            android:id="@+id/logoHeader"
-            android:layout_width="153dp"
-            android:layout_height="189dp"
-            android:layout_marginTop="56dp"
-            android:contentDescription="Logo Wander"
-            android:src="@drawable/logo_branca"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <Button
         android:id="@+id/btnCadastro"
@@ -52,7 +40,7 @@
         android:background="@drawable/btn_arredondado"
         android:backgroundTint="#32357A"
         android:contentDescription="btn para se cadastrar"
-        android:elevation="5dp"
+        android:elevation="8dp"
         android:fontFamily="@font/staatliches"
         android:text="novo usuário"
         android:textColor="#FDFDFD"
@@ -72,19 +60,19 @@
         android:layout_height="60dp"
         android:background="@drawable/btn_arredondado2"
         android:contentDescription="btn para login comum"
-        android:elevation="5dp"
+        android:elevation="8dp"
         android:fontFamily="@font/staatliches"
         android:text="usuário existente"
         android:textAllCaps="true"
         android:textColor="#32357A"
         android:textSize="28sp"
         android:textStyle="normal"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/txtTermos"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.491"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.845" />
+        app:layout_constraintVertical_bias="0.917" />
 
     <TextView
         android:id="@+id/txtTermos"
@@ -104,21 +92,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.996" />
-
-    <TextView
-        android:id="@+id/txtWander"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="56dp"
-        android:fontFamily="@font/inter"
-        android:text="Transformando como você se encontra"
-        android:textColor="#FDFDFD"
-        android:textSize="18.5sp"
-        android:textStyle="normal"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.494"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/header" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

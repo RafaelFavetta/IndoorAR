@@ -170,8 +170,8 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnFacebook"
         android:layout_width="350dp"
-        android:layout_height="50dp"
-
+        android:layout_height="42dp"
+        android:background="@drawable/btn_arredondado3_ripple"
         android:backgroundTint="#E0E0E0"
         android:fontFamily="@font/inter"
         android:gravity="center"
@@ -179,7 +179,6 @@
         android:text="Entrar com Facebook"
         android:textColor="#4F4F4F"
         android:textSize="13sp"
-        app:cornerRadius="20dp"
         app:icon="@drawable/ic_facebook"
         app:iconGravity="textStart"
         app:iconPadding="12dp"
@@ -206,9 +205,9 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnGoogle"
         android:layout_width="350dp"
-        android:layout_height="50dp"
-        android:layout_marginTop="5dp"
-
+        android:layout_height="42dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/btn_arredondado3_ripple"
         android:backgroundTint="#E0E0E0"
         android:fontFamily="@font/inter"
         android:gravity="center"
@@ -216,7 +215,7 @@
         android:text="Entrar com Google"
         android:textColor="#4F4F4F"
         android:textSize="13sp"
-        app:cornerRadius="20dp"
+        app:cornerRadius="10dp"
         app:icon="@drawable/ic_google"
         app:iconGravity="textStart"
         app:iconPadding="12dp"
@@ -227,6 +226,6 @@
         app:layout_constraintHorizontal_bias="0.508"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.987" />
+        app:layout_constraintVertical_bias="0.979" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

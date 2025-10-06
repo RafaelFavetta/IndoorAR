@@ -20,32 +20,30 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.ar.core.ArCoreApk
-import com.google.ar.core.Frame
 import com.google.ar.core.Pose
-import com.google.ar.core.TrackingState
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.indoorar.tracking.SensorFusionTracker
 import com.example.indoorar.ui.MinimapView
-import io.github.sceneview.SceneView
+import io.github.sceneview.ar.ARSceneView
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
 
 class ActivityMap : BaseActivity() {
 
-    // ---- AR / SceneView ----
-    private lateinit var arSceneView: SceneView
-    private var isArReady = false
+    // ---- AR / ARSceneView ----
+    private lateinit var arSceneView: ARSceneView
+    private var isArActive = false
     private var arInstallRequested = false
     private var lastArPose: Pose? = null
     private var arSupported: Boolean = false
 
-    // Rota (marcadores simples - apenas coordenadas, sem anchors enquanto migramos de Sceneform)
+    // Rota
     private val routeNodes = mutableListOf<RoutePoint>()
-    private val sphereHighlightDistance = 1.0 // mantido para possível realce futuro
+    private val sphereHighlightDistance = 1.0 // placeholder
 
     // UI
     private lateinit var loadingText: TextView
@@ -121,9 +119,6 @@ class ActivityMap : BaseActivity() {
 
     private lateinit var destinoAdapter: DestinoPoiAdapter
 
-    // ARCore session
-    private var arSession: com.google.ar.core.Session? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_map)
@@ -133,32 +128,27 @@ class ActivityMap : BaseActivity() {
         mapId = intent.getStringExtra("MAP_ID")?.let { extractMapId(it) }
         checkAndRequestPermissions()
 
-        // Inicialização ARCore
+        // Verificar suporte ARCore (sem criar Session manual para evitar tela preta)
         val availability = ArCoreApk.getInstance().checkAvailability(this)
         arSupported = availability.isSupported
         if (arSupported) {
-            try {
-                val arSession = com.google.ar.core.Session(this)
-                Toast.makeText(this, "ARCore está funcionando na ActivityMap!", Toast.LENGTH_LONG).show()
-                arSession.close()
-            } catch (e: Exception) {
-                Toast.makeText(this, "Erro ao iniciar ARCore: ${e.message}", Toast.LENGTH_LONG).show()
-                arSupported = false
-            }
+            Toast.makeText(this, "ARCore suportado", Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(this, "Dispositivo sem ARCore. Modo somente minimapa.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Dispositivo sem ARCore. Modo minimapa.", Toast.LENGTH_LONG).show()
         }
     }
 
     override fun onResume() {
         super.onResume()
+        // Removido: arSceneView.resume() (método inexistente nesta versão)
         if (hasCameraPermission()) checkArCoreSupport()
     }
 
     override fun onPause() {
         super.onPause()
+        stopArMode()
         sensorTracker?.stop()
-        stopArCoreSession() // Fecha sessão ARCore ao sair da Activity
+        // Removido: arSceneView.pause()
     }
 
     // ---- Binding ----
@@ -198,7 +188,11 @@ class ActivityMap : BaseActivity() {
             }
     }
 
-    private fun proceedAfterLocationReady() { checkArCoreSupport(); ensureMapLoadedOrScan() }
+    private fun proceedAfterLocationReady() {
+        checkArCoreSupport();
+        ensureMapLoadedOrScan();
+        if (arSupported && !isArActive) startArMode() // inicia câmera AR imediatamente
+    }
 
     private fun ensureMapLoadedOrScan() {
         if (mapId.isNullOrBlank()) {
@@ -207,7 +201,7 @@ class ActivityMap : BaseActivity() {
         } else carregarMapa()
     }
 
-    // ---- ARCore availability & SceneView ----
+    // ---- ARCore availability & ARSceneView ----
     private fun checkArCoreSupport() {
         val availability = ArCoreApk.getInstance().checkAvailability(this)
         if (availability.isTransient) {
@@ -217,26 +211,19 @@ class ActivityMap : BaseActivity() {
             return
         }
         when (availability) {
-            ArCoreApk.Availability.SUPPORTED_INSTALLED -> attachArSceneView()
+            ArCoreApk.Availability.SUPPORTED_INSTALLED -> { /* pronto para uso */ }
             ArCoreApk.Availability.SUPPORTED_APK_TOO_OLD, ArCoreApk.Availability.SUPPORTED_NOT_INSTALLED -> {
                 try {
                     val status = ArCoreApk.getInstance().requestInstall(this, !arInstallRequested)
-                    if (status == ArCoreApk.InstallStatus.INSTALLED) attachArSceneView() else arInstallRequested = true
-                } catch (_: Exception) { initializeCameraFallback() }
+                    if (status == ArCoreApk.InstallStatus.INSTALLED) { /* agora instalado */ } else arInstallRequested = true
+                } catch (_: Exception) { arSupported = false; initializeCameraFallback() }
             }
-            else -> initializeCameraFallback()
+            else -> { arSupported = false; initializeCameraFallback() }
         }
     }
 
-    private fun attachArSceneView() {
-        if (!::arSceneView.isInitialized) return
-        arSceneView.visibility = View.VISIBLE
-        cameraPreview.visibility = View.GONE
-        // Não existe callback onArFrame na API SceneView atual
-        // Se precisar acessar a pose do usuário, verifique métodos utilitários ou propriedades públicas da SceneView
-    }
-
     private fun initializeCameraFallback() {
+        if (isArActive) return
         arSceneView.visibility = View.GONE
         cameraPreview.visibility = View.VISIBLE
         val providerFuture = ProcessCameraProvider.getInstance(this)
@@ -374,10 +361,8 @@ class ActivityMap : BaseActivity() {
             cardDestino.visibility = View.GONE
             destinoSelecionado = poi
             if (!graphLoaded) { Toast.makeText(this, "Grafo não carregado", Toast.LENGTH_SHORT).show(); return@DestinoPoiAdapter }
-            // Calcula rota primeiro (independente de AR)
             calcularRotaAStar(poi)
-            // Só tenta iniciar AR se suportado
-            if (arSupported) startArCoreSession()
+            if (arSupported) startArMode() else initializeCameraFallback()
         }
         recyclerDestino.adapter = destinoAdapter
     }
@@ -532,7 +517,7 @@ class ActivityMap : BaseActivity() {
     private fun limparEsferas() { routeNodes.clear() }
 
     private fun limparRota() {
-        stopArCoreSession() // Fecha sessão ARCore ao limpar destino
+        stopArMode()
         limparEsferas(); currentPathNodeIds = emptyList(); cumulativeDistances = emptyList(); totalDistance = 0.0
         minimapView.clearRoute(); tvDistancia.text = getString(R.string.distance_placeholder)
     }
@@ -604,6 +589,7 @@ class ActivityMap : BaseActivity() {
     private fun hasLocationPermission(): Boolean = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
     // ---- Sensor Fusion ----
+    // Ajuste: quando AR está ativo, ainda mantemos valores estX/estZ mas posição principal vem do AR
     private fun startSensorTracking(initialX: Float, initialZ: Float) {
         if (sensorTracker != null) return
         val sm = getSystemService(android.content.Context.SENSOR_SERVICE) as android.hardware.SensorManager
@@ -614,14 +600,13 @@ class ActivityMap : BaseActivity() {
             mapNorthDegrees = mapNorthDegrees,
             stepLengthMeters = stepLengthMeters,
             onPosition = { x, z, _ ->
-                val arDriving = ::arSceneView.isInitialized && isArReady
-                if (!arDriving) {
-                    estX = x; estZ = z
+                estX = x; estZ = z
+                if (!isArActive) {
                     minimapView.updateUserPosition(x, z)
                     atualizarDistanciaRestante(x, z)
                     tentarRecalcularSeDesviou(x, z)
                     atualizarDestaqueEsferas(x, z)
-                } else { estX = x; estZ = z }
+                }
             },
             mapMatch = { x, z -> projectToNearestEdge(x, z) },
             reanchorCheck = { x, z -> checkReanchorToNode(x, z) }
@@ -629,6 +614,33 @@ class ActivityMap : BaseActivity() {
     }
 
     private fun stopSensorTracking() { sensorTracker?.stop(); sensorTracker = null }
+
+    // ---- Funções antigas de Session removidas ----
+    // startArCoreSession / stopArCoreSession substituídas por startArMode / stopArMode
+
+    private fun startArMode() {
+        if (!arSupported) return
+        if (isArActive) return
+        try {
+            arSceneView.visibility = View.VISIBLE
+            cameraPreview.visibility = View.GONE
+            // Removido callback onArFrame (API inexistente). Fallback: posição continuará via sensores.
+            isArActive = true
+            Toast.makeText(this, "AR ativado (sem callback de frame - usando sensores)", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Erro ao iniciar AR: ${e.message}", Toast.LENGTH_LONG).show()
+            isArActive = false
+            initializeCameraFallback()
+        }
+    }
+
+    private fun stopArMode() {
+        if (!isArActive) return
+        // Removido pause()
+        arSceneView.visibility = View.GONE
+        cameraPreview.visibility = View.VISIBLE
+        isArActive = false
+    }
 
     private fun projectToNearestEdge(x: Float, z: Float): Pair<Float, Float> {
         val segments: MutableList<Pair<GraphNode, GraphNode>> = mutableListOf()
@@ -671,30 +683,6 @@ class ActivityMap : BaseActivity() {
         return if (bestId != null && bestD <= reanchorNodeThresholdMeters) {
             val n = graphNodes[bestId]!!; true to (n.x to n.z)
         } else false to null
-    }
-
-    // ---- ARCore session control ----
-    private fun startArCoreSession() {
-        if (!arSupported) return // não tentar / não spammar Toast
-        if (arSession == null) {
-            try {
-                arSession = com.google.ar.core.Session(this)
-                arSceneView.visibility = View.VISIBLE
-                cameraPreview.visibility = View.GONE
-                isArReady = true
-                Toast.makeText(this, "AR iniciado", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                Toast.makeText(this, "Erro AR: ${e.message}", Toast.LENGTH_LONG).show()
-                arSupported = false
-            }
-        }
-    }
-
-    private fun stopArCoreSession() {
-        arSession?.close()
-        arSession = null
-        arSceneView.visibility = View.GONE
-        cameraPreview.visibility = View.VISIBLE
     }
 }
 

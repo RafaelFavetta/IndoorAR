@@ -47,6 +47,9 @@ class MinimapView @JvmOverloads constructor(
     private val arrowLengthPx = 16f
     private val arrowWidthPx = 12f
 
+    private var userHeadingRad: Float = 0f
+    private var rotateWithHeading: Boolean = false
+
     init {
         userPaint.style = Paint.Style.FILL
         userPaint.color = Color.rgb(33, 150, 243) // Bright blue
@@ -74,7 +77,13 @@ class MinimapView @JvmOverloads constructor(
     fun setRoute(points: List<Pair<Float, Float>>) { route.clear(); route.addAll(points); invalidate() }
     fun clearRoute() { route.clear(); invalidate() }
 
-    fun updateUserPosition(x: Float, z: Float) {
+    fun setRotateWithHeading(enabled: Boolean) { rotateWithHeading = enabled; invalidate() }
+
+    fun updateUserPose(x: Float, z: Float, headingRad: Float) {
+        userX = x; userZ = z; userHeadingRad = headingRad; invalidate()
+    }
+
+    fun updateUserPosition(x: Float, z: Float) { // backward compatibility
         userX = x; userZ = z; invalidate()
     }
 
@@ -111,6 +120,15 @@ class MinimapView @JvmOverloads constructor(
         paint.style = Paint.Style.FILL; paint.color = Color.argb(80, 0, 0, 0)
         canvas.drawRect(0f, 0f, wView, hView, paint)
 
+        val ux = (userX - minX) * scaleX
+        val uz = (userZ - minZ) * scaleY
+
+        // Rotaciona mapa em torno do usuário, mantendo heading do usuário apontando para cima
+        if (rotateWithHeading) {
+            canvas.save()
+            canvas.rotate(-Math.toDegrees(userHeadingRad.toDouble()).toFloat(), ux, uz)
+        }
+
         // formas
         formas.forEach { f ->
             paint.color = f.color
@@ -121,7 +139,7 @@ class MinimapView @JvmOverloads constructor(
             canvas.drawRect(left, top, right, bottom, paint)
         }
 
-        // Nova: linha base da rota (contínua) antes das setas para garantir visibilidade
+        // linha base rota
         if (route.size >= 2) {
             paint.style = Paint.Style.STROKE
             paint.strokeWidth = 4f
@@ -138,7 +156,7 @@ class MinimapView @JvmOverloads constructor(
             }
         }
 
-        // rota (setas azuis)
+        // setas rota
         if (route.size >= 2) {
             var leftover = 0f
             for (i in 0 until route.size - 1) {
@@ -153,7 +171,6 @@ class MinimapView @JvmOverloads constructor(
                 val segLen = hypot(dx.toDouble(), dy.toDouble()).toFloat()
                 if (segLen <= 0.001f) continue
                 val angle = atan2(dy, dx)
-
                 var placed = false
                 var dist = if (leftover > 0f) leftover else 0f
                 while (dist + arrowSpacingPx <= segLen) {
@@ -163,9 +180,7 @@ class MinimapView @JvmOverloads constructor(
                     drawArrow(canvas, px, py, angle)
                     placed = true
                 }
-                if (!placed) {
-                    drawArrow(canvas, (x1 + x2) * 0.5f, (y1 + y2) * 0.5f, angle)
-                }
+                if (!placed) { drawArrow(canvas, (x1 + x2) * 0.5f, (y1 + y2) * 0.5f, angle) }
                 leftover = (dist + arrowSpacingPx) - segLen
                 if (leftover < 0f) leftover = 0f
             }
@@ -176,7 +191,7 @@ class MinimapView @JvmOverloads constructor(
             canvas.drawCircle((dx - minX) * scaleX, (dz - minZ) * scaleY, 5f, paint)
         }
 
-        // POIs (mini pins com ícone e destaque)
+        // POIs
         pois.forEach { p ->
             val tipX = (p.x - minX) * scaleX
             val tipY = (p.z - minZ) * scaleY
@@ -194,28 +209,23 @@ class MinimapView @JvmOverloads constructor(
             path.lineTo(p1x, p1y)
             path.addArc(centerX - r, centerY - r, centerX + r, centerY + r, startAngle, sweep)
             path.close()
-            // Fill
             paint.style = Paint.Style.FILL
             paint.color = p.color
             canvas.drawPath(path, paint)
-            // Outer stroke (white)
             paint.style = Paint.Style.STROKE
             paint.strokeWidth = 1.2f
             paint.color = Color.WHITE
             canvas.drawPath(path, paint)
-            // Extra highlight ring se for start
             if (p.isStart) {
                 paint.style = Paint.Style.STROKE
                 paint.strokeWidth = 2.6f
-                paint.color = 0xFFFFD54F.toInt() // amarelo suave (gold) para destaque
+                paint.color = 0xFFFFD54F.toInt()
                 canvas.drawCircle(centerX, centerY, r * 0.95f, paint)
             }
-            // Inner circle
             paint.style = Paint.Style.FILL
             paint.color = Color.WHITE
             val innerR = r * 0.60f
             canvas.drawCircle(centerX, centerY, innerR, paint)
-            // Ícone interno
             if (p.iconRes != null) {
                 val iconSize = (innerR * 1.3f).toInt().coerceAtLeast(6)
                 getMiniIcon(p.iconRes, iconSize, p.color)?.let { bmp ->
@@ -226,9 +236,11 @@ class MinimapView @JvmOverloads constructor(
             }
         }
 
-        // usuário (ponto azul com brilho pulsando)
-        val ux = (userX - minX) * scaleX
-        val uz = (userZ - minZ) * scaleY
+        if (rotateWithHeading) {
+            canvas.restore()
+        }
+
+        // usuário (ponto + seta de heading opcional)
         val now = SystemClock.uptimeMillis()
         val phase = (now % 1000L).toFloat() / 1000f
         val baseRadius = 6f
@@ -238,6 +250,27 @@ class MinimapView @JvmOverloads constructor(
         canvas.drawCircle(ux, uz, haloRadius, haloPaint)
         userPaint.alpha = 255
         canvas.drawCircle(ux, uz, baseRadius, userPaint)
+
+        // Desenha triângulo indicando heading se não estiver rotacionando mapa; se rotaciona, seta sempre para cima (já implícito)
+        if (!rotateWithHeading) {
+            val len = 18f
+            val half = 6f
+            val cosH = kotlin.math.cos(userHeadingRad)
+            val sinH = kotlin.math.sin(userHeadingRad)
+            val tipX = ux + cosH * len
+            val tipY = uz + sinH * len
+            val leftX = ux + (-sinH * half)
+            val leftY = uz + (cosH * half)
+            val rightX = ux + (sinH * half)
+            val rightY = uz + (-cosH * half)
+            val path = Path()
+            path.moveTo(tipX, tipY)
+            path.lineTo(leftX, leftY)
+            path.lineTo(rightX, rightY)
+            path.close()
+            arrowPaint.alpha = 220
+            canvas.drawPath(path, arrowPaint)
+        }
 
         postInvalidateOnAnimation()
     }

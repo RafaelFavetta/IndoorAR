@@ -31,6 +31,7 @@ import io.github.sceneview.ar.ARSceneView
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sign
 
 class ActivityMap : BaseActivity() {
 
@@ -40,6 +41,12 @@ class ActivityMap : BaseActivity() {
     private var arInstallRequested = false
     private var lastArPose: Pose? = null
     private var arSupported: Boolean = false
+
+    // Debug / axis inversion
+    private var invertZAxisForAr = false
+    private var autoAxisEvaluated = false
+    private var lastArZForAxisEval: Float? = null
+    private var lastSensorZForAxisEval: Float? = null
 
     // Rota
     private val routeNodes = mutableListOf<RoutePoint>()
@@ -54,6 +61,12 @@ class ActivityMap : BaseActivity() {
     private lateinit var btnLimparRota: MaterialButton
     private lateinit var tvDistancia: TextView
     private lateinit var cameraPreview: PreviewView
+    private lateinit var tvPassos: TextView
+    private lateinit var tvDebug: TextView // novo
+    private var totalSteps: Int = 0
+    private var lastHeadingRad: Float = 0f
+    private var lastPitchRad: Float = 0f
+    private var arRouteOverlay: com.example.indoorar.ui.ARRouteOverlayView? = null
 
     // Map id
     private var mapId: String? = null
@@ -72,6 +85,7 @@ class ActivityMap : BaseActivity() {
     private var cumulativeDistances: List<Double> = emptyList()
     private var totalDistance: Double = 0.0
     private var lastUserRecalcCheckPose: Pair<Float, Float>? = null
+    private var routeStartSteps: Int? = null // baseline de passos quando rota inicia
 
     // Sensor fusion fallback
     private var sensorTracker: SensorFusionTracker? = null
@@ -162,6 +176,9 @@ class ActivityMap : BaseActivity() {
         tvDistancia = findViewById(R.id.tvDistancia)
         cameraPreview = findViewById(R.id.cameraPreview)
         arSceneView = findViewById(R.id.arSceneView)
+        tvPassos = findViewById(R.id.tvPassos)
+        arRouteOverlay = findViewById(R.id.arRouteOverlay)
+        tvDebug = findViewById(R.id.tvDebug)
     }
 
     // ---- Permissions & Location ----
@@ -189,8 +206,8 @@ class ActivityMap : BaseActivity() {
     }
 
     private fun proceedAfterLocationReady() {
-        checkArCoreSupport();
-        ensureMapLoadedOrScan();
+        checkArCoreSupport()
+        ensureMapLoadedOrScan()
         if (arSupported && !isArActive) startArMode() // inicia câmera AR imediatamente
     }
 
@@ -206,7 +223,7 @@ class ActivityMap : BaseActivity() {
         val availability = ArCoreApk.getInstance().checkAvailability(this)
         if (availability.isTransient) {
             loadingText.visibility = View.VISIBLE
-            loadingText.text = "Verificando ARCore..."
+            loadingText.text = getString(R.string.verifying_arcore)
             loadingText.postDelayed({ checkArCoreSupport() }, 500)
             return
         }
@@ -421,13 +438,14 @@ class ActivityMap : BaseActivity() {
         gerarCumulativeDistances()
         totalDistance = if (cumulativeDistances.isNotEmpty()) cumulativeDistances.last() else 0.0
         tvDistancia.text = getString(R.string.distance_meters, totalDistance)
+        routeStartSteps = totalSteps // salva baseline de passos
         val ptsNodes = path.mapNotNull { graphNodes[it] }.map { it.x to it.z }
         val ptsDensificados = densificarRota(ptsNodes)
         minimapView.setRoute(ptsDensificados)
-        if (::arSceneView.isInitialized) desenharEsferasRota(ptsDensificados)
+        arRouteOverlay?.setRoute(ptsDensificados) // Atualiza overlay AR
         val pose = lastArPose
         val (ux, uz) = if (pose != null) pose.tx() to pose.tz() else (estX to estZ)
-        atualizarDistanciaRestante(ux, uz)
+        atualizarDistanciaRestantePrecisa(ux, uz)
     }
 
     private val densifyStepMeters = 0.5f
@@ -461,20 +479,37 @@ class ActivityMap : BaseActivity() {
         cumulativeDistances = list
     }
 
-    private fun atualizarDistanciaRestante(ux: Float, uz: Float) {
-        if (currentPathNodeIds.isEmpty()) return
-        var bestIdx = 0; var bestDist = Double.MAX_VALUE
-        currentPathNodeIds.forEachIndexed { idx, id ->
-            val n = graphNodes[id] ?: return@forEachIndexed
-            val d = hypot((n.x - ux).toDouble(), (n.z - uz).toDouble())
-            if (d < bestDist) { bestDist = d; bestIdx = idx }
+    // Novo cálculo mais preciso: projeta o usuário em cada segmento da rota para medir progresso contínuo
+    private fun atualizarDistanciaRestantePrecisa(ux: Float, uz: Float) {
+        if (currentPathNodeIds.size < 2) return
+        var melhorDistAoSegmento = Double.MAX_VALUE
+        var distanciaPercorridaProjetada = 0.0
+        var acumuladoAnterior = 0.0
+        for (i in 0 until currentPathNodeIds.size - 1) {
+            val a = graphNodes[currentPathNodeIds[i]] ?: continue
+            val b = graphNodes[currentPathNodeIds[i+1]] ?: continue
+            val ax = a.x; val az = a.z; val bx = b.x; val bz = b.z
+            val vx = bx - ax; val vz = bz - az
+            val wx = ux - ax; val wz = uz - az
+            val len2 = vx*vx + vz*vz // Float
+            if (len2 == 0f) { acumuladoAnterior += hypot(vx.toDouble(), vz.toDouble()); continue }
+            val t = ((wx*vx + wz*vz) / len2).coerceIn(0f,1f)
+            val projX = ax + vx * t
+            val projZ = az + vz * t
+            val dist = hypot((projX - ux).toDouble(), (projZ - uz).toDouble())
+            if (dist < melhorDistAoSegmento) {
+                melhorDistAoSegmento = dist
+                val segLen = hypot(vx.toDouble(), vz.toDouble())
+                distanciaPercorridaProjetada = acumuladoAnterior + segLen * t
+            }
+            acumuladoAnterior += hypot(vx.toDouble(), vz.toDouble())
         }
-        if (bestIdx == currentPathNodeIds.lastIndex && bestDist < 1.0) { tvDistancia.text = getString(R.string.distance_arrived); return }
-        val restante = if (bestIdx < cumulativeDistances.size) {
-            val totalAteNo = cumulativeDistances[bestIdx]
-            max(0.0, totalDistance - totalAteNo - bestDist)
-        } else 0.0
-        tvDistancia.text = getString(R.string.distance_meters, restante)
+        val restante = (totalDistance - distanciaPercorridaProjetada).coerceAtLeast(0.0)
+        if (restante < 1.0) {
+            tvDistancia.text = getString(R.string.distance_arrived)
+        } else {
+            tvDistancia.text = getString(R.string.distance_meters, restante)
+        }
     }
 
     private fun tentarRecalcularSeDesviou(ux: Float, uz: Float) {
@@ -512,6 +547,7 @@ class ActivityMap : BaseActivity() {
     private fun desenharEsferasRota(pontos: List<Pair<Float,Float>>) {
         routeNodes.clear()
         pontos.forEach { (x,z) -> routeNodes += RoutePoint(x,z) }
+        arRouteOverlay?.setRoute(pontos) // garante que overlay também é atualizada
     }
 
     private fun limparEsferas() { routeNodes.clear() }
@@ -520,6 +556,8 @@ class ActivityMap : BaseActivity() {
         stopArMode()
         limparEsferas(); currentPathNodeIds = emptyList(); cumulativeDistances = emptyList(); totalDistance = 0.0
         minimapView.clearRoute(); tvDistancia.text = getString(R.string.distance_placeholder)
+        arRouteOverlay?.clearRoute()
+        routeStartSteps = null
     }
 
     private fun encontrarNodeMaisProximo(x: Float, z: Float): String {
@@ -589,7 +627,6 @@ class ActivityMap : BaseActivity() {
     private fun hasLocationPermission(): Boolean = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
     // ---- Sensor Fusion ----
-    // Ajuste: quando AR está ativo, ainda mantemos valores estX/estZ mas posição principal vem do AR
     private fun startSensorTracking(initialX: Float, initialZ: Float) {
         if (sensorTracker != null) return
         val sm = getSystemService(android.content.Context.SENSOR_SERVICE) as android.hardware.SensorManager
@@ -599,24 +636,36 @@ class ActivityMap : BaseActivity() {
             context = this,
             mapNorthDegrees = mapNorthDegrees,
             stepLengthMeters = stepLengthMeters,
-            onPosition = { x, z, _ ->
+            onPosition = { x, z, heading ->
+                lastHeadingRad = heading
                 estX = x; estZ = z
-                if (!isArActive) {
-                    minimapView.updateUserPosition(x, z)
-                    atualizarDistanciaRestante(x, z)
-                    tentarRecalcularSeDesviou(x, z)
-                    atualizarDestaqueEsferas(x, z)
-                }
+                val (ux, uz) = lastArPose?.let { (it.tx()) to (if (invertZAxisForAr) -it.tz() else it.tz()) } ?: (x to z)
+                minimapView.updateUserPose(ux, uz, lastHeadingRad)
+                atualizarDistanciaRestantePrecisa(ux, uz)
+                tentarRecalcularSeDesviou(ux, uz)
+                atualizarDestaqueEsferas(ux, uz)
+                arRouteOverlay?.updateUserPose(ux, uz, lastHeadingRad)
+                updateDebug(lastArPose, "sensor")
             },
             mapMatch = { x, z -> projectToNearestEdge(x, z) },
-            reanchorCheck = { x, z -> checkReanchorToNode(x, z) }
+            reanchorCheck = { x, z -> checkReanchorToNode(x, z) },
+            onStep = { steps ->
+                totalSteps = steps
+                val rel = routeStartSteps?.let { (steps - it).coerceAtLeast(0) }
+                tvPassos.text = if (rel != null) "Passos: $steps (rota: $rel)" else "Passos: $steps"
+            }
         ).also { it.start(initialX, initialZ) }
     }
-
     private fun stopSensorTracking() { sensorTracker?.stop(); sensorTracker = null }
 
-    // ---- Funções antigas de Session removidas ----
-    // startArCoreSession / stopArCoreSession substituídas por startArMode / stopArMode
+    // ---- AR frame loop ----
+    private val arFrameUpdater = object : Runnable {
+        override fun run() {
+            if (!isArActive) return
+            updateArCameraPose()
+            arSceneView.postOnAnimation(this)
+        }
+    }
 
     private fun startArMode() {
         if (!arSupported) return
@@ -624,9 +673,11 @@ class ActivityMap : BaseActivity() {
         try {
             arSceneView.visibility = View.VISIBLE
             cameraPreview.visibility = View.GONE
-            // Removido callback onArFrame (API inexistente). Fallback: posição continuará via sensores.
             isArActive = true
-            Toast.makeText(this, "AR ativado (sem callback de frame - usando sensores)", Toast.LENGTH_SHORT).show()
+            arRouteOverlay?.updateUserPose(estX, estZ, lastHeadingRad)
+            arSceneView.removeCallbacks(arFrameUpdater)
+            arSceneView.postOnAnimation(arFrameUpdater)
+            Toast.makeText(this, "AR ativado", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Erro ao iniciar AR: ${e.message}", Toast.LENGTH_LONG).show()
             isArActive = false
@@ -636,53 +687,172 @@ class ActivityMap : BaseActivity() {
 
     private fun stopArMode() {
         if (!isArActive) return
-        // Removido pause()
         arSceneView.visibility = View.GONE
         cameraPreview.visibility = View.VISIBLE
         isArActive = false
+        arSceneView.removeCallbacks(arFrameUpdater)
+    }
+
+    private fun updateArCameraPose() {
+        val pose = getCurrentArPose()
+        if (pose != null) {
+            // Avaliação automática de inversão do eixo Z (apenas uma vez)
+            val zRaw = pose.tz()
+            if (!autoAxisEvaluated) {
+                if (lastArZForAxisEval == null) {
+                    lastArZForAxisEval = zRaw
+                    lastSensorZForAxisEval = estZ
+                } else {
+                    val dzAr = zRaw - (lastArZForAxisEval ?: 0f)
+                    val dzSensor = estZ - (lastSensorZForAxisEval ?: estZ)
+                    if (kotlin.math.abs(dzAr) > 0.15f && kotlin.math.abs(dzSensor) > 0.15f) {
+                        if (dzAr.sign != dzSensor.sign) invertZAxisForAr = true
+                        autoAxisEvaluated = true
+                    }
+                }
+            }
+            lastArPose = pose
+            val yaw = extractYaw(pose)
+            val pitch = extractPitch(pose)
+            lastHeadingRad = yaw
+            lastPitchRad = pitch
+            val x = pose.tx()
+            val z = if (invertZAxisForAr) -pose.tz() else pose.tz()
+            estX = x; estZ = z
+            minimapView.updateUserPose(x, z, yaw)
+            arRouteOverlay?.updateCameraPose(x, z, yaw, pitch)
+            atualizarDistanciaRestantePrecisa(x, z)
+            updateDebug(pose, "arPose")
+        } else {
+            arRouteOverlay?.updateCameraPose(estX, estZ, lastHeadingRad, lastPitchRad)
+            minimapView.updateUserPose(estX, estZ, lastHeadingRad)
+            updateDebug(null, "poseNull")
+        }
+    }
+
+    private fun getCurrentArPose(): Pose? {
+        return try {
+            // Tenta obter um objeto "Frame" via reflexão a partir do ARSceneView
+            val viewCls = arSceneView.javaClass
+            val methods = viewCls.methods
+            var frameObj: Any? = null
+            for (m in methods) {
+                if (m.parameterCount == 0) {
+                    val name = m.name.lowercase()
+                    if (name.contains("frame") || name == "getcurrentframe") {
+                        try {
+                            val r = m.invoke(arSceneView)
+                            if (r != null && r.javaClass.name.lowercase().contains("frame")) {
+                                frameObj = r; break
+                            }
+                        } catch (_: Throwable) { /* tenta próxima */ }
+                    }
+                }
+            }
+            if (frameObj == null) return null
+            // Obter camera do frame
+            var cameraObj: Any? = null
+            for (fm in frameObj.javaClass.methods) {
+                if (fm.parameterCount == 0) {
+                    val nm = fm.name.lowercase()
+                    if (nm == "getcamera" || nm == "camera") {
+                        try {
+                            val r = fm.invoke(frameObj)
+                            if (r != null) { cameraObj = r; break }
+                        } catch (_: Throwable) {}
+                    }
+                }
+            }
+            if (cameraObj == null) return null
+            // Obter pose do camera
+            for (cm in cameraObj.javaClass.methods) {
+                if (cm.parameterCount == 0) {
+                    val nm = cm.name.lowercase()
+                    if (nm == "getpose" || nm == "pose") {
+                        try {
+                            val r = cm.invoke(cameraObj)
+                            if (r is Pose) return r
+                        } catch (_: Throwable) {}
+                    }
+                }
+            }
+            null
+        } catch (_: Throwable) { null }
+    }
+
+    private fun extractYaw(pose: Pose): Float {
+        // Conversão de quaternion para yaw (rotação em torno do eixo Y "para cima")
+        val qw = pose.qw(); val qx = pose.qx(); val qy = pose.qy(); val qz = pose.qz()
+        val sinyCosp = 2f * (qw * qy + qx * qz)
+        val cosyCosp = 1f - 2f * (qy * qy + qz * qz)
+        return kotlin.math.atan2(sinyCosp, cosyCosp)
+    }
+
+    private fun extractPitch(pose: Pose): Float {
+        // Pitch (rotação em torno do eixo X) usando convenção típica ARCore (Y up, Z forward negativo?)
+        val qw = pose.qw(); val qx = pose.qx(); val qy = pose.qy(); val qz = pose.qz()
+        // Fórmula pitch = asin(2*(qw*qx - qy*qz)) limitada
+        val sinp = 2f * (qw * qx - qy * qz)
+        return if (kotlin.math.abs(sinp) >= 1f) (kotlin.math.PI.toFloat()/2f) * kotlin.math.sign(sinp) else kotlin.math.asin(sinp)
     }
 
     private fun projectToNearestEdge(x: Float, z: Float): Pair<Float, Float> {
-        val segments: MutableList<Pair<GraphNode, GraphNode>> = mutableListOf()
-        if (currentPathNodeIds.size >= 2) for (i in 0 until currentPathNodeIds.size - 1) {
-            val a = graphNodes[currentPathNodeIds[i]]; val b = graphNodes[currentPathNodeIds[i+1]]
-            if (a != null && b != null) segments += a to b
-        }
-        if (segments.isEmpty()) {
-            val seen = mutableSetOf<String>()
-            adjacency.forEach { (from, edges) ->
-                val a = graphNodes[from] ?: return@forEach
-                edges.forEach { e ->
-                    val b = graphNodes[e.to] ?: return@forEach
-                    val key = listOf(a.id, b.id).sorted().joinToString("-")
-                    if (seen.add(key)) segments += a to b
-                }
+        // Projeta posição bruta do usuário no segmento de rota mais próximo para suavizar drift
+        if (currentPathNodeIds.size < 2) return x to z
+        var bestDist = Float.MAX_VALUE
+        var bestX = x
+        var bestZ = z
+        for (i in 0 until currentPathNodeIds.size - 1) {
+            val a = graphNodes[currentPathNodeIds[i]] ?: continue
+            val b = graphNodes[currentPathNodeIds[i + 1]] ?: continue
+            val ax = a.x; val az = a.z; val bx = b.x; val bz = b.z
+            val vx = bx - ax; val vz = bz - az
+            val wx = x - ax; val wz = z - az
+            val len2 = vx * vx + vz * vz
+            if (len2 <= 0f) continue
+            val t = ((wx * vx + wz * vz) / len2).coerceIn(0f, 1f)
+            val px = ax + vx * t
+            val pz = az + vz * t
+            val dx = px - x; val dz = pz - z
+            val d2 = dx * dx + dz * dz
+            if (d2 < bestDist) {
+                bestDist = d2
+                bestX = px
+                bestZ = pz
             }
         }
-        if (segments.isEmpty()) return x to z
-        var bestX = x; var bestZ = z; var bestD = Double.MAX_VALUE
-        segments.forEach { (na, nb) ->
-            val ax = na.x; val az = na.z; val bx = nb.x; val bz = nb.z
-            val vx = bx - ax; val vz = bz - az; val wx = x - ax; val wz = z - az
-            val len2 = vx*vx + vz*vz
-            val t = if (len2 == 0f) 0f else ((wx*vx + wz*vz) / len2).coerceIn(0f,1f)
-            val px = ax + t * vx; val pz = az + t * vz
-            val d = hypot((px - x).toDouble(), (pz - z).toDouble())
-            if (d < bestD) { bestD = d; bestX = px; bestZ = pz }
-        }
-        return if (bestD <= 1.5) bestX to bestZ else x to z
+        // Só aplica se realmente perto (abaixo de 1m)
+        return if (bestDist < 1f) bestX to bestZ else x to z
     }
 
     private fun checkReanchorToNode(x: Float, z: Float): Pair<Boolean, Pair<Float, Float>?> {
-        if (graphNodes.isEmpty()) return false to null
-        var bestId: String? = null; var bestD = Double.MAX_VALUE
-        graphNodes.forEach { (id, n) ->
-            val d = hypot((n.x - x).toDouble(), (n.z - z).toDouble())
-            if (d < bestD) { bestD = d; bestId = id }
+        // Verifica se está muito próximo de um nó para "snap" total
+        var closest: GraphNode? = null
+        var best = Float.MAX_VALUE
+        graphNodes.values.forEach { n ->
+            val dx = n.x - x; val dz = n.z - z
+            val d2 = dx * dx + dz * dz
+            if (d2 < best) { best = d2; closest = n }
         }
-        return if (bestId != null && bestD <= reanchorNodeThresholdMeters) {
-            val n = graphNodes[bestId]!!; true to (n.x to n.z)
-        } else false to null
+        if (closest != null && best < (reanchorNodeThresholdMeters * reanchorNodeThresholdMeters)) {
+            return true to (closest!!.x to closest!!.z)
+        }
+        return false to null
+    }
+
+    private fun updateDebug(pose: Pose?, origin: String) {
+        if (!this::tvDebug.isInitialized) return
+        val yawDeg = Math.toDegrees(lastHeadingRad.toDouble()).toInt()
+        val pitchDeg = Math.toDegrees(lastPitchRad.toDouble()).toInt()
+        val poseStr = if (pose != null) {
+            val x = pose.tx(); val y = pose.ty(); val zRaw = pose.tz(); val zAdj = if (invertZAxisForAr) -zRaw else zRaw
+            "AR(x=%.2f z=%.2f rawZ=%.2f y=%.2f)".format(x, zAdj, zRaw, y)
+        } else "AR(null)"
+        val sensorStr = "Sens(x=%.2f z=%.2f)".format(estX, estZ)
+        val stepsStr = "Steps=$totalSteps"
+        val flags = "invZ=$invertZAxisForAr arAct=$isArActive hasPose=${pose!=null}" + (if (!autoAxisEvaluated) " evalPending" else "")
+        val arrowsInfo = arRouteOverlay?.let { "arrows=${it.lastArrowCount}" + if (it.usedFallbackHeading) " fb=1" else "" } ?: "arrows=-"
+        tvDebug.text = listOf(origin, poseStr, sensorStr, "yaw=$yawDeg° pitch=$pitchDeg°", stepsStr, flags, arrowsInfo).joinToString("\n")
     }
 }
 
@@ -692,7 +862,6 @@ data class DestinoPoi(val id: String, val name: String, val x: Float, val z: Flo
 data class GraphNode(val id: String, val x: Float, val z: Float)
 data class GraphEdge(val from: String, val to: String, val peso: Double)
 
-// RoutePoint simples (sem Pose / Anchor)
 data class RoutePoint(val x: Float, val z: Float)
 
 class DestinoPoiAdapter(private val items: List<DestinoPoi>, private val onClick: (DestinoPoi) -> Unit) : RecyclerView.Adapter<DestinoPoiAdapter.VH>() {

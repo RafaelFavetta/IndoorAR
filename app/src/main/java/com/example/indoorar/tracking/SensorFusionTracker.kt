@@ -13,7 +13,8 @@ class SensorFusionTracker(
     private val stepLengthMeters: Float = 0.7f,
     private val onPosition: (x: Float, z: Float, headingRad: Float) -> Unit,
     private val mapMatch: ((x: Float, z: Float) -> Pair<Float, Float>)? = null,
-    private val reanchorCheck: ((x: Float, z: Float) -> Pair<Boolean, Pair<Float, Float>?>)? = null
+    private val reanchorCheck: ((x: Float, z: Float) -> Pair<Boolean, Pair<Float, Float>?>)? = null,
+    private val onStep: ((totalSteps: Int) -> Unit)? = null
 ) : SensorEventListener {
 
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -48,10 +49,9 @@ class SensorFusionTracker(
     private val alphaVar = 0.15f
     private val kStd = 0.85f
     private val hysteresisFactor = 0.35f
-    private val minStepIntervalNs = 240_000_000L // 240 ms
-
+    private val minStepIntervalNs = 200_000_000L // 240 ms
     // Sub-step aggregation: move in fixed chunks (default 1.0 m)
-    private val subStepMeters = 0.5f
+    private val subStepMeters = 0.25f
     private var distanceBufferMeters = 0f
 
     // Fallback heading using accel + magnetometer
@@ -72,6 +72,15 @@ class SensorFusionTracker(
     private val motionTickMs = 500L          // faster tick
     private val motionNoStepMs = 800L        // fallback sooner
     private val motionAdvanceMeters = 0.4f   // advance per tick when moving (more visible)
+
+    // Total steps counter
+    private var totalSteps = 0
+
+    // Heading dispatch state
+    private var lastHeadingDispatch = 0f
+    private var lastHeadingDispatchTime = 0L
+    private val headingMinDelta = 0.01f // antes 0.035f (~2 graus) agora mais sensível
+    private val headingMaxIntervalMs = 300L
 
     fun start(initialX: Float, initialZ: Float) {
         currX = initialX
@@ -217,6 +226,7 @@ class SensorFusionTracker(
         val azimuthRad = orientation[0]
         val mapNorthRad = Math.toRadians(mapNorthDegrees.toDouble()).toFloat()
         headingRad = azimuthRad - mapNorthRad
+        maybeDispatchHeadingOnly()
     }
 
     private fun updateHeadingFromAccelMag() {
@@ -228,10 +238,30 @@ class SensorFusionTracker(
             val azimuthRad = orientation[0]
             val mapNorthRad = Math.toRadians(mapNorthDegrees.toDouble()).toFloat()
             headingRad = azimuthRad - mapNorthRad
+            maybeDispatchHeadingOnly()
         }
     }
 
+    private fun maybeDispatchHeadingOnly() {
+        if (!started) return
+        val now = SystemClock.uptimeMillis()
+        val d = kotlin.math.abs(angularDiff(headingRad, lastHeadingDispatch))
+        if (d >= headingMinDelta || (now - lastHeadingDispatchTime) >= headingMaxIntervalMs) {
+            lastHeadingDispatch = headingRad
+            lastHeadingDispatchTime = now
+            onPosition(currX, currZ, headingRad)
+        }
+    }
+
+    private fun angularDiff(a: Float, b: Float): Float {
+        var d = (a - b + Math.PI * 3).toFloat() % (2 * Math.PI).toFloat() - Math.PI.toFloat()
+        if (d < -Math.PI) d += (2 * Math.PI).toFloat()
+        return d
+    }
+
     private fun onStepDetected() {
+        totalSteps++
+        onStep?.invoke(totalSteps)
         distanceBufferMeters += stepLengthMeters
         lastStepWallMs = SystemClock.uptimeMillis()
         while (distanceBufferMeters >= subStepMeters) {

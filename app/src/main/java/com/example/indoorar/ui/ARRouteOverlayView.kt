@@ -29,6 +29,10 @@ class ARRouteOverlayView @JvmOverloads constructor(
     private var headingRad = 0f
     private var pitchRad = 0f
 
+    // Destino explícito opcional (pode ser usado para seta única grande)
+    private var destinationX: Float? = null
+    private var destinationZ: Float? = null
+
     private val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         color = "#1E88E5".toColorInt() // azul mais forte
@@ -59,6 +63,8 @@ class ARRouteOverlayView @JvmOverloads constructor(
     fun clearRoute() { routePoints.clear(); invalidate() }
     fun updateUserPose(x: Float, z: Float, headingRad: Float) = updateCameraPose(x, z, headingRad)
     fun updateUserPose(x: Float, z: Float, headingRad: Float, pitchRad: Float) = updateCameraPose(x, z, headingRad, pitchRad)
+    fun setDestination(x: Float, z: Float) { destinationX = x; destinationZ = z; invalidate() }
+    fun clearDestination() { destinationX = null; destinationZ = null; invalidate() }
 
     fun updateCameraPose(x: Float, z: Float, headingRad: Float) { camX = x; camZ = z; this.headingRad = headingRad; invalidate() }
     fun updateCameraPose(x: Float, z: Float, headingRad: Float, pitchRad: Float) { camX = x; camZ = z; this.headingRad = headingRad; this.pitchRad = pitchRad; invalidate() }
@@ -70,8 +76,8 @@ class ARRouteOverlayView @JvmOverloads constructor(
 
         // Normaliza pitch (-90..+90) -> (-1..1)
         val pitchNorm = (pitchRad / (Math.PI.toFloat() / 2f)).coerceIn(-1f, 1f)
-        // Base vertical (quanto mais olhando para baixo (pitch negativo típico), subir a projeção)
-        val baseYFactor = (0.985f - (pitchNorm * 0.20f)).coerceIn(0.70f, 0.99f)
+        // Ajuste: base mais alta para parecer piso (~0.80-0.92)
+        val baseYFactor = (0.88f - (pitchNorm * 0.10f)).coerceIn(0.78f, 0.92f)
 
         fun project(heading: Float): List<Projected> {
             val sinH = sin(heading); val cosH = cos(heading)
@@ -135,7 +141,9 @@ class ARRouteOverlayView @JvmOverloads constructor(
         lastArrowCount = proj.size
 
         for (p in proj) {
-            val size = (arrowBaseSizePx * p.scale).coerceAtLeast(minArrowSizePx)
+            var size = (arrowBaseSizePx * p.scale).coerceAtLeast(minArrowSizePx)
+            // Última seta (destino) fica maior
+            if (p === proj.last()) size *= 1.3f
             val half = size / 2f
             path.reset()
             path.moveTo(0f, -size * 0.95f)

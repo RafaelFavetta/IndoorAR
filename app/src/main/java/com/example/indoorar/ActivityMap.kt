@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
@@ -50,7 +51,7 @@ class ActivityMap : BaseActivity() {
 
     // Rota
     private val routeNodes = mutableListOf<RoutePoint>()
-    private val sphereHighlightDistance = 1.0 // placeholder
+    private val sphereHighlightDistance = 1.0 // placeholder (mantido se futuro highlight)
 
     // UI
     private lateinit var loadingText: TextView
@@ -67,6 +68,82 @@ class ActivityMap : BaseActivity() {
     private var lastHeadingRad: Float = 0f
     private var lastPitchRad: Float = 0f
     private var arRouteOverlay: com.example.indoorar.ui.ARRouteOverlayView? = null
+
+    // ---- AR Anchors (rota 3D real no chão) ----
+    private var floorY: Float? = null
+    private val routeAnchors = mutableListOf<com.google.ar.core.Anchor>()
+    private var built3DRouteForCurrentPath: Boolean = false
+    private var mapWorldYawDelta: Float? = null
+    private var mapWorldOffsetX: Float? = null
+    private var mapWorldOffsetZ: Float? = null
+    private var calibrationDone = false
+    private val maxAnchors3D = 80
+    private val arrow3DSpacingMeters = 0.25f // reduzido para ter mais setas
+    // Modelo 3D de seta (GLB)
+    private val arrowModelFile = "models/arrow.glb"
+    private val arrowModelAssetUri = "file:///android_asset/models/arrow.glb"
+    private val densify3DStepMeters = 0.30f
+    private val continuousLineWidth = 0.18f
+    private val continuousLineHeight = 0.02f
+    // removido useContinuousExtrudedLine (não utilizado)
+    private val routeSegmentAnchors = mutableListOf<com.google.ar.core.Anchor>()
+
+    // Novos helpers / flags ausentes anteriormente
+    private var debugArrowCreated: Boolean = false
+    private val baseScale: Float = 1.0f
+
+    // Verifica existência do asset da seta
+    private fun hasArrowAsset(): Boolean = try { assets.open(arrowModelFile).close(); true } catch (_: Exception) { false }
+
+    // Converte yaw (rad) para quaternion eixo Y (x,y,z,w)
+    private fun yawToQuaternionY(yaw: Float): FloatArray {
+        val half = yaw / 2f
+        val s = kotlin.math.sin(half)
+        val c = kotlin.math.cos(half)
+        return floatArrayOf(0f, s, 0f, c)
+    }
+
+    // Obtém Session via reflexão a partir do arSceneView
+    private fun obterArSessionRefletido(): com.google.ar.core.Session? {
+        return try {
+            arSceneView.javaClass.declaredFields.firstOrNull { f -> f.type.name.contains("Session", true) }?.let { f ->
+                f.isAccessible = true
+                (f.get(arSceneView) as? com.google.ar.core.Session)?.let { return it }
+            }
+            arSceneView.javaClass.methods.firstOrNull { m -> m.parameterCount == 0 && m.returnType.name.contains("Session", true) }?.let { m ->
+                runCatching { m.invoke(arSceneView) as? com.google.ar.core.Session }.getOrNull()?.let { return it }
+            }
+            null
+        } catch (_: Throwable) { null }
+    }
+
+    // Estima altura do piso (floorY). Idealmente usaria planos detectados; aqui aproxima pela altura da câmera - 1.5m
+    private fun estimarFloorY(@Suppress("UNUSED_PARAMETER") session: com.google.ar.core.Session): Float? {
+        val pose = lastArPose ?: return null
+        // Altura média olhos/phone ~1.5m acima do chão
+        return (pose.ty() - 1.5f)
+            .coerceIn(-10f, 10f) // sanity clamp
+    }
+
+    // Cria segmento (fallback) caso não seja possível carregar seta GLB
+    private fun criarNodeSegmentoExtrudado(anchor: com.google.ar.core.Anchor, length: Float, @Suppress("UNUSED_PARAMETER") isLast: Boolean) {
+        runCatching {
+            val arNodeCls = Class.forName("io.github.sceneview.ar.node.ArNode")
+            val node = arNodeCls.getDeclaredConstructor().newInstance()
+            arNodeCls.methods.firstOrNull { it.name.equals("setAnchor", true) && it.parameterTypes.size == 1 }?.invoke(node, anchor)
+            val thickness = 0.06f
+            val scaleZ = length.coerceAtMost(2.0f)
+            arNodeCls.methods.firstOrNull { it.name.equals("setScale", true) && it.parameterTypes.size == 3 }?.let { m ->
+                runCatching { m.invoke(node, thickness, thickness, scaleZ) }
+            }
+            // Qualquer método que indique cor/ material simplificado (best effort)
+            val sceneObj = arSceneView.javaClass.methods.firstOrNull { it.name.lowercase() in listOf("getscene","scene") && it.parameterCount==0 }?.invoke(arSceneView)
+            val addChildMethods = sceneObj?.javaClass?.methods?.filter { m -> m.name.lowercase().contains("addchild") && m.parameterTypes.size==1 }
+            addChildMethods?.forEach { m -> runCatching { m.invoke(sceneObj, node); return } }
+        }.onFailure {
+            Log.w("IndoorAR","Falha criar segmento extrudado: ${it.message}")
+        }
+    }
 
     // Map id
     private var mapId: String? = null
@@ -304,10 +381,8 @@ class ActivityMap : BaseActivity() {
         if (minX == Float.MAX_VALUE) { minX = 0f; minZ = 0f; maxX = 10f; maxZ = 10f }
         minimapView.setWorldBounds(minX, minZ, maxX, maxZ)
 
-        // Limpa formas anteriores para evitar sobreposição duplicada
         try { minimapView.clearFormas() } catch (_: Exception) {}
 
-        // Render somente no minimap (remoção de cubos 3D para simplificar migração). Pode ser reimplementado depois com modelos GLB.
         formas.forEach { f ->
             val pos = f.get("posicao") as? List<*> ?: return@forEach
             val tam = f.get("tamanho") as? List<*> ?: return@forEach
@@ -363,12 +438,14 @@ class ActivityMap : BaseActivity() {
         loadingText.visibility = View.GONE
         minimapView.invalidate()
 
-        if (sensorTracker == null) {
-            val startPoi = destinos.firstOrNull { it.isStart }
-            val initX = startPoi?.x ?: graphNodes.values.firstOrNull()?.x ?: 0f
-            val initZ = startPoi?.z ?: graphNodes.values.firstOrNull()?.z ?: 0f
-            startSensorTracking(initX, initZ)
-        }
+        try { minimapView.setRotateWithHeading(false) } catch (_: Exception) {}
+
+        val startPoi = destinos.firstOrNull { it.isStart }
+        val initX = startPoi?.x ?: graphNodes.values.firstOrNull()?.x ?: 0f
+        val initZ = startPoi?.z ?: graphNodes.values.firstOrNull()?.z ?: 0f
+
+        sensorTracker?.stop(); sensorTracker = null
+        startSensorTracking(initX, initZ)
     }
 
     // ---- UI / Recycler ----
@@ -435,18 +512,24 @@ class ActivityMap : BaseActivity() {
         if (!graphNodes.containsKey(goalNodeId)) { Toast.makeText(this, "Destino sem nó correspondente", Toast.LENGTH_SHORT).show(); return }
         val path = aStar(startNodeId, goalNodeId) ?: run { Toast.makeText(this, "Sem rota encontrada", Toast.LENGTH_SHORT).show(); return }
         currentPathNodeIds = path
+        built3DRouteForCurrentPath = false
+        calibrationDone = false
         gerarCumulativeDistances()
         totalDistance = if (cumulativeDistances.isNotEmpty()) cumulativeDistances.last() else 0.0
         tvDistancia.text = getString(R.string.distance_meters, totalDistance)
-        routeStartSteps = totalSteps // salva baseline de passos
+        routeStartSteps = totalSteps
         val ptsNodes = path.mapNotNull { graphNodes[it] }.map { it.x to it.z }
         val ptsDensificados = densificarRota(ptsNodes)
         minimapView.setRoute(ptsDensificados)
-        arRouteOverlay?.setRoute(ptsDensificados) // Atualiza overlay AR
+        arRouteOverlay?.setRoute(ptsDensificados)
+        arRouteOverlay?.visibility = View.GONE
         val pose = lastArPose
         val (ux, uz) = if (pose != null) pose.tx() to pose.tz() else (estX to estZ)
         atualizarDistanciaRestantePrecisa(ux, uz)
+        if (isArActive && lastArPose != null) tentarConstruirRota3D(ptsDensificados)
     }
+
+    private var last3DRouteProgressDistance = 0.0
 
     private val densifyStepMeters = 0.5f
     private fun densificarRota(pontos: List<Pair<Float, Float>>): List<Pair<Float, Float>> {
@@ -468,6 +551,25 @@ class ActivityMap : BaseActivity() {
         out += pontos.last(); return out
     }
 
+    private fun densificarRota3D(pontos: List<Pair<Float, Float>>): List<Pair<Float, Float>> {
+        if (pontos.size < 2) return pontos
+        val out = mutableListOf<Pair<Float, Float>>()
+        for (i in 0 until pontos.size - 1) {
+            val (ax, az) = pontos[i]; val (bx, bz) = pontos[i+1]
+            out += ax to az
+            val dx = bx - ax; val dz = bz - az
+            val dist = kotlin.math.sqrt(dx*dx + dz*dz)
+            if (dist > densify3DStepMeters) {
+                val steps = (dist / densify3DStepMeters).toInt()
+                if (steps > 1) {
+                    val stepX = dx / steps; val stepZ = dz / steps
+                    for (s in 1 until steps) out += (ax + stepX * s) to (az + stepZ * s)
+                }
+            }
+        }
+        out += pontos.last(); return out
+    }
+
     private fun gerarCumulativeDistances() {
         val list = mutableListOf<Double>(); var acc = 0.0
         currentPathNodeIds.forEachIndexed { i, id ->
@@ -479,7 +581,6 @@ class ActivityMap : BaseActivity() {
         cumulativeDistances = list
     }
 
-    // Novo cálculo mais preciso: projeta o usuário em cada segmento da rota para medir progresso contínuo
     private fun atualizarDistanciaRestantePrecisa(ux: Float, uz: Float) {
         if (currentPathNodeIds.size < 2) return
         var melhorDistAoSegmento = Double.MAX_VALUE
@@ -491,7 +592,7 @@ class ActivityMap : BaseActivity() {
             val ax = a.x; val az = a.z; val bx = b.x; val bz = b.z
             val vx = bx - ax; val vz = bz - az
             val wx = ux - ax; val wz = uz - az
-            val len2 = vx*vx + vz*vz // Float
+            val len2 = vx*vx + vz*vz
             if (len2 == 0f) { acumuladoAnterior += hypot(vx.toDouble(), vz.toDouble()); continue }
             val t = ((wx*vx + wz*vz) / len2).coerceIn(0f,1f)
             val projX = ax + vx * t
@@ -524,7 +625,7 @@ class ActivityMap : BaseActivity() {
         if (dist > 2.0) destinoSelecionado?.let { calcularRotaAStar(it) }
     }
 
-    private fun atualizarDestaqueEsferas(ux: Float, uz: Float) { /* Placeholder visual no momento */ }
+    private fun atualizarDestaqueEsferas(@Suppress("UNUSED_PARAMETER") ux: Float, @Suppress("UNUSED_PARAMETER") uz: Float) { /* Placeholder visual */ }
 
     private fun distanciaParaRota(x: Float, z: Float): Double {
         if (currentPathNodeIds.size < 2) return Double.MAX_VALUE
@@ -536,18 +637,18 @@ class ActivityMap : BaseActivity() {
             val vx = bx - ax; val vz = bz - az; val wx = x - ax; val wz = z - az
             val len2 = vx*vx + vz*vz
             val t = if (len2 == 0f) 0f else ((wx*vx + wz*vz) / len2).coerceIn(0f,1f)
-            val px = ax + t * vx; val pz = az + t * vz
-            val d = hypot((px - x).toDouble(), (pz - z).toDouble())
+            val projX = ax + vx * t
+            val projZ = az + vz * t
+            val d = hypot((projX - x).toDouble(), (projZ - z).toDouble())
             if (d < best) best = d
         }
         return best
     }
 
-    // ---- AR route nodes (simplificado) ----
     private fun desenharEsferasRota(pontos: List<Pair<Float,Float>>) {
         routeNodes.clear()
         pontos.forEach { (x,z) -> routeNodes += RoutePoint(x,z) }
-        arRouteOverlay?.setRoute(pontos) // garante que overlay também é atualizada
+        arRouteOverlay?.setRoute(pontos)
     }
 
     private fun limparEsferas() { routeNodes.clear() }
@@ -558,6 +659,8 @@ class ActivityMap : BaseActivity() {
         minimapView.clearRoute(); tvDistancia.text = getString(R.string.distance_placeholder)
         arRouteOverlay?.clearRoute()
         routeStartSteps = null
+        limparAnchors3D()
+        last3DRouteProgressDistance = 0.0
     }
 
     private fun encontrarNodeMaisProximo(x: Float, z: Float): String {
@@ -621,12 +724,10 @@ class ActivityMap : BaseActivity() {
         return parts.lastOrNull()
     }
 
-    // ---- Permissions helpers ----
     private fun hasCameraPermission(): Boolean = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
     private fun hasActivityRecognitionPermission(): Boolean = ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED
     private fun hasLocationPermission(): Boolean = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
-    // ---- Sensor Fusion ----
     private fun startSensorTracking(initialX: Float, initialZ: Float) {
         if (sensorTracker != null) return
         val sm = getSystemService(android.content.Context.SENSOR_SERVICE) as android.hardware.SensorManager
@@ -639,12 +740,21 @@ class ActivityMap : BaseActivity() {
             onPosition = { x, z, heading ->
                 lastHeadingRad = heading
                 estX = x; estZ = z
-                val (ux, uz) = lastArPose?.let { (it.tx()) to (if (invertZAxisForAr) -it.tz() else it.tz()) } ?: (x to z)
+                val (ux, uz) = if (isArActive && lastArPose != null) {
+                    val pose = lastArPose!!
+                    pose.tx() to (if (invertZAxisForAr) -pose.tz() else pose.tz())
+                } else x to z
                 minimapView.updateUserPose(ux, uz, lastHeadingRad)
                 atualizarDistanciaRestantePrecisa(ux, uz)
                 tentarRecalcularSeDesviou(ux, uz)
                 atualizarDestaqueEsferas(ux, uz)
-                arRouteOverlay?.updateUserPose(ux, uz, lastHeadingRad)
+                if (isArActive && currentPathNodeIds.size > 1) {
+                    atualizarRota3DRestante(ux, uz)
+                }
+                if (!built3DRouteForCurrentPath && isArActive && currentPathNodeIds.size > 1) {
+                    val ptsNodes = currentPathNodeIds.mapNotNull { graphNodes[it] }.map { it.x to it.z }
+                    tentarConstruirRota3D(densificarRota(ptsNodes))
+                }
                 updateDebug(lastArPose, "sensor")
             },
             mapMatch = { x, z -> projectToNearestEdge(x, z) },
@@ -658,7 +768,6 @@ class ActivityMap : BaseActivity() {
     }
     private fun stopSensorTracking() { sensorTracker?.stop(); sensorTracker = null }
 
-    // ---- AR frame loop ----
     private val arFrameUpdater = object : Runnable {
         override fun run() {
             if (!isArActive) return
@@ -674,7 +783,15 @@ class ActivityMap : BaseActivity() {
             arSceneView.visibility = View.VISIBLE
             cameraPreview.visibility = View.GONE
             isArActive = true
-            arRouteOverlay?.updateUserPose(estX, estZ, lastHeadingRad)
+            debugArrowCreated = false
+            disableArVisualDebug()
+            updateArCameraPose()
+            if (currentPathNodeIds.size > 1) {
+                calibrationDone = false
+                val ptsNodes = currentPathNodeIds.mapNotNull { graphNodes[it] }.map { it.x to it.z }
+                val dens = densificarRota(ptsNodes)
+                tentarConstruirRota3D(dens)
+            }
             arSceneView.removeCallbacks(arFrameUpdater)
             arSceneView.postOnAnimation(arFrameUpdater)
             Toast.makeText(this, "AR ativado", Toast.LENGTH_SHORT).show()
@@ -685,18 +802,40 @@ class ActivityMap : BaseActivity() {
         }
     }
 
+    private fun disableArVisualDebug() {
+        runCatching {
+            arSceneView.javaClass.methods.filter { m ->
+                m.name.lowercase().let { it.startsWith("set") && it.contains("point") && m.parameterTypes.size == 1 && (m.parameterTypes[0] == Boolean::class.java || m.parameterTypes[0] == java.lang.Boolean.TYPE) }
+            }.forEach { m -> runCatching { m.invoke(arSceneView, false) } }
+        }
+        runCatching {
+            arSceneView.javaClass.declaredFields.firstOrNull { it.name.contains("plane", true) }?.let { f ->
+                f.isAccessible = true; val planeObj = f.get(arSceneView)
+                val visField = planeObj?.javaClass?.declaredFields?.firstOrNull { it.name.equals("isVisible", true) }
+                visField?.let { vf -> vf.isAccessible = true; runCatching { vf.setBoolean(planeObj, false) } }
+                planeObj?.javaClass?.methods?.firstOrNull { it.name.equals("setVisible", true) && it.parameterTypes.size==1 }?.let { m -> runCatching { m.invoke(planeObj, false) } }
+            }
+        }
+        runCatching {
+            arSceneView.javaClass.declaredFields.firstOrNull { it.name.contains("point", true) }?.let { f ->
+                f.isAccessible = true; val pcObj = f.get(arSceneView)
+                pcObj?.javaClass?.methods?.filter { it.name.lowercase().contains("visible") && it.parameterTypes.size==1 }?.forEach { m -> runCatching { m.invoke(pcObj, false) } }
+            }
+        }
+    }
+
     private fun stopArMode() {
         if (!isArActive) return
         arSceneView.visibility = View.GONE
         cameraPreview.visibility = View.VISIBLE
         isArActive = false
         arSceneView.removeCallbacks(arFrameUpdater)
+        limparAnchors3D()
     }
 
     private fun updateArCameraPose() {
         val pose = getCurrentArPose()
         if (pose != null) {
-            // Avaliação automática de inversão do eixo Z (apenas uma vez)
             val zRaw = pose.tz()
             if (!autoAxisEvaluated) {
                 if (lastArZForAxisEval == null) {
@@ -720,11 +859,14 @@ class ActivityMap : BaseActivity() {
             val z = if (invertZAxisForAr) -pose.tz() else pose.tz()
             estX = x; estZ = z
             minimapView.updateUserPose(x, z, yaw)
-            arRouteOverlay?.updateCameraPose(x, z, yaw, pitch)
             atualizarDistanciaRestantePrecisa(x, z)
-            updateDebug(pose, "arPose")
+            if (!built3DRouteForCurrentPath && currentPathNodeIds.size > 1) {
+                val ptsNodes = currentPathNodeIds.mapNotNull { graphNodes[it] }.map { it.x to it.z }
+                tentarConstruirRota3D(densificarRota(ptsNodes))
+            } else if (currentPathNodeIds.size > 1) {
+                atualizarRota3DRestante(x, z)
+            }
         } else {
-            arRouteOverlay?.updateCameraPose(estX, estZ, lastHeadingRad, lastPitchRad)
             minimapView.updateUserPose(estX, estZ, lastHeadingRad)
             updateDebug(null, "poseNull")
         }
@@ -732,7 +874,6 @@ class ActivityMap : BaseActivity() {
 
     private fun getCurrentArPose(): Pose? {
         return try {
-            // Tenta obter um objeto "Frame" via reflexão a partir do ARSceneView
             val viewCls = arSceneView.javaClass
             val methods = viewCls.methods
             var frameObj: Any? = null
@@ -745,12 +886,11 @@ class ActivityMap : BaseActivity() {
                             if (r != null && r.javaClass.name.lowercase().contains("frame")) {
                                 frameObj = r; break
                             }
-                        } catch (_: Throwable) { /* tenta próxima */ }
+                        } catch (_: Throwable) { }
                     }
                 }
             }
             if (frameObj == null) return null
-            // Obter camera do frame
             var cameraObj: Any? = null
             for (fm in frameObj.javaClass.methods) {
                 if (fm.parameterCount == 0) {
@@ -764,7 +904,6 @@ class ActivityMap : BaseActivity() {
                 }
             }
             if (cameraObj == null) return null
-            // Obter pose do camera
             for (cm in cameraObj.javaClass.methods) {
                 if (cm.parameterCount == 0) {
                     val nm = cm.name.lowercase()
@@ -781,7 +920,6 @@ class ActivityMap : BaseActivity() {
     }
 
     private fun extractYaw(pose: Pose): Float {
-        // Conversão de quaternion para yaw (rotação em torno do eixo Y "para cima")
         val qw = pose.qw(); val qx = pose.qx(); val qy = pose.qy(); val qz = pose.qz()
         val sinyCosp = 2f * (qw * qy + qx * qz)
         val cosyCosp = 1f - 2f * (qy * qy + qz * qz)
@@ -789,15 +927,12 @@ class ActivityMap : BaseActivity() {
     }
 
     private fun extractPitch(pose: Pose): Float {
-        // Pitch (rotação em torno do eixo X) usando convenção típica ARCore (Y up, Z forward negativo?)
         val qw = pose.qw(); val qx = pose.qx(); val qy = pose.qy(); val qz = pose.qz()
-        // Fórmula pitch = asin(2*(qw*qx - qy*qz)) limitada
         val sinp = 2f * (qw * qx - qy * qz)
-        return if (kotlin.math.abs(sinp) >= 1f) (kotlin.math.PI.toFloat()/2f) * kotlin.math.sign(sinp) else kotlin.math.asin(sinp)
+        return if (kotlin.math.abs(sinp) >= 1f) (Math.PI.toFloat()/2f) * kotlin.math.sign(sinp) else kotlin.math.asin(sinp)
     }
 
     private fun projectToNearestEdge(x: Float, z: Float): Pair<Float, Float> {
-        // Projeta posição bruta do usuário no segmento de rota mais próximo para suavizar drift
         if (currentPathNodeIds.size < 2) return x to z
         var bestDist = Float.MAX_VALUE
         var bestX = x
@@ -821,12 +956,10 @@ class ActivityMap : BaseActivity() {
                 bestZ = pz
             }
         }
-        // Só aplica se realmente perto (abaixo de 1m)
         return if (bestDist < 1f) bestX to bestZ else x to z
     }
 
     private fun checkReanchorToNode(x: Float, z: Float): Pair<Boolean, Pair<Float, Float>?> {
-        // Verifica se está muito próximo de um nó para "snap" total
         var closest: GraphNode? = null
         var best = Float.MAX_VALUE
         graphNodes.values.forEach { n ->
@@ -835,7 +968,7 @@ class ActivityMap : BaseActivity() {
             if (d2 < best) { best = d2; closest = n }
         }
         if (closest != null && best < (reanchorNodeThresholdMeters * reanchorNodeThresholdMeters)) {
-            return true to (closest!!.x to closest!!.z)
+            return true to (closest!!.x to closest!!.z) // kept closest!! due to smart cast limitations
         }
         return false to null
     }
@@ -851,8 +984,304 @@ class ActivityMap : BaseActivity() {
         val sensorStr = "Sens(x=%.2f z=%.2f)".format(estX, estZ)
         val stepsStr = "Steps=$totalSteps"
         val flags = "invZ=$invertZAxisForAr arAct=$isArActive hasPose=${pose!=null}" + (if (!autoAxisEvaluated) " evalPending" else "")
-        val arrowsInfo = arRouteOverlay?.let { "arrows=${it.lastArrowCount}" + if (it.usedFallbackHeading) " fb=1" else "" } ?: "arrows=-"
-        tvDebug.text = listOf(origin, poseStr, sensorStr, "yaw=$yawDeg° pitch=$pitchDeg°", stepsStr, flags, arrowsInfo).joinToString("\n")
+        tvDebug.text = listOf(origin, poseStr, sensorStr, "yaw=$yawDeg° pitch=$pitchDeg°", stepsStr, flags).joinToString("\n")
+    }
+
+    private fun tentarConstruirRota3D(pontos: List<Pair<Float, Float>>) {
+        if (!isArActive || lastArPose == null) return
+        if (pontos.size < 2) return
+        if (!calibrationDone && lastArPose != null) calibrarMapToWorld(lastArPose!!)
+        last3DRouteProgressDistance = 0.0
+        construirRota3DParaPontos(pontos)
+    }
+
+    private data class ProgressProjection(
+        val projX: Float,
+        val projZ: Float,
+        val distanceAlong: Double,
+        val segmentIndex: Int,
+        val t: Float
+    )
+
+    private fun projetarProgressoNaRota(ux: Float, uz: Float): ProgressProjection? {
+        if (currentPathNodeIds.size < 2) return null
+        var melhorDist = Double.MAX_VALUE
+        var melhorProjX = ux
+        var melhorProjZ = uz
+        var melhorDistAlong = 0.0
+        var acumuladoAnterior = 0.0
+        var melhorSegmentIndex = 0
+        var melhorT = 0f
+        for (i in 0 until currentPathNodeIds.size - 1) {
+            val a = graphNodes[currentPathNodeIds[i]] ?: continue
+            val b = graphNodes[currentPathNodeIds[i+1]] ?: continue
+            val ax = a.x; val az = a.z; val bx = b.x; val bz = b.z
+            val vx = bx - ax; val vz = bz - az
+            val len = kotlin.math.sqrt(vx*vx + vz*vz)
+            if (len < 1e-4f) { acumuladoAnterior += len; continue }
+            val wx = ux - ax; val wz = uz - az
+            val tRaw = (wx*vx + wz*vz) / (len*len)
+            val t = tRaw.coerceIn(0f,1f)
+            val px = ax + vx * t
+            val pz = az + vz * t
+            val d = hypot((px - ux).toDouble(), (pz - uz).toDouble())
+            if (d < melhorDist) {
+                melhorDist = d
+                melhorProjX = px
+                melhorProjZ = pz
+                melhorDistAlong = acumuladoAnterior + len * t
+                melhorSegmentIndex = i
+                melhorT = t
+            }
+            acumuladoAnterior += len
+        }
+        return ProgressProjection(melhorProjX, melhorProjZ, melhorDistAlong, melhorSegmentIndex, melhorT)
+    }
+
+    private fun atualizarRota3DRestante(ux: Float, uz: Float) {
+        if (!isArActive || lastArPose == null) return
+        if (currentPathNodeIds.size < 2) return
+        val proj = projetarProgressoNaRota(ux, uz) ?: return
+        // Só reconstruir se avançou pelo menos 0.5m desde última materialização
+        if (proj.distanceAlong - last3DRouteProgressDistance < 0.50) return
+        last3DRouteProgressDistance = proj.distanceAlong
+        val restante = totalDistance - proj.distanceAlong
+        if (restante < 0.8) { // Considera chegada
+            limparAnchors3D(); return
+        }
+        val rem = mutableListOf<Pair<Float,Float>>()
+        rem.add(proj.projX to proj.projZ)
+        for (i in (proj.segmentIndex + 1) until currentPathNodeIds.size) {
+            val node = graphNodes[currentPathNodeIds[i]] ?: continue
+            rem.add(node.x to node.z)
+        }
+        if (rem.size < 2) { limparAnchors3D(); return }
+        construirRota3DParaPontos(rem)
+    }
+
+    private fun construirRota3DParaPontos(pontosMapa: List<Pair<Float,Float>>) {
+        try {
+            val session = obterArSessionRefletido() ?: return
+            if (!calibrationDone && lastArPose != null) calibrarMapToWorld(lastArPose!!)
+            if (floorY == null) floorY = estimarFloorY(session) ?: (lastArPose?.ty()?.minus(1.5f) ?: 0f)
+            val y = floorY ?: 0f
+            val yawDelta = mapWorldYawDelta ?: 0f
+            val cosY = kotlin.math.cos(yawDelta)
+            val sinY = kotlin.math.sin(yawDelta)
+            val offX = mapWorldOffsetX ?: 0f
+            val offZ = mapWorldOffsetZ ?: 0f
+            val dens = densificarRota3D(pontosMapa)
+            limparAnchors3D()
+            var created = 0
+            val wantArrows = hasArrowAsset()
+            var accDist = 0f
+            var lastPlacedDist = 0f
+            for (i in 0 until dens.size - 1) {
+                if (created >= maxAnchors3D) break
+                val (mx, mz) = dens[i]
+                val (nx, nz) = dens[i + 1]
+                val rx1 = mx * cosY - mz * sinY + offX
+                val rz1 = mx * sinY + mz * cosY + offZ
+                val rx2 = nx * cosY - nz * sinY + offX
+                val rz2 = nx * sinY + nz * cosY + offZ
+                val dx = rx2 - rx1; val dz = rz2 - rz1
+                val segLen = kotlin.math.sqrt(dx*dx + dz*dz)
+                if (segLen < 0.05f) continue
+                val midX = (rx1 + rx2) * 0.5f
+                val midZ = (rz1 + rz2) * 0.5f
+                val heading = kotlin.math.atan2(dx.toDouble(), dz.toDouble()).toFloat()
+                accDist += segLen
+                val isLastSegment = i == dens.size - 2
+                val forceFirst = created == 0
+                val place = if (wantArrows) forceFirst || isLastSegment || (accDist - lastPlacedDist) >= arrow3DSpacingMeters else true
+                if (!place) continue
+                if (wantArrows) lastPlacedDist = accDist
+                val quat = yawToQuaternionY(heading)
+                val pose = Pose(floatArrayOf(midX, y, midZ), quat)
+                val anchor = session.createAnchor(pose)
+                routeSegmentAnchors.add(anchor)
+                val usedArrow = if (wantArrows) tryCreateArrowNodeViaReflection(anchor, heading, isLastSegment, baseScale) else false
+                if (!usedArrow) criarNodeSegmentoExtrudado(anchor, segLen, isLastSegment)
+                created++
+            }
+            built3DRouteForCurrentPath = created > 0
+            if (!built3DRouteForCurrentPath) {
+                Log.w("IndoorAR","Nenhuma seta 3D criada. Verifique arrow.glb ou path. Criando seta de debug.")
+                spawnDebugArrowAtCamera()
+            }
+        } catch (e: Exception) {
+            Log.w("IndoorAR","Falha construir rota 3D: ${e.message}")
+            spawnDebugArrowAtCamera()
+        }
+    }
+
+    private fun spawnDebugArrowAtCamera() {
+        if (debugArrowCreated) return
+        val pose = lastArPose ?: return
+        val session = obterArSessionRefletido() ?: return
+        try {
+            val forwardZ = 1.0f // 1m à frente
+            val dx = 0f
+            val dz = if (invertZAxisForAr) -forwardZ else forwardZ
+            val camX = pose.tx(); val camZ = if (invertZAxisForAr) -pose.tz() else pose.tz(); val camY = pose.ty()
+            val arrowX = camX + dx
+            val arrowZ = camZ + dz
+            val y = (floorY ?: (camY - 1.5f)) + 0.05f
+            val heading = extractYaw(pose)
+            val quat = yawToQuaternionY(heading)
+            val anchorPose = Pose(floatArrayOf(arrowX, y, arrowZ), quat)
+            val anchor = session.createAnchor(anchorPose)
+            routeSegmentAnchors.add(anchor)
+            val ok = tryCreateArrowNodeViaReflection(anchor, heading, true, 1.0f)
+            Log.d("IndoorAR","Debug arrow criada em (${arrowX.format2()}, ${y.format2()}, ${arrowZ.format2()}) ok=$ok")
+            debugArrowCreated = true
+        } catch (e: Exception) {
+            Log.w("IndoorAR","Falha criar debug arrow: ${e.message}")
+        }
+    }
+
+    private fun Float.format2(): String = String.format("%.2f", this)
+
+    private fun tryCreateArrowNodeViaReflection(anchor: com.google.ar.core.Anchor, heading: Float, isLast: Boolean, forcedScale: Float? = null): Boolean {
+        if (!hasArrowAsset()) return false
+        try {
+            val arModelCls = Class.forName("io.github.sceneview.ar.node.ArModelNode")
+            val modelNode = arModelCls.getDeclaredConstructor().newInstance()
+            arModelCls.methods.firstOrNull { it.name.equals("setAnchor", true) && it.parameterTypes.size == 1 }?.invoke(modelNode, anchor)
+            val base = forcedScale ?: if (isLast) 0.40f else 0.28f
+            arModelCls.methods.firstOrNull { it.name.equals("setScale", true) && it.parameterTypes.size == 3 }?.let { m ->
+                try { m.invoke(modelNode, base, base, base) } catch (_: Throwable) {}
+            }
+            arModelCls.methods.firstOrNull { it.name.equals("setScale", true) && it.parameterTypes.size == 1 && it.parameterTypes[0]==FloatArray::class.java }?.let { m ->
+                try { m.invoke(modelNode, floatArrayOf(base, base, base)) } catch (_: Throwable) {}
+            }
+            val yawDeg = Math.toDegrees(heading.toDouble()).toFloat()
+            arModelCls.methods.firstOrNull { it.name.equals("setRotation", true) && it.parameterTypes.size==3 }?.let { m ->
+                try { m.invoke(modelNode, 0f, yawDeg, 0f) } catch (_: Throwable) {}
+            }
+            val candidates = listOf("loadModelGlbAsync", "loadModelGlb", "loadModel", "loadGlb")
+            var invoked = false
+            val assetPaths = listOf(arrowModelAssetUri, arrowModelFile, "/android_asset/$arrowModelFile")
+            for (nm in candidates) {
+                if (invoked) break
+                val mList = arModelCls.methods.filter { it.name == nm }
+                for (m in mList) {
+                    for (p in assetPaths) {
+                        try {
+                            when (m.parameterTypes.size) {
+                                1 -> if (m.parameterTypes[0]==String::class.java) { m.invoke(modelNode, p); invoked = true }
+                                2 -> if (m.parameterTypes[0]==String::class.java) { m.invoke(modelNode, p, base); invoked = true }
+                                3 -> if (m.parameterTypes[0]==String::class.java) { m.invoke(modelNode, p, base, true); invoked = true }
+                            }
+                        } catch (_: Throwable) {}
+                        if (invoked) break
+                    }
+                    if (invoked) break
+                }
+            }
+            if (!invoked) {
+                arModelCls.methods.filter { it.name.lowercase().contains("load") }.forEach { m ->
+                    if (invoked) return@forEach
+                    for (p in assetPaths) {
+                        try {
+                            if (m.parameterTypes.size>=1 && m.parameterTypes[0]==String::class.java) {
+                                val args = when (m.parameterTypes.size) {
+                                    1 -> arrayOf(p)
+                                    2 -> arrayOf(p, true)
+                                    3 -> arrayOf(p, true, base)
+                                    else -> arrayOf(p)
+                                }
+                                m.invoke(modelNode, *args)
+                                invoked = true; break
+                            }
+                        } catch (_: Throwable) {}
+                    }
+                }
+            }
+            val sceneObj = arSceneView.javaClass.methods.firstOrNull { it.name.lowercase() in listOf("getscene","scene") && it.parameterCount==0 }?.invoke(arSceneView)
+            val addChildMethods = sceneObj?.javaClass?.methods?.filter { m -> m.name.lowercase().contains("addchild") && m.parameterTypes.size==1 }
+            var added = false
+            addChildMethods?.forEach { m -> if (!added) try { m.invoke(sceneObj, modelNode); added = true } catch (_: Throwable) {} }
+            if (added) {
+                Log.d("IndoorAR","ArModelNode seta adicionada (invokedLoad=$invoked)")
+                return true
+            }
+        } catch (_: ClassNotFoundException) { } catch (t: Throwable) {
+            Log.w("IndoorAR","Falha usando ArModelNode: ${t.message}")
+        }
+        return try {
+            val arNodeCls = Class.forName("io.github.sceneview.ar.node.ArNode")
+            val node = arNodeCls.getDeclaredConstructor().newInstance()
+            arNodeCls.methods.firstOrNull { it.name.equals("setAnchor", true) && it.parameterTypes.size == 1 }?.invoke(node, anchor)
+            val base = forcedScale ?: if (isLast) 0.40f else 0.28f
+            arNodeCls.methods.firstOrNull { it.name.equals("setScale", true) && it.parameterTypes.size == 3 }?.let { m ->
+                try { m.invoke(node, base, base, base) } catch (_: Throwable) {}
+            }
+            arNodeCls.methods.firstOrNull { it.name.equals("setScale", true) && it.parameterTypes.size == 1 && it.parameterTypes[0]==FloatArray::class.java }?.let { m ->
+                try { m.invoke(node, floatArrayOf(base, base, base)) } catch (_: Throwable) {}
+            }
+            val quat = yawToQuaternionY(heading)
+            arNodeCls.methods.firstOrNull { it.name.lowercase().contains("quaternion") && it.parameterTypes.size == 4 }?.let { m ->
+                try { m.invoke(node, quat[0], quat[1], quat[2], quat[3]) } catch (_: Throwable) {}
+            }
+            val pathVariants = listOf(arrowModelFile, arrowModelAssetUri, "/android_asset/$arrowModelFile")
+            var invoked = false
+            val loadCandidates = arNodeCls.methods.filter { m ->
+                val n = m.name.lowercase(); (n.contains("load") || n.contains("model")) && m.parameterTypes.isNotEmpty()
+            }
+            fun attempt(m: java.lang.reflect.Method, path: String) {
+                if (invoked) return
+                try {
+                    when (m.parameterTypes.size) {
+                        1 -> if (m.parameterTypes[0] == String::class.java) { m.invoke(node, path); invoked = true }
+                        2 -> if (m.parameterTypes[0] == String::class.java) { m.invoke(node, path, true); invoked = true }
+                        3 -> if (m.parameterTypes[0] == String::class.java) { m.invoke(node, path, true, base); invoked = true }
+                    }
+                } catch (_: Throwable) {}
+            }
+            val priorityNames = listOf("loadModelGlbAsync", "loadModelGlb", "loadModel", "loadGlb")
+            for (nm in priorityNames) {
+                if (invoked) break
+                loadCandidates.filter { it.name == nm }.forEach { m -> pathVariants.forEach { p -> attempt(m, p) } }
+            }
+            if (!invoked) loadCandidates.forEach { m -> pathVariants.forEach { p -> attempt(m, p) } }
+            if (!invoked) {
+                arNodeCls.methods.firstOrNull { it.name.lowercase().startsWith("set") && it.parameterTypes.size==1 && it.parameterTypes[0]==String::class.java }
+                    ?.let { setter -> pathVariants.forEach { p -> if (!invoked) try { setter.invoke(node, p); invoked = true } catch (_: Throwable) {} } }
+            }
+            val sceneObj = arSceneView.javaClass.methods.firstOrNull { it.name.lowercase() in listOf("getscene","scene") && it.parameterCount==0 }?.invoke(arSceneView)
+            val addChildMethods = sceneObj?.javaClass?.methods?.filter { m -> m.name.lowercase().contains("addchild") && m.parameterTypes.size==1 }
+            var added = false
+            addChildMethods?.forEach { m -> if (!added) try { m.invoke(sceneObj, node); added = true } catch (_: Throwable) {} }
+            Log.d("IndoorAR","ArNode seta adicionada (invokedLoad=$invoked added=$added)")
+            added
+        } catch (t: Throwable) {
+            Log.w("IndoorAR","Falha fallback ArNode seta: ${t.message}")
+            false
+        }
+    }
+
+    private fun limparAnchors3D() {
+        routeSegmentAnchors.forEach { a -> try { a.detach() } catch (_: Exception) {} }
+        routeSegmentAnchors.clear()
+        routeAnchors.forEach { a -> try { a.detach() } catch (_: Exception) {} }
+        routeAnchors.clear()
+        built3DRouteForCurrentPath = false
+    }
+
+    private fun calibrarMapToWorld(pose: Pose) {
+        val yawPose = extractYaw(pose)
+        val yawDelta = yawPose - lastHeadingRad
+        val cosY = kotlin.math.cos(yawDelta)
+        val sinY = kotlin.math.sin(yawDelta)
+        val rx = estX * cosY - estZ * sinY
+        val rz = estX * sinY + estZ * cosY
+        val worldX = pose.tx()
+        val worldZ = if (invertZAxisForAr) -pose.tz() else pose.tz()
+        mapWorldYawDelta = yawDelta
+        mapWorldOffsetX = worldX - rx
+        mapWorldOffsetZ = worldZ - rz
+        calibrationDone = true
     }
 }
 

@@ -66,20 +66,21 @@
 
         <!-- Botões -->
 
+        <!-- Textos -->
+
         <ImageView
             android:id="@+id/btnPerfil"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginEnd="20dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="32dp"
             android:background="@drawable/ripple_clickable"
             android:contentDescription="Configurações"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_settings_branco"
+            app:srcCompat="@drawable/localhome2"
             app:tint="@color/colorPrimary" />
 
-        <!-- Textos -->
         <TextView
             android:id="@+id/txtBemVindo"
             android:layout_width="0dp"

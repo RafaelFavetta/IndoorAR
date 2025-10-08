@@ -13,44 +13,74 @@
 
     <!-- Recentes e RecyclerView -->
 
+    <ProgressBar
+        android:id="@+id/progressRecentes"
+        style="@android:style/Widget.Material.ProgressBar.Small"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/txtEmptyRecentes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/inter"
+        android:text="Nenhum mapa recente ainda"
+        android:textColor="#32357A"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/txtMapasFavoritos"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="16dp"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerRecentes"
+        android:layout_width="407dp"
+        android:layout_height="261dp"
+        android:layout_marginTop="12dp"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/txtMapasFavoritos"
+        app:layout_constraintVertical_bias="1.0"
+        tools:listitem="@layout/item_mapa_recente" />
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/header"
         android:layout_width="422dp"
         android:layout_height="436dp"
         android:background="@drawable/bg_header_arco"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintHorizontal_bias="0.09"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <!-- Logo -->
-        <ImageView
-            android:id="@+id/logo"
-            android:layout_width="36dp"
-            android:layout_height="46dp"
-            android:layout_marginStart="20dp"
-            android:layout_marginTop="20dp"
-            android:contentDescription="Logo"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/logo_branca" />
 
         <!-- Botões -->
 
+        <!-- Textos -->
+
         <ImageView
             android:id="@+id/btnPerfil"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginEnd="20dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="32dp"
             android:background="@drawable/ripple_clickable"
             android:contentDescription="Configurações"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_settings_branco"
+            app:srcCompat="@drawable/localhome2"
             app:tint="@color/colorPrimary" />
 
-        <!-- Textos -->
         <TextView
             android:id="@+id/txtBemVindo"
             android:layout_width="0dp"
@@ -111,12 +141,12 @@
             <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
                 android:layout_height="150dp"
-                android:layout_weight="1"
                 android:layout_margin="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_card_3d"
                 android:foreground="?attr/selectableItemBackground"
                 app:cardCornerRadius="18dp"
-                app:cardElevation="16dp"
-                android:background="@drawable/bg_card_3d">
+                app:cardElevation="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -132,8 +162,8 @@
 
                         <ImageView
                             android:id="@+id/btnMapasExistentes"
-                            android:layout_width="56dp"
-                            android:layout_height="56dp"
+                            android:layout_width="45dp"
+                            android:layout_height="50dp"
                             android:background="@drawable/ripple_clickable"
                             android:clickable="true"
                             android:contentDescription="Mapas existente"
@@ -142,14 +172,14 @@
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent"
-                            app:srcCompat="@drawable/ic_meus_mapas" />
+                            app:srcCompat="@drawable/locationhome" />
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/inter"
-                        android:text="Ver mapas"
+                        android:text="Mapas"
                         android:textAlignment="center"
                         android:textColor="@color/colorPrimaryDark"
                         android:textSize="16sp"
@@ -161,12 +191,12 @@
             <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
                 android:layout_height="150dp"
-                android:layout_weight="1"
                 android:layout_margin="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_card_3d"
                 android:foreground="?attr/selectableItemBackground"
                 app:cardCornerRadius="18dp"
-                app:cardElevation="16dp"
-                android:background="@drawable/bg_card_3d">
+                app:cardElevation="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -182,8 +212,8 @@
 
                         <ImageView
                             android:id="@+id/btnEscanear"
-                            android:layout_width="56dp"
-                            android:layout_height="56dp"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
                             android:background="@drawable/ripple_clickable"
                             android:clickable="true"
                             android:contentDescription="Escanear QR Code"
@@ -192,7 +222,7 @@
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent"
-                            app:srcCompat="@drawable/ic_scanner_azul" />
+                            app:srcCompat="@drawable/qrhome" />
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
                     <TextView
@@ -211,12 +241,12 @@
             <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
                 android:layout_height="150dp"
-                android:layout_weight="1"
                 android:layout_margin="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_card_3d"
                 android:foreground="?attr/selectableItemBackground"
                 app:cardCornerRadius="18dp"
-                app:cardElevation="16dp"
-                android:background="@drawable/bg_card_3d">
+                app:cardElevation="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -232,8 +262,8 @@
 
                         <ImageView
                             android:id="@+id/btnFavoritos"
-                            android:layout_width="56dp"
-                            android:layout_height="56dp"
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
                             android:background="@drawable/ripple_clickable"
                             android:clickable="true"
                             android:contentDescription="Favoritos"
@@ -242,7 +272,7 @@
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent"
-                            app:srcCompat="@drawable/ic_favoritos" />
+                            app:srcCompat="@drawable/hearthome" />
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
                     <TextView
@@ -263,8 +293,8 @@
         android:id="@+id/txtMapasFavoritos"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="4dp"
         android:fontFamily="@font/staatliches"
         android:text="Recentes"
         android:textColor="#32357A"
@@ -278,51 +308,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="32dp"
-        android:padding="4dp"
         android:background="@drawable/ripple_clickable"
+        android:padding="4dp"
         android:text="Ver mais"
         android:textColor="#32357A"
         android:textStyle="bold"
         app:layout_constraintBaseline_toBaselineOf="@id/txtMapasFavoritos"
         app:layout_constraintEnd_toEndOf="parent" />
-
-    <ProgressBar
-        android:id="@+id/progressRecentes"
-        style="@android:style/Widget.Material.ProgressBar.Small"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/txtEmptyRecentes"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/inter"
-        android:text="Nenhum mapa recente ainda"
-        android:textColor="#32357A"
-        android:visibility="gone"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/txtMapasFavoritos"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="16dp"/>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerRecentes"
-        android:layout_width="407dp"
-        android:layout_height="261dp"
-        android:layout_marginTop="12dp"
-        android:clipToPadding="false"
-        android:paddingBottom="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/txtMapasFavoritos"
-        app:layout_constraintVertical_bias="0.0"
-        tools:listitem="@layout/item_mapa_recente" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

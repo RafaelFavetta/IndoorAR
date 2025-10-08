@@ -82,11 +82,17 @@ class ActivityMap : BaseActivity() {
     // Modelo 3D de seta (GLB)
     private val arrowModelFile = "models/arrow.glb"
     private val arrowModelAssetUri = "file:///android_asset/models/arrow.glb"
+    // Novo: modelo especial para destino
+    private val destinationModelFile = "models/direction_arrow.glb" // usar o arquivo adicionado pelo usuário
+    private val destinationModelAssetUri = "file:///android_asset/models/direction_arrow.glb"
     private val densify3DStepMeters = 0.30f
     private val continuousLineWidth = 0.18f
     private val continuousLineHeight = 0.02f
     // removido useContinuousExtrudedLine (não utilizado)
     private val routeSegmentAnchors = mutableListOf<com.google.ar.core.Anchor>()
+    // Novo: anchor exclusivo do destino
+    private var destinationAnchor: com.google.ar.core.Anchor? = null
+    private var destinationMarkerPlaced = false
 
     // Novos helpers / flags ausentes anteriormente
     private var debugArrowCreated: Boolean = false
@@ -94,6 +100,8 @@ class ActivityMap : BaseActivity() {
 
     // Verifica existência do asset da seta
     private fun hasArrowAsset(): Boolean = try { assets.open(arrowModelFile).close(); true } catch (_: Exception) { false }
+    // Novo helper para destino
+    private fun hasDestinationAsset(): Boolean = try { assets.open(destinationModelFile).close(); true } catch (_: Exception) { false }
 
     // Converte yaw (rad) para quaternion eixo Y (x,y,z,w)
     private fun yawToQuaternionY(yaw: Float): FloatArray {
@@ -102,6 +110,9 @@ class ActivityMap : BaseActivity() {
         val c = kotlin.math.cos(half)
         return floatArrayOf(0f, s, 0f, c)
     }
+
+    // Extensão utilit��ria para formatar floats com 2 casas decimais
+    private fun Float.format2(): String = String.format("%.2f", this)
 
     // Obtém Session via reflexão a partir do arSceneView
     private fun obterArSessionRefletido(): com.google.ar.core.Session? {
@@ -739,11 +750,10 @@ class ActivityMap : BaseActivity() {
             stepLengthMeters = stepLengthMeters,
             onPosition = { x, z, heading ->
                 lastHeadingRad = heading
+                // Estimativa de posição do sensor sempre em coordenadas de mapa
                 estX = x; estZ = z
-                val (ux, uz) = if (isArActive && lastArPose != null) {
-                    val pose = lastArPose!!
-                    pose.tx() to (if (invertZAxisForAr) -pose.tz() else pose.tz())
-                } else x to z
+                // Usar sempre coordenadas de mapa (já convertidas em updateArCameraPose quando AR ativo)
+                val ux = estX; val uz = estZ
                 minimapView.updateUserPose(ux, uz, lastHeadingRad)
                 atualizarDistanciaRestantePrecisa(ux, uz)
                 tentarRecalcularSeDesviou(ux, uz)
@@ -855,16 +865,29 @@ class ActivityMap : BaseActivity() {
             val pitch = extractPitch(pose)
             lastHeadingRad = yaw
             lastPitchRad = pitch
-            val x = pose.tx()
-            val z = if (invertZAxisForAr) -pose.tz() else pose.tz()
-            estX = x; estZ = z
-            minimapView.updateUserPose(x, z, yaw)
-            atualizarDistanciaRestantePrecisa(x, z)
+            val worldX = pose.tx()
+            val worldZAdj = if (invertZAxisForAr) -pose.tz() else pose.tz()
+            // Converter world -> mapa se calibração já feita
+            if (calibrationDone && mapWorldYawDelta != null && mapWorldOffsetX != null && mapWorldOffsetZ != null) {
+                val dx = worldX - mapWorldOffsetX!!
+                val dz = worldZAdj - mapWorldOffsetZ!!
+                val yawDelta = mapWorldYawDelta!!
+                val cosY = kotlin.math.cos(-yawDelta)
+                val sinY = kotlin.math.sin(-yawDelta)
+                val mapX = dx * cosY - dz * sinY
+                val mapZ = dx * sinY + dz * cosY
+                estX = mapX; estZ = mapZ
+            } else {
+                // Antes da calibração usamos world diretamente (melhor que nada)
+                estX = worldX; estZ = worldZAdj
+            }
+            minimapView.updateUserPose(estX, estZ, yaw)
+            atualizarDistanciaRestantePrecisa(estX, estZ)
             if (!built3DRouteForCurrentPath && currentPathNodeIds.size > 1) {
                 val ptsNodes = currentPathNodeIds.mapNotNull { graphNodes[it] }.map { it.x to it.z }
                 tentarConstruirRota3D(densificarRota(ptsNodes))
             } else if (currentPathNodeIds.size > 1) {
-                atualizarRota3DRestante(x, z)
+                atualizarRota3DRestante(estX, estZ)
             }
         } else {
             minimapView.updateUserPose(estX, estZ, lastHeadingRad)
@@ -1100,13 +1123,36 @@ class ActivityMap : BaseActivity() {
                 val pose = Pose(floatArrayOf(midX, y, midZ), quat)
                 val anchor = session.createAnchor(pose)
                 routeSegmentAnchors.add(anchor)
-                val usedArrow = if (wantArrows) tryCreateArrowNodeViaReflection(anchor, heading, isLastSegment, baseScale) else false
+                val usedArrow = if (wantArrows) tryCreateModelNodeViaReflection(anchor, heading, false, baseScale, arrowModelFile) else false
                 if (!usedArrow) criarNodeSegmentoExtrudado(anchor, segLen, isLastSegment)
                 created++
             }
-            built3DRouteForCurrentPath = created > 0
+            // Após criar setas, criar marcador destino dedicado
+            if (dens.isNotEmpty()) {
+                val (lastMx, lastMz) = dens.last()
+                val rx = lastMx * cosY - lastMz * sinY + offX
+                val rz = lastMx * sinY + lastMz * cosY + offZ
+                val heading = if (dens.size >= 2) {
+                    val (pmx, pmz) = dens[dens.size - 2]
+                    val prx = pmx * cosY - pmz * sinY + offX
+                    val prz = pmx * sinY + pmz * cosY + offZ
+                    kotlin.math.atan2((rx - prx).toDouble(), (rz - prz).toDouble()).toFloat()
+                } else 0f
+                val quat = yawToQuaternionY(heading)
+                val destPose = Pose(floatArrayOf(rx, y + 0.02f, rz), quat)
+                destinationAnchor = session.createAnchor(destPose)
+                destinationAnchor?.let { anc ->
+                    val placed = if (hasDestinationAsset()) tryCreateModelNodeViaReflection(anc, heading, true, 1.0f, destinationModelFile) else false
+                    if (!placed) {
+                        // fallback reutiliza seta comum maior
+                        tryCreateModelNodeViaReflection(anc, heading, true, 1.2f, arrowModelFile)
+                    }
+                }
+                destinationMarkerPlaced = true
+            }
+            built3DRouteForCurrentPath = created > 0 || destinationMarkerPlaced
             if (!built3DRouteForCurrentPath) {
-                Log.w("IndoorAR","Nenhuma seta 3D criada. Verifique arrow.glb ou path. Criando seta de debug.")
+                Log.w("IndoorAR","Nenhuma seta/destino 3D criada. Criando debug.")
                 spawnDebugArrowAtCamera()
             }
         } catch (e: Exception) {
@@ -1115,53 +1161,21 @@ class ActivityMap : BaseActivity() {
         }
     }
 
-    private fun spawnDebugArrowAtCamera() {
-        if (debugArrowCreated) return
-        val pose = lastArPose ?: return
-        val session = obterArSessionRefletido() ?: return
-        try {
-            val forwardZ = 1.0f // 1m à frente
-            val dx = 0f
-            val dz = if (invertZAxisForAr) -forwardZ else forwardZ
-            val camX = pose.tx(); val camZ = if (invertZAxisForAr) -pose.tz() else pose.tz(); val camY = pose.ty()
-            val arrowX = camX + dx
-            val arrowZ = camZ + dz
-            val y = (floorY ?: (camY - 1.5f)) + 0.05f
-            val heading = extractYaw(pose)
-            val quat = yawToQuaternionY(heading)
-            val anchorPose = Pose(floatArrayOf(arrowX, y, arrowZ), quat)
-            val anchor = session.createAnchor(anchorPose)
-            routeSegmentAnchors.add(anchor)
-            val ok = tryCreateArrowNodeViaReflection(anchor, heading, true, 1.0f)
-            Log.d("IndoorAR","Debug arrow criada em (${arrowX.format2()}, ${y.format2()}, ${arrowZ.format2()}) ok=$ok")
-            debugArrowCreated = true
-        } catch (e: Exception) {
-            Log.w("IndoorAR","Falha criar debug arrow: ${e.message}")
-        }
-    }
-
-    private fun Float.format2(): String = String.format("%.2f", this)
-
-    private fun tryCreateArrowNodeViaReflection(anchor: com.google.ar.core.Anchor, heading: Float, isLast: Boolean, forcedScale: Float? = null): Boolean {
-        if (!hasArrowAsset()) return false
+    // Novo método genérico para carregar modelo (arrow ou destino)
+    private fun tryCreateModelNodeViaReflection(anchor: com.google.ar.core.Anchor, heading: Float, isLast: Boolean, forcedScale: Float? = null, modelFile: String): Boolean {
+        val assetUri = "file:///android_asset/$modelFile"
         try {
             val arModelCls = Class.forName("io.github.sceneview.ar.node.ArModelNode")
             val modelNode = arModelCls.getDeclaredConstructor().newInstance()
             arModelCls.methods.firstOrNull { it.name.equals("setAnchor", true) && it.parameterTypes.size == 1 }?.invoke(modelNode, anchor)
-            val base = forcedScale ?: if (isLast) 0.40f else 0.28f
-            arModelCls.methods.firstOrNull { it.name.equals("setScale", true) && it.parameterTypes.size == 3 }?.let { m ->
-                try { m.invoke(modelNode, base, base, base) } catch (_: Throwable) {}
-            }
-            arModelCls.methods.firstOrNull { it.name.equals("setScale", true) && it.parameterTypes.size == 1 && it.parameterTypes[0]==FloatArray::class.java }?.let { m ->
-                try { m.invoke(modelNode, floatArrayOf(base, base, base)) } catch (_: Throwable) {}
-            }
+            val base = forcedScale ?: if (isLast) 0.50f else 0.30f
+            arModelCls.methods.firstOrNull { it.name.equals("setScale", true) && it.parameterTypes.size == 3 }?.let { m -> runCatching { m.invoke(modelNode, base, base, base) } }
+            arModelCls.methods.firstOrNull { it.name.equals("setScale", true) && it.parameterTypes.size == 1 && it.parameterTypes[0]==FloatArray::class.java }?.let { m -> runCatching { m.invoke(modelNode, floatArrayOf(base, base, base)) } }
             val yawDeg = Math.toDegrees(heading.toDouble()).toFloat()
-            arModelCls.methods.firstOrNull { it.name.equals("setRotation", true) && it.parameterTypes.size==3 }?.let { m ->
-                try { m.invoke(modelNode, 0f, yawDeg, 0f) } catch (_: Throwable) {}
-            }
+            arModelCls.methods.firstOrNull { it.name.equals("setRotation", true) && it.parameterTypes.size==3 }?.let { m -> runCatching { m.invoke(modelNode, 0f, yawDeg, 0f) } }
             val candidates = listOf("loadModelGlbAsync", "loadModelGlb", "loadModel", "loadGlb")
             var invoked = false
-            val assetPaths = listOf(arrowModelAssetUri, arrowModelFile, "/android_asset/$arrowModelFile")
+            val assetPaths = listOf(assetUri, modelFile, "/android_asset/$modelFile")
             for (nm in candidates) {
                 if (invoked) break
                 val mList = arModelCls.methods.filter { it.name == nm }
@@ -1191,8 +1205,7 @@ class ActivityMap : BaseActivity() {
                                     3 -> arrayOf(p, true, base)
                                     else -> arrayOf(p)
                                 }
-                                m.invoke(modelNode, *args)
-                                invoked = true; break
+                                m.invoke(modelNode, *args); invoked = true; break
                             }
                         } catch (_: Throwable) {}
                     }
@@ -1201,69 +1214,60 @@ class ActivityMap : BaseActivity() {
             val sceneObj = arSceneView.javaClass.methods.firstOrNull { it.name.lowercase() in listOf("getscene","scene") && it.parameterCount==0 }?.invoke(arSceneView)
             val addChildMethods = sceneObj?.javaClass?.methods?.filter { m -> m.name.lowercase().contains("addchild") && m.parameterTypes.size==1 }
             var added = false
-            addChildMethods?.forEach { m -> if (!added) try { m.invoke(sceneObj, modelNode); added = true } catch (_: Throwable) {} }
-            if (added) {
-                Log.d("IndoorAR","ArModelNode seta adicionada (invokedLoad=$invoked)")
-                return true
+            addChildMethods?.forEach { m -> if (!added) runCatching { m.invoke(sceneObj, modelNode); added = true } }
+            if (added) return true
+        } catch (_: ClassNotFoundException) { } catch (_: Throwable) { }
+        return false
+    }
+
+    // Função de debug para posicionar uma seta à frente da câmera caso rota 3D falhe
+    private fun spawnDebugArrowAtCamera() {
+        if (debugArrowCreated) return
+        val pose = lastArPose ?: return
+        val session = obterArSessionRefletido() ?: return
+        try {
+            val forwardZ = 1.0f // 1m à frente
+            val dx = 0f
+            val dz = if (invertZAxisForAr) -forwardZ else forwardZ
+            val camX = pose.tx(); val camZ = if (invertZAxisForAr) -pose.tz() else pose.tz(); val camY = pose.ty()
+            // Converter world -> map para posicionar seta coerente com transformação (se calibrado)
+            val worldX = camX + dx
+            val worldZ = camZ + dz
+            val arrowX: Float
+            val arrowZ: Float
+            if (calibrationDone && mapWorldYawDelta != null && mapWorldOffsetX != null && mapWorldOffsetZ != null) {
+                // já estamos em world, basta usar world direto para anchor
+                arrowX = worldX
+                arrowZ = worldZ
+            } else {
+                arrowX = worldX
+                arrowZ = worldZ
             }
-        } catch (_: ClassNotFoundException) { } catch (t: Throwable) {
-            Log.w("IndoorAR","Falha usando ArModelNode: ${t.message}")
-        }
-        return try {
-            val arNodeCls = Class.forName("io.github.sceneview.ar.node.ArNode")
-            val node = arNodeCls.getDeclaredConstructor().newInstance()
-            arNodeCls.methods.firstOrNull { it.name.equals("setAnchor", true) && it.parameterTypes.size == 1 }?.invoke(node, anchor)
-            val base = forcedScale ?: if (isLast) 0.40f else 0.28f
-            arNodeCls.methods.firstOrNull { it.name.equals("setScale", true) && it.parameterTypes.size == 3 }?.let { m ->
-                try { m.invoke(node, base, base, base) } catch (_: Throwable) {}
-            }
-            arNodeCls.methods.firstOrNull { it.name.equals("setScale", true) && it.parameterTypes.size == 1 && it.parameterTypes[0]==FloatArray::class.java }?.let { m ->
-                try { m.invoke(node, floatArrayOf(base, base, base)) } catch (_: Throwable) {}
-            }
+            val y = (floorY ?: (camY - 1.5f)) + 0.05f
+            val heading = extractYaw(pose)
             val quat = yawToQuaternionY(heading)
-            arNodeCls.methods.firstOrNull { it.name.lowercase().contains("quaternion") && it.parameterTypes.size == 4 }?.let { m ->
-                try { m.invoke(node, quat[0], quat[1], quat[2], quat[3]) } catch (_: Throwable) {}
-            }
-            val pathVariants = listOf(arrowModelFile, arrowModelAssetUri, "/android_asset/$arrowModelFile")
-            var invoked = false
-            val loadCandidates = arNodeCls.methods.filter { m ->
-                val n = m.name.lowercase(); (n.contains("load") || n.contains("model")) && m.parameterTypes.isNotEmpty()
-            }
-            fun attempt(m: java.lang.reflect.Method, path: String) {
-                if (invoked) return
-                try {
-                    when (m.parameterTypes.size) {
-                        1 -> if (m.parameterTypes[0] == String::class.java) { m.invoke(node, path); invoked = true }
-                        2 -> if (m.parameterTypes[0] == String::class.java) { m.invoke(node, path, true); invoked = true }
-                        3 -> if (m.parameterTypes[0] == String::class.java) { m.invoke(node, path, true, base); invoked = true }
-                    }
-                } catch (_: Throwable) {}
-            }
-            val priorityNames = listOf("loadModelGlbAsync", "loadModelGlb", "loadModel", "loadGlb")
-            for (nm in priorityNames) {
-                if (invoked) break
-                loadCandidates.filter { it.name == nm }.forEach { m -> pathVariants.forEach { p -> attempt(m, p) } }
-            }
-            if (!invoked) loadCandidates.forEach { m -> pathVariants.forEach { p -> attempt(m, p) } }
-            if (!invoked) {
-                arNodeCls.methods.firstOrNull { it.name.lowercase().startsWith("set") && it.parameterTypes.size==1 && it.parameterTypes[0]==String::class.java }
-                    ?.let { setter -> pathVariants.forEach { p -> if (!invoked) try { setter.invoke(node, p); invoked = true } catch (_: Throwable) {} } }
-            }
-            val sceneObj = arSceneView.javaClass.methods.firstOrNull { it.name.lowercase() in listOf("getscene","scene") && it.parameterCount==0 }?.invoke(arSceneView)
-            val addChildMethods = sceneObj?.javaClass?.methods?.filter { m -> m.name.lowercase().contains("addchild") && m.parameterTypes.size==1 }
-            var added = false
-            addChildMethods?.forEach { m -> if (!added) try { m.invoke(sceneObj, node); added = true } catch (_: Throwable) {} }
-            Log.d("IndoorAR","ArNode seta adicionada (invokedLoad=$invoked added=$added)")
-            added
-        } catch (t: Throwable) {
-            Log.w("IndoorAR","Falha fallback ArNode seta: ${t.message}")
-            false
+            val anchorPose = Pose(floatArrayOf(arrowX, y, arrowZ), quat)
+            val anchor = session.createAnchor(anchorPose)
+            routeSegmentAnchors.add(anchor)
+            val ok = tryCreateModelNodeViaReflection(anchor, heading, true, 1.0f, arrowModelFile)
+            Log.d("IndoorAR","Debug arrow criada em (${arrowX.format2()}, ${y.format2()}, ${arrowZ.format2()}) ok=$ok")
+            debugArrowCreated = true
+        } catch (e: Exception) {
+            Log.w("IndoorAR","Falha criar debug arrow: ${e.message}")
         }
+    }
+
+    // Substitui antigo tryCreateArrowNodeViaReflection para manter compatibilidade chamando novo método
+    private fun tryCreateArrowNodeViaReflection(anchor: com.google.ar.core.Anchor, heading: Float, isLast: Boolean, forcedScale: Float? = null): Boolean {
+        return tryCreateModelNodeViaReflection(anchor, heading, isLast, forcedScale, arrowModelFile)
     }
 
     private fun limparAnchors3D() {
         routeSegmentAnchors.forEach { a -> try { a.detach() } catch (_: Exception) {} }
         routeSegmentAnchors.clear()
+        destinationAnchor?.let { anc -> try { anc.detach() } catch (_: Exception) {} }
+        destinationAnchor = null
+        destinationMarkerPlaced = false
         routeAnchors.forEach { a -> try { a.detach() } catch (_: Exception) {} }
         routeAnchors.clear()
         built3DRouteForCurrentPath = false

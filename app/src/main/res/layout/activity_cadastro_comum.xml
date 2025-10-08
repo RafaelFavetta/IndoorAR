@@ -196,10 +196,11 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnGoogle"
         android:layout_width="0dp"
-        android:layout_height="50dp"
+        android:layout_height="42dp"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
         android:layout_marginBottom="7dp"
+        android:background="@drawable/btn_arredondado3_ripple"
         android:backgroundTint="#E0E0E0"
         android:fontFamily="@font/inter"
         android:gravity="center"
@@ -214,17 +215,18 @@
         app:iconTint="@null"
         app:layout_constraintBottom_toTopOf="@+id/btnFacebook"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintVertical_bias="0.988" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnFacebook"
         android:layout_width="0dp"
-        android:layout_height="50dp"
+        android:layout_height="42dp"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
+        android:background="@drawable/btn_arredondado3_ripple"
         android:backgroundTint="#E0E0E0"
         android:fontFamily="@font/inter"
         android:gravity="center"
@@ -239,10 +241,10 @@
         app:iconTint="@null"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.838" />
+        app:layout_constraintVertical_bias="0.847" />
 
     <TextView
         android:id="@+id/txtTermos"

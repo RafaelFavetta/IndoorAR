@@ -161,8 +161,8 @@
 
                         <ImageView
                             android:id="@+id/btnMapasExistentes"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
+                            android:layout_width="45dp"
+                            android:layout_height="50dp"
                             android:background="@drawable/ripple_clickable"
                             android:clickable="true"
                             android:contentDescription="Mapas existente"
@@ -171,14 +171,14 @@
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent"
-                            app:srcCompat="@drawable/maphome" />
+                            app:srcCompat="@drawable/locationhome" />
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/inter"
-                        android:text="Ver mapas"
+                        android:text="Mapas"
                         android:textAlignment="center"
                         android:textColor="@color/colorPrimaryDark"
                         android:textSize="16sp"
@@ -261,8 +261,8 @@
 
                         <ImageView
                             android:id="@+id/btnFavoritos"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
                             android:background="@drawable/ripple_clickable"
                             android:clickable="true"
                             android:contentDescription="Favoritos"

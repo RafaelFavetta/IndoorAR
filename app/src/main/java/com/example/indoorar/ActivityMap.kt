@@ -221,6 +221,10 @@ class ActivityMap : BaseActivity() {
 
     private lateinit var destinoAdapter: DestinoPoiAdapter
 
+    // Novas variáveis reintroduzidas
+    private var originalDensifiedRoute: List<Pair<Float, Float>> = emptyList()
+    private var lastRouteTrimDistanceAlong: Double = 0.0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_map)
@@ -452,11 +456,16 @@ class ActivityMap : BaseActivity() {
         try { minimapView.setRotateWithHeading(false) } catch (_: Exception) {}
 
         val startPoi = destinos.firstOrNull { it.isStart }
-        val initX = startPoi?.x ?: graphNodes.values.firstOrNull()?.x ?: 0f
-        val initZ = startPoi?.z ?: graphNodes.values.firstOrNull()?.z ?: 0f
+        val fallbackPoi = if (startPoi == null) destinos.firstOrNull() else null
+        val initX = (startPoi ?: fallbackPoi)?.x ?: graphNodes.values.firstOrNull()?.x ?: 0f
+        val initZ = (startPoi ?: fallbackPoi)?.z ?: graphNodes.values.firstOrNull()?.z ?: 0f
 
         sensorTracker?.stop(); sensorTracker = null
         startSensorTracking(initX, initZ)
+        // Novo: garantir que posição inicial do usuário no minimapa inicie sobre o POI escolhido (ou primeiro disponível)
+        estX = initX
+        estZ = initZ
+        try { minimapView.updateUserPose(estX, estZ, lastHeadingRad) } catch (_: Exception) {}
     }
 
     // ---- UI / Recycler ----
@@ -531,6 +540,8 @@ class ActivityMap : BaseActivity() {
         routeStartSteps = totalSteps
         val ptsNodes = path.mapNotNull { graphNodes[it] }.map { it.x to it.z }
         val ptsDensificados = densificarRota(ptsNodes)
+        originalDensifiedRoute = ptsDensificados
+        lastRouteTrimDistanceAlong = 0.0
         minimapView.setRoute(ptsDensificados)
         arRouteOverlay?.setRoute(ptsDensificados)
         arRouteOverlay?.visibility = View.GONE
@@ -672,6 +683,8 @@ class ActivityMap : BaseActivity() {
         routeStartSteps = null
         limparAnchors3D()
         last3DRouteProgressDistance = 0.0
+        originalDensifiedRoute = emptyList()
+        lastRouteTrimDistanceAlong = 0.0
     }
 
     private fun encontrarNodeMaisProximo(x: Float, z: Float): String {
@@ -756,6 +769,7 @@ class ActivityMap : BaseActivity() {
                 val ux = estX; val uz = estZ
                 minimapView.updateUserPose(ux, uz, lastHeadingRad)
                 atualizarDistanciaRestantePrecisa(ux, uz)
+                updateRemainingRoute(ux, uz)
                 tentarRecalcularSeDesviou(ux, uz)
                 atualizarDestaqueEsferas(ux, uz)
                 if (isArActive && currentPathNodeIds.size > 1) {
@@ -883,6 +897,7 @@ class ActivityMap : BaseActivity() {
             }
             minimapView.updateUserPose(estX, estZ, yaw)
             atualizarDistanciaRestantePrecisa(estX, estZ)
+            updateRemainingRoute(estX, estZ)
             if (!built3DRouteForCurrentPath && currentPathNodeIds.size > 1) {
                 val ptsNodes = currentPathNodeIds.mapNotNull { graphNodes[it] }.map { it.x to it.z }
                 tentarConstruirRota3D(densificarRota(ptsNodes))
@@ -1287,19 +1302,47 @@ class ActivityMap : BaseActivity() {
         mapWorldOffsetZ = worldZ - rz
         calibrationDone = true
     }
+
+    // ---- Data classes / adapters ----
+
+    data class DestinoPoi(val id: String, val name: String, val x: Float, val z: Float, val iconRes: Int, val isStart: Boolean = false)
+    data class GraphNode(val id: String, val x: Float, val z: Float)
+    data class GraphEdge(val from: String, val to: String, val peso: Double)
+
+    data class RoutePoint(val x: Float, val z: Float)
+
+    class DestinoPoiAdapter(private val items: List<DestinoPoi>, private val onClick: (DestinoPoi) -> Unit) : RecyclerView.Adapter<DestinoPoiAdapter.VH>() {
+        inner class VH(v: View) : RecyclerView.ViewHolder(v) { val icon: android.widget.ImageView = v.findViewById(R.id.ivPoi); val txt: TextView = v.findViewById(R.id.tvPoiName) }
+        override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): VH { val v = android.view.LayoutInflater.from(parent.context).inflate(R.layout.item_poi, parent, false); return VH(v) }
+        override fun onBindViewHolder(holder: VH, position: Int) { val item = items[position]; try { holder.icon.setImageResource(item.iconRes) } catch (_: Exception) { holder.icon.setImageResource(R.drawable.ic_poi_default) }; holder.txt.text = item.name; holder.itemView.setOnClickListener { onClick(item) } }
+        override fun getItemCount(): Int = items.size
+    }
+
+    private fun updateRemainingRoute(ux: Float, uz: Float) {
+        if (originalDensifiedRoute.size < 2 || currentPathNodeIds.size < 2 || totalDistance <= 0.0) return
+        val proj = projetarProgressoNaRota(ux, uz) ?: return
+        val distanceAlong = proj.distanceAlong
+        if (distanceAlong - lastRouteTrimDistanceAlong < 0.25) return
+        val remainingTotal = totalDistance - distanceAlong
+        if (remainingTotal < 0.8) {
+            minimapView.clearRoute()
+            lastRouteTrimDistanceAlong = distanceAlong
+            return
+        }
+        var accum = 0.0
+        var cutIndex = 0
+        for (i in 0 until originalDensifiedRoute.size - 1) {
+            val (ax, az) = originalDensifiedRoute[i]
+            val (bx, bz) = originalDensifiedRoute[i + 1]
+            val segLen = hypot((bx - ax).toDouble(), (bz - az).toDouble())
+            if (accum + segLen >= distanceAlong) { cutIndex = i; break } else accum += segLen
+            cutIndex = i + 1
+        }
+        val newRoute = ArrayList<Pair<Float, Float>>()
+        newRoute += proj.projX to proj.projZ
+        for (j in (cutIndex + 1) until originalDensifiedRoute.size) newRoute += originalDensifiedRoute[j]
+        if (newRoute.size >= 2) minimapView.setRoute(newRoute) else minimapView.clearRoute()
+        lastRouteTrimDistanceAlong = distanceAlong
+    }
 }
 
-// ---- Data classes / adapters ----
-
-data class DestinoPoi(val id: String, val name: String, val x: Float, val z: Float, val iconRes: Int, val isStart: Boolean = false)
-data class GraphNode(val id: String, val x: Float, val z: Float)
-data class GraphEdge(val from: String, val to: String, val peso: Double)
-
-data class RoutePoint(val x: Float, val z: Float)
-
-class DestinoPoiAdapter(private val items: List<DestinoPoi>, private val onClick: (DestinoPoi) -> Unit) : RecyclerView.Adapter<DestinoPoiAdapter.VH>() {
-    inner class VH(v: View) : RecyclerView.ViewHolder(v) { val icon: android.widget.ImageView = v.findViewById(R.id.ivPoi); val txt: TextView = v.findViewById(R.id.tvPoiName) }
-    override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): VH { val v = android.view.LayoutInflater.from(parent.context).inflate(R.layout.item_poi, parent, false); return VH(v) }
-    override fun onBindViewHolder(holder: VH, position: Int) { val item = items[position]; try { holder.icon.setImageResource(item.iconRes) } catch (_: Exception) { holder.icon.setImageResource(R.drawable.ic_poi_default) }; holder.txt.text = item.name; holder.itemView.setOnClickListener { onClick(item) } }
-    override fun getItemCount(): Int = items.size
-}

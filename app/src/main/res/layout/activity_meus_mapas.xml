@@ -10,6 +10,7 @@
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
         android:background="@android:color/white">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -56,7 +57,7 @@
                 android:textColor="#32357A"
                 android:textSize="16sp"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintHorizontal_bias="1.0"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tituloMeusMapas"
                 app:layout_scrollFlags="scroll|enterAlways" />

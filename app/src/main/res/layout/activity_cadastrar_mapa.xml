@@ -25,22 +25,24 @@
             app:srcCompat="@drawable/ic_avancar_azul"
             android:rotation="180"/>
 
+        <!-- Image picker -->
+
         <TextView
             android:id="@+id/txtTitulo"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="28dp"
+            android:fontFamily="@font/staatliches"
             android:text="Cadastrar mapa"
             android:textColor="@color/colorPrimaryDark"
-            android:textSize="22sp"
+            android:textSize="30sp"
             android:textStyle="bold"
-            android:fontFamily="@font/staatliches"
-            app:layout_constraintStart_toEndOf="@id/btnVoltar"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintHorizontal_bias="0"
-            android:layout_marginStart="12dp"/>
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toEndOf="@id/btnVoltar"
+            app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Image picker -->
         <androidx.cardview.widget.CardView
             android:id="@+id/cardImagem"
             android:layout_width="0dp"
@@ -86,6 +88,7 @@
             android:id="@+id/editNomeLocal"
             android:layout_width="0dp"
             android:layout_height="50dp"
+            android:autofillHints=""
             android:background="@drawable/btn_arredondado3"
             android:elevation="4dp"
             android:fontFamily="@font/inter"
@@ -108,6 +111,7 @@
             android:id="@+id/editDescricaoLocal"
             android:layout_width="0dp"
             android:layout_height="90dp"
+            android:autofillHints=""
             android:background="@drawable/btn_arredondado3"
             android:elevation="4dp"
             android:fontFamily="@font/inter"
@@ -131,11 +135,12 @@
             android:id="@+id/editAndarLocal"
             android:layout_width="0dp"
             android:layout_height="50dp"
+            android:autofillHints=""
             android:background="@drawable/btn_arredondado3"
             android:elevation="4dp"
             android:fontFamily="@font/inter"
             android:hint="Quantidade de andares"
-            android:inputType="text"
+            android:inputType="number"
             android:minHeight="48dp"
             android:paddingStart="20dp"
             android:paddingEnd="20dp"

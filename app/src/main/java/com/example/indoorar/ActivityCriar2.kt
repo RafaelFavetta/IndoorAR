@@ -80,6 +80,7 @@ class ActivityCriar2 : BaseActivity() {
         btnCadastrar = findViewById(R.id.btnCadastro)
         progressBar = findViewById(R.id.progressBar)
         btnGoogle = findViewById(R.id.btnGoogle)
+        progressBar.bringToFront()
 
         val btnVoltar = findViewById<ImageView>(R.id.btnVoltar)
         btnVoltar.setOnClickListener {

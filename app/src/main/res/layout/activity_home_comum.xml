@@ -39,26 +39,23 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerRecentes"
-        android:layout_width="407dp"
-        android:layout_height="261dp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:clipToPadding="false"
         android:paddingBottom="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/txtMapasFavoritos"
-        app:layout_constraintVertical_bias="1.0"
-        tools:listitem="@layout/item_mapa_recente" />
+        tools:listitem="@layout/item_mapa_page" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/header"
-        android:layout_width="422dp"
+        android:layout_width="match_parent"
         android:layout_height="436dp"
         android:background="@drawable/bg_header_arco"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.09"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -133,7 +130,6 @@
             android:paddingEnd="24dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/txtSubtitulo"
             app:layout_constraintVertical_bias="1.0">
@@ -166,7 +162,7 @@
                             android:layout_height="50dp"
                             android:background="@drawable/ripple_clickable"
                             android:clickable="true"
-                            android:contentDescription="Mapas existente"
+                            android:contentDescription="Mapas existentes"
                             android:focusable="true"
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
@@ -183,7 +179,7 @@
                         android:textAlignment="center"
                         android:textColor="@color/colorPrimaryDark"
                         android:textSize="16sp"
-                        android:textStyle="bold" />
+                        android:textStyle="normal" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -233,7 +229,7 @@
                         android:textAlignment="center"
                         android:textColor="@color/colorPrimaryDark"
                         android:textSize="16sp"
-                        android:textStyle="bold" />
+                        android:textStyle="normal" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -283,7 +279,7 @@
                         android:textAlignment="center"
                         android:textColor="@color/colorPrimaryDark"
                         android:textSize="16sp"
-                        android:textStyle="bold" />
+                        android:textStyle="normal" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
         </LinearLayout>
@@ -294,27 +290,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="28dp"
-        android:layout_marginTop="4dp"
-        android:fontFamily="@font/staatliches"
-        android:text="Recentes"
+        android:layout_marginTop="24dp"
+        android:fontFamily="@font/inter"
+        android:text="Adicionados recentemente"
+        android:textAllCaps="false"
         android:textColor="#32357A"
-        android:textSize="24sp"
-        android:textStyle="bold"
+        android:textSize="18sp"
+        android:textStyle="normal"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/header" />
-
-    <TextView
-        android:id="@+id/txtVerMais"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="32dp"
-        android:background="@drawable/ripple_clickable"
-        android:padding="4dp"
-        android:text="Ver mais"
-        android:textColor="#32357A"
-        android:textStyle="bold"
-        app:layout_constraintBaseline_toBaselineOf="@id/txtMapasFavoritos"
-        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Remove FAB: was granting creation access in common home -->
 

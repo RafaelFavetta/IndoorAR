@@ -36,10 +36,11 @@ class ActivityLogin: BaseActivity() {
         db = FirebaseFirestore.getInstance()
 
         // IDs do novo layout
-        val editNome = findViewById<EditText>(R.id.editNome)  // equivalente ao editEmail antigo
+        val editNome = findViewById<EditText>(R.id.editNome)
         val editSenha = findViewById<EditText>(R.id.editSenha)
         btnEntrar = findViewById(R.id.btnEntrar)
         progressBar = findViewById(R.id.progressBar)
+        progressBar.bringToFront()
         val btnGoogle = findViewById<MaterialButton>(R.id.btnGoogle)
 
         val btnVoltar = findViewById<ImageView>(R.id.btnVoltar)

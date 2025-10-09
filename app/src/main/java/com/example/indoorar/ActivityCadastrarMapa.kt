@@ -15,24 +15,20 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import android.graphics.drawable.Drawable
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageMetadata
-import com.google.firebase.storage.StorageException
 
 class ActivityCadastrarMapa : BaseActivity() {
 
     private lateinit var imgPreview: ImageView
     private lateinit var txtHintImagem: TextView
-    private lateinit var editNome: TextInputEditText
-    private lateinit var editDescricao: TextInputEditText
-    private lateinit var dropTipoLocal: AutoCompleteTextView
-    private lateinit var editAndar: TextInputEditText
-    private lateinit var editHorario: TextInputEditText
-    private lateinit var btnSalvar: MaterialButton
+    private lateinit var editNomeLocal: EditText
+    private lateinit var editDescricaoLocal: EditText
+    private lateinit var editAndarLocal: EditText
+    private lateinit var btnSalvarLocal: MaterialButton
     private lateinit var progressSalvar: ProgressBar
 
     private var selectedImageUri: Uri? = null
@@ -82,54 +78,45 @@ class ActivityCadastrarMapa : BaseActivity() {
         // Views
         imgPreview = findViewById(R.id.imgPreview)
         txtHintImagem = findViewById(R.id.txtHintImagem)
-        editNome = findViewById(R.id.editNome)
-        editDescricao = findViewById(R.id.editDescricao)
-        dropTipoLocal = findViewById(R.id.dropTipoLocal)
-        editAndar = findViewById(R.id.editAndar)
-        editHorario = findViewById(R.id.editHorario)
-        btnSalvar = findViewById(R.id.btnSalvar)
+        editNomeLocal = findViewById(R.id.editNomeLocal)
+        editDescricaoLocal = findViewById(R.id.editDescricaoLocal)
+        editAndarLocal = findViewById(R.id.editAndarLocal)
+        btnSalvarLocal = findViewById(R.id.btnSalvarLocal)
         progressSalvar = findViewById(R.id.progressSalvar)
 
         // Voltar
         findViewById<ImageView>(R.id.btnVoltar).setOnClickListener { onBackPressedDispatcher.onBackPressed() }
-
-        // Dropdown tipos
-        val tipos = resources.getStringArray(R.array.tipos_locais)
-        val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, tipos)
-        dropTipoLocal.setAdapter(adapter)
 
         // Escolher imagem
         findViewById<View>(R.id.cardImagem).setOnClickListener { pickImage.launch("image/*") }
         imgPreview.setOnClickListener { pickImage.launch("image/*") }
 
         // Salvar
-        btnSalvar.setOnClickListener { salvarMapa() }
+        btnSalvarLocal.setOnClickListener { salvarMapa() }
     }
 
     private fun setLoading(loading: Boolean) {
         progressSalvar.visibility = if (loading) View.VISIBLE else View.GONE
-        btnSalvar.isEnabled = !loading
+        btnSalvarLocal.isEnabled = !loading
     }
 
     private fun salvarMapa() {
-        val nome = editNome.text?.toString()?.trim().orEmpty()
-        val descricao = editDescricao.text?.toString()?.trim().orEmpty()
-        val tipo = dropTipoLocal.text?.toString()?.trim().orEmpty()
-        val andar = editAndar.text?.toString()?.trim().orEmpty()
-        val horario = editHorario.text?.toString()?.trim().orEmpty()
-
-        // Chips
-        val recursos = mutableListOf<String>()
-        if (findViewById<CompoundButton>(R.id.chipAcessivel).isChecked) recursos += "Acessível"
-        if (findViewById<CompoundButton>(R.id.chipElevador).isChecked) recursos += "Elevador"
-        if (findViewById<CompoundButton>(R.id.chipEscadas).isChecked) recursos += "Escadas"
-        if (findViewById<CompoundButton>(R.id.chipBanheiros).isChecked) recursos += "Banheiros"
-        if (findViewById<CompoundButton>(R.id.chipWifi).isChecked) recursos += "Wi-Fi"
-        if (findViewById<CompoundButton>(R.id.chipEstacionamento).isChecked) recursos += "Estacionamento"
+        val nome = editNomeLocal.text?.toString()?.trim().orEmpty()
+        val descricao = editDescricaoLocal.text?.toString()?.trim().orEmpty()
+        val quantidadeAndaresStr = editAndarLocal.text?.toString()?.trim().orEmpty()
 
         if (nome.isEmpty()) { showSnackbar("Informe o nome do mapa"); return }
-        if (descricao.isEmpty()) { showSnackbar("Informe a descrição"); return }
-        if (tipo.isEmpty()) { showSnackbar("Selecione o tipo do local"); return }
+        if (descricao.isEmpty()) { showSnackbar("Informe a descrição do local"); return }
+        val quantidadeAndares = quantidadeAndaresStr.toIntOrNull()
+        if (quantidadeAndares == null || quantidadeAndares <= 0) {
+            showSnackbar("Informe a quantidade de andares")
+            return
+        }
+        val uri = selectedImageUri
+        if (uri == null) {
+            showSnackbar("Selecione uma imagem do local")
+            return
+        }
 
         val user = FirebaseAuth.getInstance().currentUser
         if (user == null) {
@@ -145,16 +132,13 @@ class ActivityCadastrarMapa : BaseActivity() {
             finish()
         }
 
-        fun saveToFirestore(imageUrl: String?) {
+        fun saveToFirestore(imageUrl: String) {
             val dados = hashMapOf(
                 "nome" to nome,
                 "descricao" to descricao,
-                "tipo" to tipo,
-                "andar" to andar,
-                "horario" to horario,
-                "recursos" to recursos,
-                "imagemUrl" to (imageUrl ?: ""),
-                // campos compatíveis com fluxo maker
+                "quantidadeAndares" to quantidadeAndares,
+                "imagemUrl" to imageUrl,
+                // metadados
                 "criadorUid" to user.uid,
                 "nomeAutor" to (user.displayName ?: ""),
                 "dataCriacao" to Timestamp.now()
@@ -172,55 +156,42 @@ class ActivityCadastrarMapa : BaseActivity() {
                 }
         }
 
-        val uri = selectedImageUri
-        if (uri == null) {
-            saveToFirestore(null)
-        } else {
-            val storageRef = FirebaseStorage.getInstance().reference
-                .child("map_images/${user.uid}/${System.currentTimeMillis()}.jpg")
-            val contentType = contentResolver.getType(uri) ?: "image/jpeg"
-            val metadata = StorageMetadata.Builder()
-                .setContentType(contentType)
-                .build()
+        // Upload da imagem e depois salvar metadados
+        val storageRef = FirebaseStorage.getInstance().reference
+            .child("map_images/${user.uid}/${System.currentTimeMillis()}.jpg")
+        val contentType = contentResolver.getType(uri) ?: "image/jpeg"
+        val metadata = StorageMetadata.Builder()
+            .setContentType(contentType)
+            .build()
 
-            try {
-                val input = contentResolver.openInputStream(uri)
-                if (input == null) {
-                    showSnackbar("Falha ao acessar a imagem selecionada")
-                    saveToFirestore(null)
-                    return
-                }
-                val uploadTask = storageRef.putStream(input, metadata)
-                uploadTask
-                    .addOnSuccessListener {
-                        // Upload OK -> tentar obter URL pública
-                        storageRef.downloadUrl
-                            .addOnSuccessListener { httpsUri ->
-                                saveToFirestore(httpsUri.toString())
-                            }
-                            .addOnFailureListener { _ ->
-                                // Upload ok mas não deu para obter downloadUrl -> salvar gs:// como fallback
-                                val gsUrl = storageRef.toString()
-                                saveToFirestore(gsUrl)
-                            }
-                    }
-                    .addOnFailureListener { e ->
-                        val msg = when (e) {
-                            is StorageException -> when (e.errorCode) {
-                                StorageException.ERROR_NOT_AUTHORIZED -> "Sem permissão para enviar imagem (verifique as regras do Storage)"
-                                StorageException.ERROR_RETRY_LIMIT_EXCEEDED -> "Falha de rede ao enviar imagem"
-                                else -> e.message
-                            }
-                            else -> e.message
-                        }
-                        showSnackbar("Não foi possível enviar a imagem: ${msg ?: "erro desconhecido"}")
-                        saveToFirestore(null)
-                    }
-                    .addOnCompleteListener { try { input.close() } catch (_: Throwable) {} }
-            } catch (t: Throwable) {
-                showSnackbar("Falha ao ler imagem: ${t.message}")
-                saveToFirestore(null)
+        try {
+            val input = contentResolver.openInputStream(uri)
+            if (input == null) {
+                showSnackbar("Falha ao acessar a imagem selecionada")
+                setLoading(false)
+                return
             }
+            val uploadTask = storageRef.putStream(input, metadata)
+            uploadTask
+                .addOnSuccessListener {
+                    storageRef.downloadUrl
+                        .addOnSuccessListener { httpsUri ->
+                            saveToFirestore(httpsUri.toString())
+                        }
+                        .addOnFailureListener { _ ->
+                            // Fallback para gs:// se não conseguir URL pública
+                            val gsUrl = storageRef.toString()
+                            saveToFirestore(gsUrl)
+                        }
+                }
+                .addOnFailureListener { e ->
+                    showSnackbar("Não foi possível enviar a imagem: ${e.message}")
+                    setLoading(false)
+                }
+                .addOnCompleteListener { try { input.close() } catch (_: Throwable) {} }
+        } catch (t: Throwable) {
+            showSnackbar("Falha ao ler imagem: ${t.message}")
+            setLoading(false)
         }
     }
 }

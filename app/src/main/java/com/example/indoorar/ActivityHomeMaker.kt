@@ -7,7 +7,6 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -30,21 +29,6 @@ class ActivityHomeMaker : BaseActivity() {
         })
     }
 
-    private val cadastroLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val mapId = result.data?.getStringExtra("MAP_ID")
-            if (!mapId.isNullOrBlank()) {
-                startActivity(Intent(this, ActivityEditor::class.java).apply {
-                    putExtra("MAP_ID", mapId)
-                })
-            } else {
-                showSnackbar("Não foi possível criar o mapa (MAP_ID ausente)")
-            }
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -56,25 +40,13 @@ class ActivityHomeMaker : BaseActivity() {
             insets
         }
 
+        // Define dinamicamente o texto de boas-vindas com o nome do usuário logado
         val txtBemVindo = findViewById<TextView>(R.id.txtBemVindo)
-        val user = FirebaseAuth.getInstance().currentUser
-        val nome = user?.let { u ->
-            when {
-                !u.displayName.isNullOrBlank() -> u.displayName
-                !u.email.isNullOrBlank() -> u.email!!.substringBefore("@")
-                else -> null
-            }
-        }
-        txtBemVindo.text = buildString {
-            append("BEM-VINDO")
-            if (!nome.isNullOrBlank()) {
-                append(" ")
-                append(nome.uppercase())
-            }
-        }
+        txtBemVindo.text = "BEM-VINDO!"
 
+        // Botões principais
         findViewById<ImageView>(R.id.btnCriarMapa).setOnClickListener {
-            cadastroLauncher.launch(Intent(this, ActivityCadastrarMapa::class.java))
+            startActivity(Intent(this, ActivityEditor::class.java))
         }
         findViewById<ImageView>(R.id.btnMeusMapas).setOnClickListener {
             startActivity(Intent(this, ActivityMeusMapas::class.java))
@@ -83,6 +55,7 @@ class ActivityHomeMaker : BaseActivity() {
             startActivity(Intent(this, ActivityPerfil::class.java))
         }
 
+        // Views de recentes
         recyclerRecentes = findViewById(R.id.recyclerRecentes)
         progressRecentes = findViewById(R.id.progressRecentes)
         txtEmptyRecentes = findViewById(R.id.txtEmptyRecentes)

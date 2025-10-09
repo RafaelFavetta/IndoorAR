@@ -51,6 +51,10 @@ class ActivityCriar : BaseActivity() {
         val emailField = findViewById<EditText>(R.id.editEmail)
         telefoneField = findViewById(R.id.editTelefone)
         senhaField = findViewById(R.id.editSenha)
+        btnCadastrar = findViewById(R.id.btnCadastrar)
+        progressBar = findViewById(R.id.progressBar)
+        btnGoogle = findViewById(R.id.btnGoogle)
+        progressBar.bringToFront()
 
         // Máscara manual para telefone brasileiro
         telefoneField.addTextChangedListener(object : TextWatcher {
@@ -61,8 +65,8 @@ class ActivityCriar : BaseActivity() {
             override fun afterTextChanged(s: Editable?) {
                 if (isUpdating) return
                 isUpdating = true
-                val digits = s.toString().replace(Regex("[^\\d]"), "")
-                telefoneBruto = digits // Atualiza telefoneBruto com só os dígitos
+                val digits = s.toString().replace(Regex("\\D"), "")
+                telefoneBruto = digits
                 var masked = ""
                 var i = 0
                 for (m in mask) {
@@ -167,7 +171,7 @@ class ActivityCriar : BaseActivity() {
             if (!validarCampos(nome, email, telefone, senha)) return@setOnClickListener
 
             btnCadastrar.isEnabled = false
-            progressBar.visibility = ProgressBar.VISIBLE
+            progressBar.visibility = View.VISIBLE
 
             criarConta(nome, email, telefone, senha)
         }
@@ -192,7 +196,7 @@ class ActivityCriar : BaseActivity() {
     private fun criarConta(nome: String, email: String, telefone: String, senha: String) {
         auth.createUserWithEmailAndPassword(email, senha)
             .addOnCompleteListener(this) { task ->
-                progressBar.visibility = ProgressBar.GONE
+                progressBar.visibility = View.GONE
                 btnCadastrar.isEnabled = true
 
                 if (task.isSuccessful) {
@@ -206,13 +210,6 @@ class ActivityCriar : BaseActivity() {
                         "mapasCriados" to emptyList<String>()
                     )
 
-                    val btnVoltar = findViewById<ImageView>(R.id.btnVoltar)
-                    btnVoltar.setOnClickListener {
-                        val intent = Intent(this, ActivityConta::class.java)
-                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        startActivity(intent)
-                        finish()
-                    }
 
                     db.collection("usuarios").document(uid)
                         .set(dadosUsuario)

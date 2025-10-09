@@ -19,4 +19,19 @@
     <string name="alterar_senha">Alterar Senha</string>
     <string name="seta">Seta</string>
     <string name="verifying_arcore">Verificando ARCore...</string>
+
+    <string name="bem_vindo">BEM-VINDO!</string>
+    <string name="adicionados_recentemente">Adicionados recentemente</string>
+    <string name="o_que_vamos_criar">O que vamos criar?</string>
+    <string name="meus_mapas">Meus mapas</string>
+    <string name="criar">Criar</string>
+    <string name="criar_novo_mapa">Criar novo mapa</string>
+    <string name="estatisticas">Estatísticas</string>
+    <string name="logo">Logo</string>
+    <string name="configuracoes">Configurações</string>
+    <string name="nenhum_mapa_recente">Nenhum mapa recente ainda</string>
+    <string name="nome_do_mapa">Nome do mapa</string>
+    <string name="descricao_do_mapa">Descrição do mapa</string>
+    <string name="data">Data</string>
+    <string name="thumb_mapa">Miniatura do mapa</string>
 </resources>

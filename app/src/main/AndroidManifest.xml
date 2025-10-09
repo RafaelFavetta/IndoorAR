@@ -45,6 +45,9 @@
             android:name=".ActivityHomeComum"
             android:exported="false" />
         <activity
+            android:name=".ActivityFavoritos"
+            android:exported="false" />
+        <activity
             android:name=".ActivityLogin"
             android:exported="false" />
         <activity

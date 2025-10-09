@@ -69,6 +69,9 @@ class ActivityHomeComum : BaseActivity() {
         findViewById<ImageView>(R.id.btnMapasExistentes)?.setOnClickListener {
             startActivity(Intent(this, ActivityMapasExistentes::class.java))
         }
+        findViewById<androidx.cardview.widget.CardView>(R.id.cardFavoritos)?.setOnClickListener {
+            startActivity(Intent(this, ActivityFavoritos::class.java))
+        }
 
         // Lista de recentes (carrossel horizontal paginado)
         recyclerRecentes = findViewById(R.id.recyclerRecentes)

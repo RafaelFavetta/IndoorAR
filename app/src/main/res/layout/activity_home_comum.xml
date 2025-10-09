@@ -248,6 +248,7 @@
 
             <!-- Card Favoritos -->
             <androidx.cardview.widget.CardView
+                android:id="@+id/cardFavoritos"
                 android:layout_width="0dp"
                 android:layout_height="150dp"
                 android:layout_margin="8dp"
@@ -270,7 +271,6 @@
                         android:background="@drawable/background_oval_2">
 
                         <ImageView
-                            android:id="@+id/btnFavoritos"
                             android:layout_width="38dp"
                             android:layout_height="38dp"
                             android:background="@drawable/ripple_clickable"

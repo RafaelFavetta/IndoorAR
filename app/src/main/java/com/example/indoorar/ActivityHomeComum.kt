@@ -48,13 +48,18 @@ class ActivityHomeComum : BaseActivity() {
         setContentView(R.layout.activity_home_comum)
 
         // System insets
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        val mainView = findViewById<View>(R.id.main)
+        if (mainView == null) {
+            Toast.makeText(this, "Erro: View 'main' não encontrada no layout.", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(mainView) { v, insets ->
             val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
-        // Botões header (null-safe caso layout mude)
         findViewById<ImageView>(R.id.btnEscanear)?.setOnClickListener {
             startActivity(Intent(this, ActivityScanQR::class.java))
         }
@@ -72,7 +77,9 @@ class ActivityHomeComum : BaseActivity() {
 
         recyclerRecentes.layoutManager = LinearLayoutManager(this, RecyclerView.HORIZONTAL, false)
         recyclerRecentes.adapter = recentAdapter
-        PagerSnapHelper().attachToRecyclerView(recyclerRecentes)
+
+        val snapHelper = PagerSnapHelper()
+        snapHelper.attachToRecyclerView(recyclerRecentes)
 
         carregarMapasRecentesEmTempoReal()
     }
@@ -80,7 +87,6 @@ class ActivityHomeComum : BaseActivity() {
     override fun onDestroy() {
         super.onDestroy()
         recentesListener?.remove()
-        recentesListener = null
     }
 
     private fun carregarMapasRecentesEmTempoReal() {

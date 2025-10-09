@@ -38,7 +38,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.IndoorAR" >
-        <!-- Mark ARCore optional for Sceneform -->
         <meta-data
             android:name="com.google.ar.core"
             android:value="optional" />

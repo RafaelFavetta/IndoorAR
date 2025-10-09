@@ -13,6 +13,19 @@
 
     <!-- Recentes e RecyclerView -->
 
+    <TextView
+        android:id="@+id/txtMapasFavoritos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="24dp"
+        android:fontFamily="@font/inter"
+        android:text="Adicionados recentemente"
+        android:textColor="#32357A"
+        android:textSize="18sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/header" />
+
     <ProgressBar
         android:id="@+id/progressRecentes"
         style="@android:style/Widget.Material.ProgressBar.Small"
@@ -284,21 +297,6 @@
             </androidx.cardview.widget.CardView>
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <TextView
-        android:id="@+id/txtMapasFavoritos"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="28dp"
-        android:layout_marginTop="24dp"
-        android:fontFamily="@font/inter"
-        android:text="Adicionados recentemente"
-        android:textAllCaps="false"
-        android:textColor="#32357A"
-        android:textSize="18sp"
-        android:textStyle="normal"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/header" />
 
     <!-- Remove FAB: was granting creation access in common home -->
 

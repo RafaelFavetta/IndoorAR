@@ -36,5 +36,7 @@ class ActivityHomeComum : BaseActivity() {
         btnMapasExistentes.setOnClickListener {
             startActivity(Intent(this, ActivityMapasExistentes::class.java))
         }
+
+        // Removido: criação de mapa é exclusivo para maker na ActivityHomeMaker/ActivityEditor
     }
 }

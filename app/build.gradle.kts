@@ -112,6 +112,7 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics-ktx")
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
 
     implementation("androidx.activity:activity-ktx:1.11.0")
     implementation("androidx.activity:activity:1.11.0")
@@ -141,4 +142,7 @@ dependencies {
 
 
     testImplementation("junit:junit:4.13.2")
+
+    // Firebase UI Storage for Glide <-> StorageReference support
+    implementation("com.firebaseui:firebase-ui-storage:8.0.2")
 }

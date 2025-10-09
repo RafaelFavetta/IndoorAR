@@ -7,6 +7,7 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -23,10 +24,25 @@ class ActivityHomeMaker : BaseActivity() {
     private lateinit var txtEmptyRecentes: TextView
     private lateinit var txtVerMais: TextView
     private val adapterRecentes = RecentesAdapter { mapa ->
-        // Ao clicar abre diretamente o mapa em ActivityMap
-        val itn = Intent(this, ActivityMap::class.java)
-        itn.putExtra("MAP_ID", mapa.id)
-        startActivity(itn)
+        // Abrir planta (editor) diretamente
+        startActivity(Intent(this, ActivityEditor::class.java).apply {
+            putExtra("MAP_ID", mapa.id)
+        })
+    }
+
+    private val cadastroLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val mapId = result.data?.getStringExtra("MAP_ID")
+            if (!mapId.isNullOrBlank()) {
+                startActivity(Intent(this, ActivityEditor::class.java).apply {
+                    putExtra("MAP_ID", mapId)
+                })
+            } else {
+                showSnackbar("Não foi possível criar o mapa (MAP_ID ausente)")
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,7 +56,6 @@ class ActivityHomeMaker : BaseActivity() {
             insets
         }
 
-        // Define dinamicamente o texto de boas-vindas com o nome do usuário logado
         val txtBemVindo = findViewById<TextView>(R.id.txtBemVindo)
         val user = FirebaseAuth.getInstance().currentUser
         val nome = user?.let { u ->
@@ -58,9 +73,8 @@ class ActivityHomeMaker : BaseActivity() {
             }
         }
 
-        // Botões principais
         findViewById<ImageView>(R.id.btnCriarMapa).setOnClickListener {
-            startActivity(Intent(this, ActivityEditor::class.java))
+            cadastroLauncher.launch(Intent(this, ActivityCadastrarMapa::class.java))
         }
         findViewById<ImageView>(R.id.btnMeusMapas).setOnClickListener {
             startActivity(Intent(this, ActivityMeusMapas::class.java))
@@ -69,7 +83,6 @@ class ActivityHomeMaker : BaseActivity() {
             startActivity(Intent(this, ActivityPerfil::class.java))
         }
 
-        // Views de recentes
         recyclerRecentes = findViewById(R.id.recyclerRecentes)
         progressRecentes = findViewById(R.id.progressRecentes)
         txtEmptyRecentes = findViewById(R.id.txtEmptyRecentes)
@@ -113,7 +126,8 @@ class ActivityHomeMaker : BaseActivity() {
                             descricao = doc.getString("descricao") ?: "",
                             autorUid = autorUid,
                             autorNome = doc.getString("nomeAutor") ?: nomeAutorCache(autorUid),
-                            dataCriacao = doc.getTimestamp("dataCriacao")
+                            dataCriacao = doc.getTimestamp("dataCriacao"),
+                            imagemUrl = doc.getString("imagemUrl")
                         )
                     }
                     adapterRecentes.submit(lista)
@@ -135,7 +149,6 @@ class ActivityHomeMaker : BaseActivity() {
         FirebaseFirestore.getInstance().collection("usuarios").document(uid).get()
             .addOnSuccessListener { d ->
                 cacheAutorNome = d.getString("nome") ?: uid
-                // Poderia notificar adapter se quisermos atualizar nomes posteriormente
             }
         return uid
     }

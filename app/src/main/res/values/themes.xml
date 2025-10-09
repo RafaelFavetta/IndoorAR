@@ -1,21 +1,17 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Tema base do app -->
-    <style name="Theme.IndoorAR" parent="Theme.MaterialComponents.Light.NoActionBar">
+    <!-- Tema base do app agora usando Material3 para compatibilidade com widgets Material3 nos layouts -->
+    <style name="Theme.IndoorAR" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">#32357A</item>
         <item name="colorPrimaryVariant">#32357A</item>
         <item name="colorOnPrimary">#FDFDFD</item>
         <item name="android:statusBarColor">#32357A</item>
         <item name="android:windowBackground">#FDFDFD</item>
-
-        <!-- força todos os botões a não usarem Material -->
-        <item name="buttonStyle">@style/Widget.AppCompat.Button</item>
-        <item name="materialButtonStyle">@style/Widget.AppCompat.Button</item>
+        <!-- Removidos overrides de AppCompat Button para evitar conflitos com Material -->
     </style>
 
-
-    <!-- Splash para versões antigas -->
-    <style name="Theme.IndoorAR.Splash" parent="Theme.MaterialComponents.Light.NoActionBar">
+    <!-- Splash para versões antigas usando Material3 -->
+    <style name="Theme.IndoorAR.Splash" parent="Theme.Material3.Light.NoActionBar">
         <item name="android:windowBackground">@color/colorPrimary</item>
     </style>
 

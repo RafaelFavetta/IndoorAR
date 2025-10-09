@@ -24,6 +24,9 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.graphics.toColorInt
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.activity.result.contract.ActivityResultContracts
+import android.content.Intent
+import com.google.firebase.firestore.SetOptions
 
 class ActivityEditor : BaseActivity() {
 
@@ -39,9 +42,29 @@ class ActivityEditor : BaseActivity() {
     private lateinit var btnMergeShapes: MaterialButton
     private lateinit var btnPreviewMode: MaterialButton
 
+    private var mapIdFromIntent: String? = null
+
+    private val cadastroLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        btnSalvarMapa.isEnabled = true
+        if (result.resultCode == RESULT_OK) {
+            val mapId = result.data?.getStringExtra("MAP_ID")
+            if (!mapId.isNullOrBlank()) {
+                salvarEstruturaNoMapa(mapId)
+            } else {
+                Toast.makeText(this, "Falha: MAP_ID não retornado", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            Toast.makeText(this, "Cadastro cancelado", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editor)
+
+        mapIdFromIntent = intent.getStringExtra("MAP_ID")
 
         bindViews()
         setupToolButtons()
@@ -76,7 +99,7 @@ class ActivityEditor : BaseActivity() {
             }
         }
 
-        btnSalvarMapa.setOnClickListener { salvarMapa() }
+        btnSalvarMapa.setOnClickListener { onSalvarClick() }
 
         btnMergeShapes.setOnClickListener {
             mapEditor.mergeEdgesAndAdjustCorners()
@@ -117,7 +140,7 @@ class ActivityEditor : BaseActivity() {
         }
     }
 
-    private fun salvarMapa() {
+    private fun onSalvarClick() {
         val auth = FirebaseAuth.getInstance()
         val user = auth.currentUser
         if (user == null) {
@@ -125,7 +148,6 @@ class ActivityEditor : BaseActivity() {
             return
         }
         btnSalvarMapa.isEnabled = false
-        Toast.makeText(this, "Verificando permissões...", Toast.LENGTH_SHORT).show()
         val db = FirebaseFirestore.getInstance()
         db.collection("usuarios").document(user.uid).get()
             .addOnSuccessListener { doc ->
@@ -135,16 +157,13 @@ class ActivityEditor : BaseActivity() {
                     Toast.makeText(this, "Apenas maker pode criar mapas", Toast.LENGTH_LONG).show()
                     return@addOnSuccessListener
                 }
-                val nomeAutor = doc.getString("nome") ?: user.uid
-                // Abrir card para inserir o nome do mapa
-                solicitarNomeMapa { nomeMapa ->
-                    if (nomeMapa.isBlank()) {
-                        btnSalvarMapa.isEnabled = true
-                        Toast.makeText(this, "Informe um nome para o mapa", Toast.LENGTH_SHORT).show()
-                    } else {
-                        executarSalvamento(user.uid, nomeAutor, nomeMapa.trim())
-                    }
+                // Se já temos um MAP_ID (veio da HomeMaker), salva direto
+                mapIdFromIntent?.let { existingId ->
+                    salvarEstruturaNoMapa(existingId)
+                    return@addOnSuccessListener
                 }
+                // Caso contrário, abre a tela de cadastro de metadados
+                cadastroLauncher.launch(Intent(this, com.example.indoorar.ActivityCadastrarMapa::class.java))
             }
             .addOnFailureListener { e ->
                 btnSalvarMapa.isEnabled = true
@@ -152,53 +171,13 @@ class ActivityEditor : BaseActivity() {
             }
     }
 
-    private fun solicitarNomeMapa(onConfirm: (String) -> Unit) {
-        val input = EditText(this).apply {
-            hint = "Nome do mapa"
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_WORDS
-            maxLines = 1
-        }
-        val container = FrameLayout(this).apply {
-            val padding = (16 * resources.displayMetrics.density).toInt()
-            setPadding(padding, padding, padding, 0)
-            addView(input, FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ))
-        }
-        AlertDialog.Builder(this)
-            .setTitle("Salvar mapa")
-            .setMessage("Digite o nome do mapa")
-            .setView(container)
-            .setPositiveButton("Salvar") { dialog, _ ->
-                onConfirm(input.text?.toString() ?: "")
-                dialog.dismiss()
-            }
-            .setNegativeButton("Cancelar") { dialog, _ ->
-                btnSalvarMapa.isEnabled = true
-                dialog.dismiss()
-            }
-            .setOnCancelListener {
-                btnSalvarMapa.isEnabled = true
-            }
-            .show()
-    }
-
-    private fun executarSalvamento(uid: String, autorNome: String, nomeMapa: String) {
+    private fun salvarEstruturaNoMapa(mapId: String) {
         val db = FirebaseFirestore.getInstance()
-        val mapaRef = db.collection("mapas").document()
-
-        val mapaData = mapOf(
-            "criadorUid" to uid,
-            "nomeAutor" to autorNome,
-            "dataCriacao" to com.google.firebase.Timestamp.now(),
-            "nome" to nomeMapa,
-            "descricao" to "",
-            "pxPerMeter" to mapEditor.pxPerMeter
-        )
+        val mapaRef = db.collection("mapas").document(mapId)
 
         val batch = db.batch()
-        batch.set(mapaRef, mapaData)
+        // Atualiza somente pxPerMeter sem sobrescrever outros campos
+        batch.set(mapaRef, mapOf("pxPerMeter" to mapEditor.pxPerMeter), SetOptions.merge())
 
         // FORMAS
         mapEditor.actions.filterIsInstance<Action.Shape>().forEach { shape ->
@@ -227,7 +206,7 @@ class ActivityEditor : BaseActivity() {
             batch.set(formaDoc, dataForma)
         }
 
-        // POIS
+        // POIs
         val pois = mapEditor.actions.filterIsInstance<Action.Poi>()
         pois.forEach { poi ->
             val poiDoc = mapaRef.collection("pois").document(poi.id)
@@ -267,7 +246,7 @@ class ActivityEditor : BaseActivity() {
             .addOnSuccessListener {
                 btnSalvarMapa.isEnabled = true
                 Toast.makeText(this, "Mapa salvo com sucesso!", Toast.LENGTH_SHORT).show()
-                startActivity(android.content.Intent(this, com.example.indoorar.ActivityMeusMapas::class.java))
+                startActivity(Intent(this, com.example.indoorar.ActivityMeusMapas::class.java))
                 finish()
             }
             .addOnFailureListener { e ->

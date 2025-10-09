@@ -170,44 +170,32 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnFacebook"
         android:layout_width="350dp"
-        android:layout_height="42dp"
-        android:background="@drawable/btn_arredondado3_ripple"
+        android:layout_height="50dp"
         android:backgroundTint="#E0E0E0"
         android:fontFamily="@font/inter"
         android:gravity="center"
         android:letterSpacing="0.1"
-        android:text="Entrar com Facebook"
+        android:text="Entrar com Google"
         android:textColor="#4F4F4F"
         android:textSize="13sp"
-        app:icon="@drawable/ic_facebook"
+        app:cornerRadius="10dp"
+        app:icon="@drawable/ic_google"
         app:iconGravity="textStart"
         app:iconPadding="12dp"
         app:iconSize="24dp"
         app:iconTint="@null"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.508"
+        app:layout_constraintHorizontal_bias="0.491"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.914" />
-
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintVertical_bias="0.911" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnGoogle"
         android:layout_width="350dp"
-        android:layout_height="42dp"
+        android:layout_height="50dp"
         android:layout_marginTop="8dp"
-        android:background="@drawable/btn_arredondado3_ripple"
         android:backgroundTint="#E0E0E0"
         android:fontFamily="@font/inter"
         android:gravity="center"
@@ -223,9 +211,20 @@
         app:iconTint="@null"
         app:layout_constraintBottom_toTopOf="@+id/btnFacebook"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.508"
+        app:layout_constraintHorizontal_bias="0.475"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.979" />
+        app:layout_constraintVertical_bias="0.989" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

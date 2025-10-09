@@ -316,4 +316,6 @@
         app:layout_constraintBaseline_toBaselineOf="@id/txtMapasFavoritos"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Remove FAB: was granting creation access in common home -->
+
 </androidx.constraintlayout.widget.ConstraintLayout>

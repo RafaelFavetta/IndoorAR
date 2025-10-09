@@ -58,7 +58,7 @@
             android:name=".ui.ActivityEditor"
             android:exported="true"
             android:screenOrientation="landscape"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
+            android:theme="@style/Theme.IndoorAR" />
         <activity
             android:name=".ActivityHomeMaker"
             android:exported="false" />
@@ -96,7 +96,7 @@
             android:name=".ActivityMap"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
+            android:theme="@style/Theme.IndoorAR" />
         <activity
             android:name=".ActivityMeusMapas"
             android:exported="false" />
@@ -109,6 +109,7 @@
         <activity android:name=".ActivityAlterarEmail" android:exported="false" />
         <activity android:name=".ActivityAlterarSenha" android:exported="false" />
         <activity android:name=".ActivityCriarSenha" android:exported="false" />
+        <activity android:name=".ActivityCadastrarMapa" android:exported="false" />
 
         <!-- Provider para compartilhar o QR Code -->
         <provider

@@ -10,7 +10,6 @@
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
         android:background="@android:color/white">
 
         <androidx.constraintlayout.widget.ConstraintLayout

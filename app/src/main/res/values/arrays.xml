@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="tipos_locais">
+        <item>Shopping</item>
+        <item>Hospital</item>
+        <item>Universidade</item>
+        <item>Escritório</item>
+        <item>Aeroporto</item>
+        <item>Rodoviária</item>
+        <item>Museu</item>
+        <item>Estádio</item>
+        <item>Centro de Convenções</item>
+        <item>Biblioteca</item>
+        <item>Hotel</item>
+        <item>Outro</item>
+    </string-array>
+</resources>
+

@@ -100,7 +100,11 @@ class ActivityHomeMaker : BaseActivity() {
                             autorUid = autorUid,
                             autorNome = doc.getString("nomeAutor") ?: nomeAutorCache(autorUid),
                             dataCriacao = doc.getTimestamp("dataCriacao"),
-                            imagemUrl = doc.getString("imagemUrl")
+                            imagemUrl = doc.getString("imagemUrl"),
+                            imagemBlob = doc.getBlob("imagemBlob"),
+                            imagemMime = doc.getString("imagemMime"),
+                            imagemBlobThumb = doc.getBlob("imagemBlobThumb"),
+                            imagemMimeThumb = doc.getString("imagemMimeThumb")
                         )
                     }
                     adapterRecentes.submit(lista)

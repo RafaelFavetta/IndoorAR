@@ -122,7 +122,11 @@ class ActivityHomeComum : BaseActivity() {
             autorUid = doc.getString("criadorUid") ?: "",
             autorNome = doc.getString("nomeAutor") ?: (doc.getString("criadorUid") ?: ""),
             dataCriacao = doc.getTimestamp("dataCriacao"),
-            imagemUrl = doc.getString("imagemUrl")
+            imagemUrl = doc.getString("imagemUrl"),
+            imagemBlob = doc.getBlob("imagemBlob"),
+            imagemMime = doc.getString("imagemMime"),
+            imagemBlobThumb = doc.getBlob("imagemBlobThumb"),
+            imagemMimeThumb = doc.getString("imagemMimeThumb")
         )
     }
 
@@ -142,33 +146,55 @@ class ActivityHomeComum : BaseActivity() {
         txtTitulo?.text = m.nome
         txtDesc?.text = m.descricao.ifBlank { "Sem descrição" }
 
-        val url = m.imagemUrl
         if (ivPreview != null) {
-            if (!url.isNullOrBlank()) {
-                if (url.startsWith("gs://")) {
-                    val ref = FirebaseStorage.getInstance().getReferenceFromUrl(url)
-                    ref.downloadUrl
-                        .addOnSuccessListener { httpsUri ->
-                            Glide.with(ivPreview.context)
-                                .load(httpsUri)
-                                .centerCrop()
-                                .placeholder(R.drawable.ic_minimap_placeholder)
-                                .error(R.drawable.ic_minimap_placeholder)
-                                .into(ivPreview)
-                        }
-                        .addOnFailureListener {
-                            ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
-                        }
-                } else {
+            val medium = m.imagemBlob?.toBytes()
+            val thumb = m.imagemBlobThumb?.toBytes()
+            when {
+                medium != null && medium.isNotEmpty() -> {
                     Glide.with(ivPreview.context)
-                        .load(url)
+                        .load(medium)
                         .centerCrop()
                         .placeholder(R.drawable.ic_minimap_placeholder)
                         .error(R.drawable.ic_minimap_placeholder)
                         .into(ivPreview)
                 }
-            } else {
-                ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
+                thumb != null && thumb.isNotEmpty() -> {
+                    Glide.with(ivPreview.context)
+                        .load(thumb)
+                        .centerCrop()
+                        .placeholder(R.drawable.ic_minimap_placeholder)
+                        .error(R.drawable.ic_minimap_placeholder)
+                        .into(ivPreview)
+                }
+                else -> {
+                    val url = m.imagemUrl
+                    if (!url.isNullOrBlank()) {
+                        if (url.startsWith("gs://")) {
+                            val ref = FirebaseStorage.getInstance().getReferenceFromUrl(url)
+                            ref.downloadUrl
+                                .addOnSuccessListener { httpsUri ->
+                                    Glide.with(ivPreview.context)
+                                        .load(httpsUri)
+                                        .centerCrop()
+                                        .placeholder(R.drawable.ic_minimap_placeholder)
+                                        .error(R.drawable.ic_minimap_placeholder)
+                                        .into(ivPreview)
+                                }
+                                .addOnFailureListener {
+                                    ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
+                                }
+                        } else {
+                            Glide.with(ivPreview.context)
+                                .load(url)
+                                .centerCrop()
+                                .placeholder(R.drawable.ic_minimap_placeholder)
+                                .error(R.drawable.ic_minimap_placeholder)
+                                .into(ivPreview)
+                        }
+                    } else {
+                        ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
+                    }
+                }
             }
         }
 
@@ -258,27 +284,22 @@ class ActivityHomeComum : BaseActivity() {
         } catch (_: Exception) { false }
     }
 
-    private fun writeSimplePdfWithBitmap(qr: Bitmap, out: OutputStream) {
-        // PDF A4 simples com o QR centralizado usando PdfDocument nativo
-        val pdf = android.graphics.pdf.PdfDocument()
-        val pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 72dpi
-        val page = pdf.startPage(pageInfo)
-        val c = page.canvas
-        c.drawColor(Color.WHITE)
-        val margin = 40
-        val size = minOf(pageInfo.pageWidth, pageInfo.pageHeight) - margin * 2
-        val left = (pageInfo.pageWidth - size) / 2
-        val top = (pageInfo.pageHeight - size) / 2
-        val rect = Rect(left, top, left + size, top + size)
-        c.drawBitmap(qr, null, rect, null)
-        val paint = Paint().apply {
-            color = Color.BLACK
-            textAlign = Paint.Align.CENTER
-            textSize = 14f
-        }
-        c.drawText("IndoorAR - Mapa ${qr.hashCode()}", pageInfo.pageWidth / 2f, (top - 12).toFloat(), paint)
-        pdf.finishPage(page)
-        pdf.writeTo(out)
-        pdf.close()
+    private fun writeSimplePdfWithBitmap(bmp: Bitmap, out: OutputStream) {
+        val pageWidth = 595 // A4 width at 72dpi (~8.27in * 72)
+        val pageHeight = 842 // A4 height at 72dpi (~11.69in * 72)
+        val scale = minOf(pageWidth.toFloat() / bmp.width, pageHeight.toFloat() / bmp.height)
+        val pdfBmp = Bitmap.createScaledBitmap(bmp, (bmp.width * scale).toInt(), (bmp.height * scale).toInt(), true)
+        val document = android.graphics.pdf.PdfDocument()
+        val pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
+        val page = document.startPage(pageInfo)
+        val canvas = page.canvas
+        val left = (pageWidth - pdfBmp.width) / 2f
+        val top = (pageHeight - pdfBmp.height) / 2f
+        canvas.drawColor(Color.WHITE)
+        canvas.drawBitmap(pdfBmp, left, top, null)
+        document.finishPage(page)
+        document.writeTo(out)
+        document.close()
+        if (!pdfBmp.isRecycled) pdfBmp.recycle()
     }
 }

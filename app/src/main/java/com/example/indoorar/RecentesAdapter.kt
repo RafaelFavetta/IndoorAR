@@ -60,33 +60,57 @@ class RecentesAdapter(
         fun bind(m: MapaResumo, onClick: (MapaResumo) -> Unit) {
             txtNome.text = m.nome
             txtDesc.text = m.descricao.ifBlank { "Sem descrição" }
-            val url = m.imagemUrl
-            if (!url.isNullOrBlank()) {
-                if (url.startsWith("gs://")) {
-                    val ref = FirebaseStorage.getInstance().getReferenceFromUrl(url)
-                    ref.downloadUrl
-                        .addOnSuccessListener { httpsUri ->
-                            Glide.with(ivThumb.context)
-                                .load(httpsUri)
-                                .centerCrop()
-                                .placeholder(R.drawable.ic_minimap_placeholder)
-                                .error(R.drawable.ic_minimap_placeholder)
-                                .into(ivThumb)
-                        }
-                        .addOnFailureListener {
-                            ivThumb.setImageResource(R.drawable.ic_minimap_placeholder)
-                        }
-                } else {
+
+            val thumbBytes = m.imagemBlobThumb?.toBytes()
+            val mediumBytes = m.imagemBlob?.toBytes()
+            when {
+                thumbBytes != null && thumbBytes.isNotEmpty() -> {
                     Glide.with(ivThumb.context)
-                        .load(url)
+                        .load(thumbBytes)
                         .centerCrop()
                         .placeholder(R.drawable.ic_minimap_placeholder)
                         .error(R.drawable.ic_minimap_placeholder)
                         .into(ivThumb)
                 }
-            } else {
-                ivThumb.setImageResource(R.drawable.ic_minimap_placeholder)
+                mediumBytes != null && mediumBytes.isNotEmpty() -> {
+                    Glide.with(ivThumb.context)
+                        .load(mediumBytes)
+                        .centerCrop()
+                        .placeholder(R.drawable.ic_minimap_placeholder)
+                        .error(R.drawable.ic_minimap_placeholder)
+                        .into(ivThumb)
+                }
+                else -> {
+                    val url = m.imagemUrl
+                    if (!url.isNullOrBlank()) {
+                        if (url.startsWith("gs://")) {
+                            val ref = FirebaseStorage.getInstance().getReferenceFromUrl(url)
+                            ref.downloadUrl
+                                .addOnSuccessListener { httpsUri ->
+                                    Glide.with(ivThumb.context)
+                                        .load(httpsUri)
+                                        .centerCrop()
+                                        .placeholder(R.drawable.ic_minimap_placeholder)
+                                        .error(R.drawable.ic_minimap_placeholder)
+                                        .into(ivThumb)
+                                }
+                                .addOnFailureListener {
+                                    ivThumb.setImageResource(R.drawable.ic_minimap_placeholder)
+                                }
+                        } else {
+                            Glide.with(ivThumb.context)
+                                .load(url)
+                                .centerCrop()
+                                .placeholder(R.drawable.ic_minimap_placeholder)
+                                .error(R.drawable.ic_minimap_placeholder)
+                                .into(ivThumb)
+                        }
+                    } else {
+                        ivThumb.setImageResource(R.drawable.ic_minimap_placeholder)
+                    }
+                }
             }
+
             itemView.setOnClickListener { onClick(m) }
         }
     }

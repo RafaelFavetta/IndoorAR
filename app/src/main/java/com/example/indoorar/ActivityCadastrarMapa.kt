@@ -18,13 +18,12 @@ import com.google.android.material.button.MaterialButton
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageMetadata
-import com.google.firebase.storage.StorageReference
 import android.os.Handler
 import android.os.Looper
-import com.google.firebase.storage.StorageException
-import com.google.firebase.FirebaseApp
+import android.graphics.BitmapFactory
+import android.graphics.Bitmap
+import java.io.ByteArrayOutputStream
+import com.google.firebase.firestore.Blob
 
 class ActivityCadastrarMapa : BaseActivity() {
 
@@ -37,13 +36,9 @@ class ActivityCadastrarMapa : BaseActivity() {
     private lateinit var progressSalvar: ProgressBar
 
     private var selectedImageUri: Uri? = null // manterá a URI local copiada
-    private var originalPickedUri: Uri? = null // URI original do provedor (content://)
-
-    private val mainHandler = Handler(Looper.getMainLooper())
 
     private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { selected ->
-            originalPickedUri = selected
             val copied = copyUriToCache(selected)
             if (copied == null) {
                 showSnackbar("Falha ao acessar a imagem selecionada")
@@ -83,7 +78,6 @@ class ActivityCadastrarMapa : BaseActivity() {
         }
     }
 
-    // Copia a URI para um arquivo local no cache e retorna sua URI
     private fun copyUriToCache(src: Uri): Uri? {
         return try {
             val mime = contentResolver.getType(src) ?: "image/jpeg"
@@ -156,33 +150,52 @@ class ActivityCadastrarMapa : BaseActivity() {
         }
         setLoading(true)
 
-        // Helpers
-        fun extFromMime(mime: String): String = when {
-            mime.endsWith("png") -> "png"
-            mime.endsWith("webp") -> "webp"
-            mime.endsWith("heic") -> "heic"
-            else -> "jpg"
-        }
-
         fun returnToCaller(mapId: String) {
             val data = Intent().apply { putExtra("MAP_ID", mapId) }
             setResult(RESULT_OK, data)
             finish()
         }
 
-        fun saveToFirestore(imageUrl: String) {
+        // Comprimir duas versões: medium e thumbnail
+        try {
+            val medium = compressUri(uri, targetMaxBytes = 720_000, maxDim = 1280)
+            val thumb = compressUri(uri, targetMaxBytes = 150_000, maxDim = 600)
+            val mediumBytes = medium.first
+            val thumbBytes = thumb.first
+            val mediumMime = medium.second
+            val thumbMime = thumb.second
+            if (mediumBytes == null && thumbBytes == null) {
+                showSnackbar("Não foi possível processar a imagem selecionada")
+                setLoading(false)
+                return
+            }
+            // Garantir que o total do documento não ultrapasse ~1MB: se necessário, priorizar thumb
+            val total = (mediumBytes?.size ?: 0) + (thumbBytes?.size ?: 0)
+            val (finalMedium, finalThumb) = if (total > 950_000) {
+                // Se excedeu, descarta medium e mantém só o thumb
+                Pair(null, thumbBytes)
+            } else Pair(mediumBytes, thumbBytes)
+
             val dados = hashMapOf(
                 "nome" to nome,
                 "descricao" to descricao,
                 "quantidadeAndares" to quantidadeAndares,
-                "imagemUrl" to imageUrl,
+                // blobs
+                "imagemBlob" to (finalMedium?.let { Blob.fromBytes(it) }),
+                "imagemMime" to (finalMedium?.let { mediumMime } ?: thumbMime), // mime principal
+                "imagemBlobThumb" to (finalThumb?.let { Blob.fromBytes(it) }),
+                "imagemMimeThumb" to (finalThumb?.let { thumbMime }),
+                // compatibilidade
+                "imagemUrl" to "",
                 // metadados
                 "criadorUid" to user.uid,
                 "nomeAutor" to (user.displayName ?: ""),
                 "dataCriacao" to Timestamp.now()
             )
+            // Remove nulls para não gravar campos vazios
+            val sanitized = dados.filterValues { it != null }
             FirebaseFirestore.getInstance().collection("mapas")
-                .add(dados)
+                .add(sanitized)
                 .addOnSuccessListener { docRef ->
                     showSnackbar("Mapa cadastrado com sucesso.")
                     setLoading(false)
@@ -192,110 +205,67 @@ class ActivityCadastrarMapa : BaseActivity() {
                     showSnackbar("Erro ao salvar: ${e.message}")
                     setLoading(false)
                 }
+        } catch (t: Throwable) {
+            showSnackbar("Falha ao processar imagem: ${t.message}")
+            setLoading(false)
         }
+    }
 
-        // Helpers
-        fun makeGsUrl(ref: StorageReference): String = "gs://${ref.bucket}${ref.path}"
-
-        fun fetchDownloadUrlWithRetry(
-            ref: StorageReference,
-            retries: Int = 3,
-            initialDelayMs: Long = 300,
-            onDone: (Uri?) -> Unit
-        ) {
-            ref.downloadUrl
-                .addOnSuccessListener { onDone(it) }
-                .addOnFailureListener { err ->
-                    if (retries <= 0) {
-                        onDone(null)
-                    } else {
-                        val nextDelay = (initialDelayMs * 2).coerceAtMost(2000)
-                        mainHandler.postDelayed({
-                            fetchDownloadUrlWithRetry(ref, retries - 1, nextDelay, onDone)
-                        }, initialDelayMs)
-                    }
-                }
+    // Compacta a imagem da URI com limites de tamanho e dimensão
+    private fun compressUri(uri: Uri, targetMaxBytes: Int, maxDim: Int): Pair<ByteArray?, String> {
+        // 1) Ler dimensões
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        contentResolver.openInputStream(uri)?.use { input ->
+            BitmapFactory.decodeStream(input, null, bounds)
         }
+        val origW = bounds.outWidth
+        val origH = bounds.outHeight
+        if (origW <= 0 || origH <= 0) return Pair(null, "image/jpeg")
 
-        // Upload da imagem e depois salvar metadados
-        val contentType = (originalPickedUri?.let { contentResolver.getType(it) }
-            ?: contentResolver.getType(uri)) ?: "image/jpeg"
-        val fileExt = extFromMime(contentType)
-        val metadata = StorageMetadata.Builder()
-            .setContentType(contentType)
-            .build()
-        val path = "map_images/${user.uid}/${System.currentTimeMillis()}.$fileExt"
+        // 2) Calcular inSampleSize
+        val opts = BitmapFactory.Options().apply {
+            inSampleSize = calculateInSampleSize(origW, origH, maxDim, maxDim)
+            inPreferredConfig = Bitmap.Config.ARGB_8888
+        }
+        val bmp = contentResolver.openInputStream(uri)?.use { input ->
+            BitmapFactory.decodeStream(input, null, opts)
+        } ?: return Pair(null, "image/jpeg")
 
-        val errorLog = mutableListOf<String>()
+        // 3) Comprimir JPEG com qualidade decrescente
+        val baos = ByteArrayOutputStream()
+        var quality = 90
+        var outBytes: ByteArray
+        do {
+            baos.reset()
+            bmp.compress(Bitmap.CompressFormat.JPEG, quality, baos)
+            outBytes = baos.toByteArray()
+            quality -= 10
+        } while (outBytes.size > targetMaxBytes && quality >= 30)
 
-        fun handleUploadSuccess(ref: StorageReference) {
-            fetchDownloadUrlWithRetry(ref, retries = 3, initialDelayMs = 300) { dlUri ->
-                val imageUrl = dlUri?.toString() ?: makeGsUrl(ref)
-                saveToFirestore(imageUrl)
+        // Se ainda grande, downscale adicional e qualidade moderada
+        if (outBytes.size > targetMaxBytes) {
+            val scale = 0.75f
+            val newW = (bmp.width * scale).toInt().coerceAtLeast(300)
+            val newH = (bmp.height * scale).toInt().coerceAtLeast(300)
+            val scaled = Bitmap.createScaledBitmap(bmp, newW, newH, true)
+            baos.reset()
+            scaled.compress(Bitmap.CompressFormat.JPEG, 70, baos)
+            outBytes = baos.toByteArray()
+            if (!scaled.isRecycled) scaled.recycle()
+        }
+        if (!bmp.isRecycled) bmp.recycle()
+        return Pair(outBytes, "image/jpeg")
+    }
+
+    private fun calculateInSampleSize(origW: Int, origH: Int, reqW: Int, reqH: Int): Int {
+        var inSampleSize = 1
+        if (origH > reqH || origW > reqW) {
+            val halfH = origH / 2
+            val halfW = origW / 2
+            while ((halfH / inSampleSize) >= reqH && (halfW / inSampleSize) >= reqW) {
+                inSampleSize *= 2
             }
         }
-        fun handleUploadFailureFinal() {
-            val details = if (errorLog.isEmpty()) "Sem detalhes" else errorLog.joinToString(" | ")
-            showSnackbar("Não foi possível enviar a imagem: $details")
-            setLoading(false)
-        }
-
-        fun attemptUpload(candidates: List<com.google.firebase.storage.FirebaseStorage>, idx: Int = 0) {
-            if (idx >= candidates.size) { handleUploadFailureFinal(); return }
-            val storage = candidates[idx]
-            val ref = storage.reference.child(path)
-            ref.putFile(uri, metadata)
-                .addOnSuccessListener { handleUploadSuccess(ref) }
-                .addOnFailureListener { e ->
-                    val bucketInfo = try { storage.app.options.storageBucket ?: "<sem bucket>" } catch (_: Exception) { "<erro bucket>" }
-                    val msg = when (e) {
-                        is com.google.firebase.storage.StorageException -> "bucket=$bucketInfo code=${e.errorCode} msg=${e.message}"
-                        else -> "bucket=$bucketInfo msg=${e.message}"
-                    }
-                    errorLog += msg
-                    // tenta próximo candidato
-                    attemptUpload(candidates, idx + 1)
-                }
-        }
-
-        try {
-            val storages = getStorageCandidates()
-            attemptUpload(storages)
-        } catch (t: Throwable) {
-            showSnackbar("Falha ao iniciar upload: ${t.message}")
-            setLoading(false)
-        }
-    }
-
-    // Lista candidatos de Storage (corrigido, default, e derivado do projectId) - prioriza projectId.appspot.com
-    private fun getStorageCandidates(): List<com.google.firebase.storage.FirebaseStorage> {
-        val out = mutableListOf<com.google.firebase.storage.FirebaseStorage>()
-        val app = try { FirebaseApp.getInstance() } catch (_: Exception) { null }
-        val options = app?.options
-        val projectId = options?.projectId
-        val bucket = options?.storageBucket
-        val corrected = bucket?.let {
-            if (it.endsWith(".firebasestorage.app")) it.replace(".firebasestorage.app", ".appspot.com") else it
-        }
-        val derived = if (!projectId.isNullOrBlank()) "$projectId.appspot.com" else null
-        // 1) Derivado do projectId (se existir)
-        if (derived != null) out += com.google.firebase.storage.FirebaseStorage.getInstance("gs://$derived")
-        // 2) options.storageBucket corrigido, mas apenas se contiver o projectId (para evitar buckets de outro projeto)
-        if (!corrected.isNullOrBlank() && !projectId.isNullOrBlank() && corrected.contains(projectId)) {
-            out += com.google.firebase.storage.FirebaseStorage.getInstance("gs://$corrected")
-        }
-        // 3) default
-        out += com.google.firebase.storage.FirebaseStorage.getInstance()
-        return out.distinctBy { it.toString() }
-    }
-
-    // Obtém instância do FirebaseStorage com bucket corrigido, se necessário
-    private fun getStorage(): com.google.firebase.storage.FirebaseStorage {
-        val bucket = try { FirebaseApp.getInstance().options.storageBucket } catch (_: Exception) { null }
-        val corrected = bucket?.let {
-            if (it.endsWith(".firebasestorage.app")) it.replace(".firebasestorage.app", ".appspot.com") else it
-        }
-        return if (!corrected.isNullOrBlank()) com.google.firebase.storage.FirebaseStorage.getInstance("gs://$corrected")
-        else com.google.firebase.storage.FirebaseStorage.getInstance()
+        return inSampleSize.coerceAtLeast(1)
     }
 }

@@ -3,7 +3,6 @@ package com.example.indoorar
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
-import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Button
@@ -61,7 +60,11 @@ class ActivityMeusMapas : BaseActivity() {
             autorUid = doc.getString("criadorUid") ?: "",
             autorNome = doc.getString("nomeAutor") ?: (doc.getString("criadorUid") ?: ""),
             dataCriacao = doc.getTimestamp("dataCriacao"),
-            imagemUrl = doc.getString("imagemUrl")
+            imagemUrl = doc.getString("imagemUrl"),
+            imagemBlob = doc.getBlob("imagemBlob"),
+            imagemMime = doc.getString("imagemMime"),
+            imagemBlobThumb = doc.getBlob("imagemBlobThumb"),
+            imagemMimeThumb = doc.getString("imagemMimeThumb")
         )
     }
 
@@ -77,33 +80,55 @@ class ActivityMeusMapas : BaseActivity() {
         txtTitulo?.text = m.nome
         txtDesc?.text = m.descricao.ifBlank { "Sem descrição" }
 
-        val url = m.imagemUrl
         if (ivPreview != null) {
-            if (!url.isNullOrBlank()) {
-                if (url.startsWith("gs://")) {
-                    val ref = FirebaseStorage.getInstance().getReferenceFromUrl(url)
-                    ref.downloadUrl
-                        .addOnSuccessListener { httpsUri ->
-                            Glide.with(ivPreview.context)
-                                .load(httpsUri)
-                                .centerCrop()
-                                .placeholder(R.drawable.ic_minimap_placeholder)
-                                .error(R.drawable.ic_minimap_placeholder)
-                                .into(ivPreview)
-                        }
-                        .addOnFailureListener {
-                            ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
-                        }
-                } else {
+            val medium = m.imagemBlob?.toBytes()
+            val thumb = m.imagemBlobThumb?.toBytes()
+            when {
+                medium != null && medium.isNotEmpty() -> {
                     Glide.with(ivPreview.context)
-                        .load(url)
+                        .load(medium)
                         .centerCrop()
                         .placeholder(R.drawable.ic_minimap_placeholder)
                         .error(R.drawable.ic_minimap_placeholder)
                         .into(ivPreview)
                 }
-            } else {
-                ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
+                thumb != null && thumb.isNotEmpty() -> {
+                    Glide.with(ivPreview.context)
+                        .load(thumb)
+                        .centerCrop()
+                        .placeholder(R.drawable.ic_minimap_placeholder)
+                        .error(R.drawable.ic_minimap_placeholder)
+                        .into(ivPreview)
+                }
+                else -> {
+                    val url = m.imagemUrl
+                    if (!url.isNullOrBlank()) {
+                        if (url.startsWith("gs://")) {
+                            val ref = FirebaseStorage.getInstance().getReferenceFromUrl(url)
+                            ref.downloadUrl
+                                .addOnSuccessListener { httpsUri ->
+                                    Glide.with(ivPreview.context)
+                                        .load(httpsUri)
+                                        .centerCrop()
+                                        .placeholder(R.drawable.ic_minimap_placeholder)
+                                        .error(R.drawable.ic_minimap_placeholder)
+                                        .into(ivPreview)
+                                }
+                                .addOnFailureListener {
+                                    ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
+                                }
+                        } else {
+                            Glide.with(ivPreview.context)
+                                .load(url)
+                                .centerCrop()
+                                .placeholder(R.drawable.ic_minimap_placeholder)
+                                .error(R.drawable.ic_minimap_placeholder)
+                                .into(ivPreview)
+                        }
+                    } else {
+                        ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
+                    }
+                }
             }
         }
 

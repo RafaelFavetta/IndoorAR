@@ -10,14 +10,11 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.DiffUtil
 import com.bumptech.glide.Glide
 import com.google.firebase.storage.FirebaseStorage
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 class RecentPagesAdapter(
     private val onClick: (MapaResumo) -> Unit
 ) : RecyclerView.Adapter<RecentPagesAdapter.PageVH>() {
 
-    // Representa uma página com até 3 itens e chaves para diff
     private data class Page(val items: List<MapaResumo>) {
         val idKey: String = items.joinToString("|") { it.id }
         val contentKey: String = items.joinToString("|") {
@@ -25,6 +22,7 @@ class RecentPagesAdapter(
                 append(it.id)
                 append(':'); append(it.nome)
                 append(':'); append(it.imagemUrl ?: "")
+                append(':'); append(it.imagemBlobThumb?.hashCode() ?: 0)
                 append(':'); append(it.dataCriacao?.seconds ?: 0)
             }
         }
@@ -88,32 +86,54 @@ class RecentPagesAdapter(
             nome.text = mapa.nome
             desc.text = mapa.descricao.ifBlank { "Sem descrição" }
 
-            val url = mapa.imagemUrl
-            if (!url.isNullOrBlank()) {
-                if (url.startsWith("gs://")) {
-                    val ref = FirebaseStorage.getInstance().getReferenceFromUrl(url)
-                    ref.downloadUrl
-                        .addOnSuccessListener { httpsUri ->
-                            Glide.with(thumb.context)
-                                .load(httpsUri)
-                                .centerCrop()
-                                .placeholder(R.drawable.ic_minimap_placeholder)
-                                .error(R.drawable.ic_minimap_placeholder)
-                                .into(thumb)
-                        }
-                        .addOnFailureListener {
-                            thumb.setImageResource(R.drawable.ic_minimap_placeholder)
-                        }
-                } else {
+            val thumbBytes = mapa.imagemBlobThumb?.toBytes()
+            val mediumBytes = mapa.imagemBlob?.toBytes()
+            when {
+                thumbBytes != null && thumbBytes.isNotEmpty() -> {
                     Glide.with(thumb.context)
-                        .load(url)
+                        .load(thumbBytes)
                         .centerCrop()
                         .placeholder(R.drawable.ic_minimap_placeholder)
                         .error(R.drawable.ic_minimap_placeholder)
                         .into(thumb)
                 }
-            } else {
-                thumb.setImageResource(R.drawable.ic_minimap_placeholder)
+                mediumBytes != null && mediumBytes.isNotEmpty() -> {
+                    Glide.with(thumb.context)
+                        .load(mediumBytes)
+                        .centerCrop()
+                        .placeholder(R.drawable.ic_minimap_placeholder)
+                        .error(R.drawable.ic_minimap_placeholder)
+                        .into(thumb)
+                }
+                else -> {
+                    val url = mapa.imagemUrl
+                    if (!url.isNullOrBlank()) {
+                        if (url.startsWith("gs://")) {
+                            val ref = FirebaseStorage.getInstance().getReferenceFromUrl(url)
+                            ref.downloadUrl
+                                .addOnSuccessListener { httpsUri ->
+                                    Glide.with(thumb.context)
+                                        .load(httpsUri)
+                                        .centerCrop()
+                                        .placeholder(R.drawable.ic_minimap_placeholder)
+                                        .error(R.drawable.ic_minimap_placeholder)
+                                        .into(thumb)
+                                }
+                                .addOnFailureListener {
+                                    thumb.setImageResource(R.drawable.ic_minimap_placeholder)
+                                }
+                        } else {
+                            Glide.with(thumb.context)
+                                .load(url)
+                                .centerCrop()
+                                .placeholder(R.drawable.ic_minimap_placeholder)
+                                .error(R.drawable.ic_minimap_placeholder)
+                                .into(thumb)
+                        }
+                    } else {
+                        thumb.setImageResource(R.drawable.ic_minimap_placeholder)
+                    }
+                }
             }
 
             v.setOnClickListener { onClick(mapa) }

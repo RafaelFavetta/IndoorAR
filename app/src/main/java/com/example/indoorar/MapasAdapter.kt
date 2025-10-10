@@ -42,32 +42,55 @@ class MapasAdapter(
         fun bind(mapa: MapaResumo) {
             nomeText.text = mapa.nome
             descricaoText.text = mapa.descricao.ifBlank { "Sem descrição" }
-            val url = mapa.imagemUrl
-            if (!url.isNullOrBlank()) {
-                if (url.startsWith("gs://")) {
-                    val ref = FirebaseStorage.getInstance().getReferenceFromUrl(url)
-                    ref.downloadUrl
-                        .addOnSuccessListener { httpsUri ->
-                            Glide.with(thumb.context)
-                                .load(httpsUri)
-                                .centerCrop()
-                                .placeholder(R.drawable.ic_minimap_placeholder)
-                                .error(R.drawable.ic_minimap_placeholder)
-                                .into(thumb)
-                        }
-                        .addOnFailureListener {
-                            thumb.setImageResource(R.drawable.ic_minimap_placeholder)
-                        }
-                } else {
+
+            val thumbBytes = mapa.imagemBlobThumb?.toBytes()
+            val mediumBytes = mapa.imagemBlob?.toBytes()
+            when {
+                thumbBytes != null && thumbBytes.isNotEmpty() -> {
                     Glide.with(thumb.context)
-                        .load(url)
+                        .load(thumbBytes)
                         .centerCrop()
                         .placeholder(R.drawable.ic_minimap_placeholder)
                         .error(R.drawable.ic_minimap_placeholder)
                         .into(thumb)
                 }
-            } else {
-                thumb.setImageResource(R.drawable.ic_minimap_placeholder)
+                mediumBytes != null && mediumBytes.isNotEmpty() -> {
+                    Glide.with(thumb.context)
+                        .load(mediumBytes)
+                        .centerCrop()
+                        .placeholder(R.drawable.ic_minimap_placeholder)
+                        .error(R.drawable.ic_minimap_placeholder)
+                        .into(thumb)
+                }
+                else -> {
+                    val url = mapa.imagemUrl
+                    if (!url.isNullOrBlank()) {
+                        if (url.startsWith("gs://")) {
+                            val ref = FirebaseStorage.getInstance().getReferenceFromUrl(url)
+                            ref.downloadUrl
+                                .addOnSuccessListener { httpsUri ->
+                                    Glide.with(thumb.context)
+                                        .load(httpsUri)
+                                        .centerCrop()
+                                        .placeholder(R.drawable.ic_minimap_placeholder)
+                                        .error(R.drawable.ic_minimap_placeholder)
+                                        .into(thumb)
+                                }
+                                .addOnFailureListener {
+                                    thumb.setImageResource(R.drawable.ic_minimap_placeholder)
+                                }
+                        } else {
+                            Glide.with(thumb.context)
+                                .load(url)
+                                .centerCrop()
+                                .placeholder(R.drawable.ic_minimap_placeholder)
+                                .error(R.drawable.ic_minimap_placeholder)
+                                .into(thumb)
+                        }
+                    } else {
+                        thumb.setImageResource(R.drawable.ic_minimap_placeholder)
+                    }
+                }
             }
         }
     }

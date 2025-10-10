@@ -33,7 +33,8 @@ class RecentPagesAdapter(
     init { setHasStableIds(true) }
 
     fun submit(allItems: List<MapaResumo>) {
-        val newPages = allItems.chunked(3).map { Page(it) }
+        // Two items per page
+        val newPages = allItems.chunked(2).map { Page(it) }
         val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
             override fun getOldListSize(): Int = pages.size
             override fun getNewListSize(): Int = newPages.size
@@ -63,12 +64,10 @@ class RecentPagesAdapter(
     class PageVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val c1: FrameLayout = itemView.findViewById(R.id.containerItem1)
         private val c2: FrameLayout = itemView.findViewById(R.id.containerItem2)
-        private val c3: FrameLayout = itemView.findViewById(R.id.containerItem3)
 
         fun bind(items: List<MapaResumo>, onClick: (MapaResumo) -> Unit) {
             bindSlot(c1, items.getOrNull(0), onClick)
             bindSlot(c2, items.getOrNull(1), onClick)
-            bindSlot(c3, items.getOrNull(2), onClick)
         }
 
         private fun bindSlot(container: FrameLayout, mapa: MapaResumo?, onClick: (MapaResumo) -> Unit) {
@@ -79,12 +78,19 @@ class RecentPagesAdapter(
             } else container.visibility = View.VISIBLE
 
             val v = LayoutInflater.from(container.context).inflate(R.layout.item_mapa, container, false)
+
+            // Apply horizontal margins to make the card visually narrower in the carousel
+            val density = container.resources.displayMetrics.density
+            val hMargin = (12 * density).toInt() // 12dp each side
+            val lp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.setMargins(hMargin, 0, hMargin, 0)
+            lp.gravity = android.view.Gravity.CENTER_HORIZONTAL
+            v.layoutParams = lp
+
             val nome = v.findViewById<TextView>(R.id.txtNome)
-            val desc = v.findViewById<TextView>(R.id.txtDescricao)
             val thumb = v.findViewById<ImageView>(R.id.ivThumbMapa)
 
             nome.text = mapa.nome
-            desc.text = mapa.descricao.ifBlank { "Sem descrição" }
 
             val thumbBytes = mapa.imagemBlobThumb?.toBytes()
             val mediumBytes = mapa.imagemBlob?.toBytes()

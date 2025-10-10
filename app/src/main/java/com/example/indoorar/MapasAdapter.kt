@@ -36,12 +36,10 @@ class MapasAdapter(
 
     class MapaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val nomeText: TextView = itemView.findViewById(R.id.txtNome)
-        private val descricaoText: TextView = itemView.findViewById(R.id.txtDescricao)
         private val thumb: ImageView = itemView.findViewById(R.id.ivThumbMapa)
 
         fun bind(mapa: MapaResumo) {
             nomeText.text = mapa.nome
-            descricaoText.text = mapa.descricao.ifBlank { "Sem descrição" }
 
             val thumbBytes = mapa.imagemBlobThumb?.toBytes()
             val mediumBytes = mapa.imagemBlob?.toBytes()

@@ -138,11 +138,9 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:5.0.5")
     kapt("com.github.bumptech.glide:compiler:5.0.5")
 
+    // uCrop (editor de corte da foto de perfil)
     implementation("com.github.yalantis:ucrop:2.2.8")
 
 
     testImplementation("junit:junit:4.13.2")
-
-    // Firebase UI Storage for Glide <-> StorageReference support
-    implementation("com.firebaseui:firebase-ui-storage:8.0.2")
 }

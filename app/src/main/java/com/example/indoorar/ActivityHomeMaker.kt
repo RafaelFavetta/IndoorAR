@@ -21,7 +21,7 @@ class ActivityHomeMaker : BaseActivity() {
     private lateinit var recyclerRecentes: RecyclerView
     private lateinit var progressRecentes: ProgressBar
     private lateinit var txtEmptyRecentes: TextView
-    private lateinit var txtVerMais: TextView
+    private var txtVerMais: TextView? = null
     private val adapterRecentes = RecentesAdapter { mapa ->
         // Abrir planta (editor) diretamente
         startActivity(Intent(this, ActivityEditor::class.java).apply {
@@ -64,7 +64,7 @@ class ActivityHomeMaker : BaseActivity() {
         recyclerRecentes.layoutManager = LinearLayoutManager(this)
         recyclerRecentes.adapter = adapterRecentes
 
-        txtVerMais.setOnClickListener {
+        txtVerMais?.setOnClickListener {
             startActivity(Intent(this, ActivityMeusMapas::class.java))
         }
 

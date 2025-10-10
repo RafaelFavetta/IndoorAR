@@ -33,12 +33,16 @@ import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
+import android.widget.LinearLayout
+import androidx.core.graphics.scale
 
 class ActivityHomeComum : BaseActivity() {
 
     private lateinit var recyclerRecentes: RecyclerView
     private lateinit var progressRecentes: android.widget.ProgressBar
     private lateinit var txtEmptyRecentes: TextView
+    private lateinit var indicatorsRecentes: LinearLayout
+    private lateinit var snapHelper: PagerSnapHelper
     private val recentAdapter = RecentPagesAdapter { mapa -> onMapaClicked(mapa) }
     private var recentesListener: ListenerRegistration? = null
 
@@ -77,12 +81,25 @@ class ActivityHomeComum : BaseActivity() {
         recyclerRecentes = findViewById(R.id.recyclerRecentes)
         progressRecentes = findViewById(R.id.progressRecentes)
         txtEmptyRecentes = findViewById(R.id.txtEmptyRecentes)
+        indicatorsRecentes = findViewById(R.id.indicatorsRecentes)
 
         recyclerRecentes.layoutManager = LinearLayoutManager(this, RecyclerView.HORIZONTAL, false)
         recyclerRecentes.adapter = recentAdapter
 
-        val snapHelper = PagerSnapHelper()
+        snapHelper = PagerSnapHelper()
         snapHelper.attachToRecyclerView(recyclerRecentes)
+
+        recyclerRecentes.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    val lm = recyclerView.layoutManager ?: return
+                    val snapView = snapHelper.findSnapView(lm) ?: return
+                    val pos = recyclerView.getChildAdapterPosition(snapView)
+                    if (pos != RecyclerView.NO_POSITION) setCurrentIndicator(pos)
+                }
+            }
+        })
 
         carregarMapasRecentesEmTempoReal()
     }
@@ -90,6 +107,33 @@ class ActivityHomeComum : BaseActivity() {
     override fun onDestroy() {
         super.onDestroy()
         recentesListener?.remove()
+    }
+
+    private fun buildIndicators(count: Int) {
+        indicatorsRecentes.removeAllViews()
+        if (count <= 1) {
+            indicatorsRecentes.visibility = View.GONE
+            return
+        }
+        indicatorsRecentes.visibility = View.VISIBLE
+        val dm = resources.displayMetrics
+        val dotMargin = (4 * dm.density).toInt()
+        repeat(count) { idx ->
+            val iv = ImageView(this)
+            iv.setImageResource(if (idx == 0) R.drawable.dot_selected else R.drawable.dot_unselected)
+            val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.setMargins(dotMargin, 0, dotMargin, 0)
+            iv.layoutParams = lp
+            indicatorsRecentes.addView(iv)
+        }
+    }
+
+    private fun setCurrentIndicator(index: Int) {
+        val n = indicatorsRecentes.childCount
+        for (i in 0 until n) {
+            val iv = indicatorsRecentes.getChildAt(i) as? ImageView ?: continue
+            iv.setImageResource(if (i == index) R.drawable.dot_selected else R.drawable.dot_unselected)
+        }
     }
 
     private fun carregarMapasRecentesEmTempoReal() {
@@ -105,12 +149,22 @@ class ActivityHomeComum : BaseActivity() {
                     progressRecentes.visibility = View.GONE
                     txtEmptyRecentes.visibility = View.VISIBLE
                     txtEmptyRecentes.text = "Não foi possível carregar os mapas."
+                    buildIndicators(0)
                     return@addSnapshotListener
                 }
                 val lista = snap?.documents?.map { docParaMapaResumoSeguro(it) } ?: emptyList()
                 recentAdapter.submit(lista)
                 progressRecentes.visibility = View.GONE
                 txtEmptyRecentes.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
+
+                // Atualiza indicadores (recentAdapter trabalha em páginas)
+                buildIndicators(recentAdapter.itemCount)
+
+                // Seleciona o indicador inicial baseado na página atual (snapped)
+                val lm = recyclerRecentes.layoutManager
+                val snapView = if (lm != null) snapHelper.findSnapView(lm) else null
+                val pos = if (snapView != null) recyclerRecentes.getChildAdapterPosition(snapView) else 0
+                if (pos >= 0) setCurrentIndicator(pos)
             }
     }
 
@@ -288,7 +342,7 @@ class ActivityHomeComum : BaseActivity() {
         val pageWidth = 595 // A4 width at 72dpi (~8.27in * 72)
         val pageHeight = 842 // A4 height at 72dpi (~11.69in * 72)
         val scale = minOf(pageWidth.toFloat() / bmp.width, pageHeight.toFloat() / bmp.height)
-        val pdfBmp = Bitmap.createScaledBitmap(bmp, (bmp.width * scale).toInt(), (bmp.height * scale).toInt(), true)
+        val pdfBmp = bmp.scale((bmp.width * scale).toInt(), (bmp.height * scale).toInt())
         val document = android.graphics.pdf.PdfDocument()
         val pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
         val page = document.startPage(pageInfo)

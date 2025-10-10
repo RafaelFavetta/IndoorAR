@@ -185,7 +185,7 @@ class ActivityPerfil : BaseActivity() {
             val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
             if (user != null) {
                 db.collection("usuarios").document(user.uid).get().addOnSuccessListener { doc ->
-                    val tipo = doc.getString("tipo") ?: "comum"
+                    val tipo = (doc.getString("tipoConta") ?: "comum").lowercase()
                     if (tipo == "maker") {
                         startActivity(Intent(this, ActivityHomeMaker::class.java))
                     } else {

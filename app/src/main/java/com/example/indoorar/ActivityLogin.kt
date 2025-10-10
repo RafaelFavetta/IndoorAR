@@ -79,11 +79,11 @@ class ActivityLogin: BaseActivity() {
                         if (uid != null) {
                             db.collection("usuarios").document(uid).get()
                                 .addOnSuccessListener { doc ->
-                                    val tipoConta = doc.getString("tipoConta") ?: "comum"
-                                    when (tipoConta.lowercase()) {
-                                        "maker" -> startActivity(Intent(this, ActivityHomeMaker::class.java))
-                                        else -> startActivity(Intent(this, ActivityHomeComum::class.java))
-                                    }
+                                    val tipoConta = (doc.getString("tipoConta") ?: "comum").lowercase()
+                                    val dest = if (tipoConta == "maker") ActivityHomeMaker::class.java else ActivityHomeComum::class.java
+                                    startActivity(Intent(this, dest).apply {
+                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                    })
                                     finish()
                                 }
                                 .addOnFailureListener { e ->
@@ -103,8 +103,18 @@ class ActivityLogin: BaseActivity() {
             setLoading(true)
             lifecycleScope.launch {
                 val credentialManager = CredentialManager.create(this@ActivityLogin)
+
+                // Recupera o clientId com segurança (sem depender de R.string.default_web_client_id gerar em build)
+                val clientResId = resources.getIdentifier("default_web_client_id", "string", packageName)
+                if (clientResId == 0) {
+                    showSnackbar("Configuração do Google Sign-In ausente")
+                    setLoading(false)
+                    return@launch
+                }
+                val serverClientId = getString(clientResId)
+
                 val googleIdOption = GetGoogleIdOption.Builder()
-                    .setServerClientId(getString(R.string.default_web_client_id))
+                    .setServerClientId(serverClientId)
                     .setFilterByAuthorizedAccounts(false)
                     .setAutoSelectEnabled(false)
                     .build()
@@ -143,10 +153,10 @@ class ActivityLogin: BaseActivity() {
                                                             showSnackbar("Aviso: não foi possível salvar perfil: ${e.message}")
                                                         }
                                                 }
-                                                when (tipoConta) {
-                                                    "maker" -> startActivity(Intent(this@ActivityLogin, ActivityHomeMaker::class.java))
-                                                    else -> startActivity(Intent(this@ActivityLogin, ActivityHomeComum::class.java))
-                                                }
+                                                val dest = if (tipoConta == "maker") ActivityHomeMaker::class.java else ActivityHomeComum::class.java
+                                                startActivity(Intent(this@ActivityLogin, dest).apply {
+                                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                                })
                                                 finish()
                                             }
                                             .addOnFailureListener { e ->

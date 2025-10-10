@@ -94,8 +94,15 @@ class ActivityCriar : BaseActivity() {
             setLoading(true)
             lifecycleScope.launch {
                 val credentialManager = CredentialManager.create(this@ActivityCriar)
+                // Safe resolve of client ID
+                val clientResId = resources.getIdentifier("default_web_client_id", "string", packageName)
+                if (clientResId == 0) {
+                    showSnackbar("Configuração do Google Sign-In ausente")
+                    setLoading(false)
+                    return@launch
+                }
                 val googleIdOption = GetGoogleIdOption.Builder()
-                    .setServerClientId(getString(R.string.default_web_client_id))
+                    .setServerClientId(getString(clientResId))
                     .setFilterByAuthorizedAccounts(false)
                     .setAutoSelectEnabled(false)
                     .build()

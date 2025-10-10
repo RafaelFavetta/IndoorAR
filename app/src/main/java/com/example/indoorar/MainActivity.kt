@@ -18,7 +18,7 @@ class MainActivity : BaseActivity() {
             // Pula login: busca tipoConta
             FirebaseFirestore.getInstance().collection("usuarios").document(user.uid).get()
                 .addOnSuccessListener { doc ->
-                    val tipo = doc.getString("tipoConta") ?: "comum"
+                    val tipo = (doc.getString("tipoConta") ?: "comum").lowercase()
                     val dest = if (tipo == "maker") ActivityHomeMaker::class.java else ActivityHomeComum::class.java
                     startActivity(Intent(this, dest))
                     finish()

@@ -136,6 +136,16 @@ class ActivityHomeComum : BaseActivity() {
         }
     }
 
+    private fun imageKeyFor(m: MapaResumo): String {
+        val url = m.imagemUrl
+        if (!url.isNullOrBlank()) return "url:$url"
+        val t = m.imagemBlobThumb?.toBytes()
+        if (t != null && t.isNotEmpty()) return "thumb:${java.util.Arrays.hashCode(t)}:${t.size}"
+        val b = m.imagemBlob?.toBytes()
+        if (b != null && b.isNotEmpty()) return "blob:${java.util.Arrays.hashCode(b)}:${b.size}"
+        return "id:${m.id}"
+    }
+
     private fun carregarMapasRecentesEmTempoReal() {
         progressRecentes.visibility = View.VISIBLE
         txtEmptyRecentes.visibility = View.GONE
@@ -143,7 +153,7 @@ class ActivityHomeComum : BaseActivity() {
         recentesListener?.remove()
         recentesListener = FirebaseFirestore.getInstance().collection("mapas")
             .orderBy("dataCriacao", Query.Direction.DESCENDING)
-            .limit(9)
+            .limit(20) // busca um pouco mais para garantir imagens únicas suficientes
             .addSnapshotListener { snap, err ->
                 if (err != null) {
                     progressRecentes.visibility = View.GONE
@@ -153,9 +163,11 @@ class ActivityHomeComum : BaseActivity() {
                     return@addSnapshotListener
                 }
                 val lista = snap?.documents?.map { docParaMapaResumoSeguro(it) } ?: emptyList()
-                recentAdapter.submit(lista)
+                val unicos = lista.distinctBy { imageKeyFor(it) }
+                val limited = unicos.take(10) // 5 páginas x 2 itens por página
+                recentAdapter.submit(limited)
                 progressRecentes.visibility = View.GONE
-                txtEmptyRecentes.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
+                txtEmptyRecentes.visibility = if (limited.isEmpty()) View.VISIBLE else View.GONE
 
                 // Atualiza indicadores (recentAdapter trabalha em páginas)
                 buildIndicators(recentAdapter.itemCount)

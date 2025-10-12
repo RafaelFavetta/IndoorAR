@@ -4,12 +4,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.DiffUtil
 import com.bumptech.glide.Glide
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FieldValue
 
 class RecentPagesAdapter(
     private val onClick: (MapaResumo) -> Unit
@@ -70,6 +74,10 @@ class RecentPagesAdapter(
             bindSlot(c2, items.getOrNull(1), onClick)
         }
 
+        private fun setFavIcon(btn: ImageButton, isFav: Boolean) {
+            btn.setImageResource(if (isFav) R.drawable.heartfavoritesfull else R.drawable.heartfavorites)
+        }
+
         private fun bindSlot(container: FrameLayout, mapa: MapaResumo?, onClick: (MapaResumo) -> Unit) {
             container.removeAllViews()
             if (mapa == null) {
@@ -79,16 +87,18 @@ class RecentPagesAdapter(
 
             val v = LayoutInflater.from(container.context).inflate(R.layout.item_mapa, container, false)
 
-            // Apply horizontal margins to make the card visually narrower in the carousel
+            // Largura compacta e centralizada (ex.: 280dp) com pequenas margens laterais
             val density = container.resources.displayMetrics.density
-            val hMargin = (12 * density).toInt() // 12dp each side
-            val lp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-            lp.setMargins(hMargin, 0, hMargin, 0)
+            val cardWidthPx = (280 * density).toInt()
+            val sideMargin = (10 * density).toInt()
+            val lp = FrameLayout.LayoutParams(cardWidthPx, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.setMargins(sideMargin, 0, sideMargin, 0)
             lp.gravity = android.view.Gravity.CENTER_HORIZONTAL
             v.layoutParams = lp
 
             val nome = v.findViewById<TextView>(R.id.txtNome)
             val thumb = v.findViewById<ImageView>(R.id.ivThumbMapa)
+            val btnFav = v.findViewById<ImageButton>(R.id.btnFavorito)
 
             nome.text = mapa.nome
 
@@ -138,6 +148,45 @@ class RecentPagesAdapter(
                         }
                     } else {
                         thumb.setImageResource(R.drawable.ic_minimap_placeholder)
+                    }
+                }
+            }
+
+            // Favoritos por usuário
+            val user = FirebaseAuth.getInstance().currentUser
+            if (user == null) {
+                btnFav.visibility = View.GONE
+            } else {
+                btnFav.visibility = View.VISIBLE
+                val uid = user.uid
+                val docRef = FirebaseFirestore.getInstance()
+                    .collection("usuarios").document(uid)
+                    .collection("favoritos").document(mapa.id)
+
+                // Estado inicial do ícone
+                var isFav = false
+                setFavIcon(btnFav, isFav)
+                docRef.get().addOnSuccessListener { snap ->
+                    isFav = snap.exists()
+                    setFavIcon(btnFav, isFav)
+                }
+
+                btnFav.setOnClickListener {
+                    if (isFav) {
+                        docRef.delete().addOnSuccessListener {
+                            isFav = false
+                            setFavIcon(btnFav, false)
+                        }
+                    } else {
+                        val data = hashMapOf(
+                            "mapId" to mapa.id,
+                            "nome" to mapa.nome,
+                            "addedAt" to FieldValue.serverTimestamp()
+                        )
+                        docRef.set(data).addOnSuccessListener {
+                            isFav = true
+                            setFavIcon(btnFav, true)
+                        }
                     }
                 }
             }

@@ -22,7 +22,7 @@ class MapasAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MapaViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_mapa, parent, false)
+            .inflate(R.layout.item_mapa_list, parent, false)
         return MapaViewHolder(view)
     }
 

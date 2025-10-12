@@ -12,7 +12,7 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnFacebook3"
         android:layout_width="0dp"
-        android:layout_height="42dp"
+        android:layout_height="45dp"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
         app:backgroundTint="#E0E0E0"
@@ -36,9 +36,9 @@
         app:layout_constraintVertical_bias="0.847" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnGoogle3"
+        android:id="@+id/btnGoogle"
         android:layout_width="0dp"
-        android:layout_height="42dp"
+        android:layout_height="45dp"
         android:layout_marginStart="24dp"
         android:layout_marginTop="532dp"
         android:layout_marginEnd="24dp"
@@ -90,7 +90,7 @@
         android:letterSpacing="0.05"
         android:text="Registre-se"
         android:textColor="#32357A"
-        android:textSize="42sp"
+        android:textSize="50sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -149,7 +149,7 @@
     <Button
         android:id="@+id/btnCadastro"
         android:layout_width="0dp"
-        android:layout_height="50dp"
+        android:layout_height="55dp"
         android:layout_marginStart="24dp"
         android:layout_marginTop="20dp"
         android:layout_marginEnd="24dp"

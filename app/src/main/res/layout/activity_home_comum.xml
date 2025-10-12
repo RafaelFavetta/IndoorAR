@@ -24,20 +24,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/logo_branca" />
 
-    <TextView
-        android:id="@+id/txtMapasFavoritos"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="4dp"
-        android:elevation="2dp"
-        android:fontFamily="@font/inter"
-        android:text="Adicionados recentemente"
-        android:textColor="#32357A"
-        android:textSize="18sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/header" />
-
     <ProgressBar
         android:id="@+id/progressRecentes"
         style="@android:style/Widget.Material.ProgressBar.Small"
@@ -66,16 +52,33 @@
         android:id="@+id/recyclerRecentes"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
         android:layout_marginStart="24dp"
+        android:layout_marginTop="12dp"
         android:layout_marginEnd="16dp"
         android:clipToPadding="false"
-        android:paddingBottom="8dp"
         android:elevation="2dp"
+        android:paddingBottom="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/txtMapasFavoritos"
+        app:layout_constraintVertical_bias="0.0"
         tools:listitem="@layout/item_mapa_page" />
+
+    <TextView
+        android:id="@+id/txtMapasFavoritos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="4dp"
+        android:elevation="2dp"
+        android:fontFamily="@font/inter"
+        android:text="Adicionados recentemente"
+        android:textColor="#32357A"
+        android:textSize="18sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/header" />
 
     <LinearLayout
         android:id="@+id/indicatorsRecentes"
@@ -108,7 +111,7 @@
             android:id="@+id/btnPerfil"
             android:layout_width="30dp"
             android:layout_height="30dp"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="88dp"
             android:layout_marginEnd="32dp"
             android:background="@drawable/ripple_clickable"
             android:contentDescription="Configurações"
@@ -119,10 +122,10 @@
 
         <TextView
             android:id="@+id/txtBemVindo"
-            android:layout_width="0dp"
+            android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
-            android:layout_marginTop="84dp"
+            android:layout_marginTop="80dp"
             android:layout_marginEnd="20dp"
             android:fontFamily="@font/staatliches"
             android:text="Bem-vindo!"
@@ -130,6 +133,7 @@
             android:textSize="40sp"
             android:textStyle="normal|bold"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 

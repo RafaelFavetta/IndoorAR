@@ -93,6 +93,16 @@ class ActivityHomeMaker : BaseActivity() {
         recentesListener?.remove()
     }
 
+    private fun imageKeyFor(m: MapaResumo): String {
+        val url = m.imagemUrl
+        if (!url.isNullOrBlank()) return "url:$url"
+        val t = m.imagemBlobThumb?.toBytes()
+        if (t != null && t.isNotEmpty()) return "thumb:${java.util.Arrays.hashCode(t)}:${t.size}"
+        val b = m.imagemBlob?.toBytes()
+        if (b != null && b.isNotEmpty()) return "blob:${java.util.Arrays.hashCode(b)}:${b.size}"
+        return "id:${m.id}"
+    }
+
     private fun carregarMapasRecentesEmTempoReal() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid == null) {
@@ -107,7 +117,7 @@ class ActivityHomeMaker : BaseActivity() {
         recentesListener = FirebaseFirestore.getInstance().collection("mapas")
             .whereEqualTo("criadorUid", uid)
             .orderBy("dataCriacao", Query.Direction.DESCENDING)
-            .limit(9)
+            .limit(30) // busca mais para garantir itens suficientes após deduplicação
             .addSnapshotListener { snap, err ->
                 if (err != null) {
                     progressRecentes.visibility = View.GONE
@@ -116,9 +126,11 @@ class ActivityHomeMaker : BaseActivity() {
                     return@addSnapshotListener
                 }
                 val lista = snap?.documents?.map { docParaMapaResumoMaker(it, uid) } ?: emptyList()
-                recentAdapter.submit(lista)
+                val unicos = lista.distinctBy { imageKeyFor(it) }
+                val limited = unicos.take(10) // 5 páginas x 2 itens por página
+                recentAdapter.submit(limited)
                 progressRecentes.visibility = View.GONE
-                txtEmptyRecentes.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
+                txtEmptyRecentes.visibility = if (limited.isEmpty()) View.VISIBLE else View.GONE
                 buildIndicators(recentAdapter.itemCount)
 
                 val lm = recyclerRecentes.layoutManager

@@ -54,7 +54,6 @@ class ActivityCriar : BaseActivity() {
         btnCadastrar = findViewById(R.id.btnCadastrar)
         progressBar = findViewById(R.id.progressBar)
         btnGoogle = findViewById(R.id.btnGoogle3)
-        findViewById<View>(R.id.btnGoogle3)?.isEnabled = !loading
 
         // Máscara manual para telefone brasileiro
         telefoneField.addTextChangedListener(object : TextWatcher {

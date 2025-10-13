@@ -69,16 +69,17 @@
 
     <TextView
         android:id="@+id/txtMapasFavoritos"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="4dp"
-        android:elevation="2dp"
+        android:layout_marginTop="2dp"
         android:fontFamily="@font/inter"
-        android:text="Adicionados recentemente"
+        android:text="@string/adicionados_recentemente"
+        android:textAllCaps="false"
+        android:textAlignment="center"
         android:textColor="#32357A"
         android:textSize="18sp"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/header" />
 
     <LinearLayout

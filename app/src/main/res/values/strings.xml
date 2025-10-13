@@ -35,4 +35,6 @@
     <string name="data">Data</string>
     <string name="thumb_mapa">Miniatura do mapa</string>
     <string name="ver_mais">Ver mais</string>
+    <string name="erro_nao_foi_possivel_carregar_mapas">Não foi possível carregar os mapas.</string>
+    <string name="rotation_degrees">%1$d°</string>
 </resources>

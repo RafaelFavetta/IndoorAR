@@ -90,7 +90,6 @@ class ActivityEditor : BaseActivity() {
             poiCard.visibility = if (newTool == Tool.POI) View.VISIBLE else View.GONE
             formasCard.visibility = if (newTool == Tool.FORMAS) View.VISIBLE else View.GONE
             brushCard.visibility = if (newTool == Tool.BRUSH) View.VISIBLE else View.GONE
-            // Hide cursor card on generic tool change; toggled explicitly on click
             if (newTool != Tool.CURSOR) {
                 cursorCard.visibility = View.GONE
                 // also ensure eraser off when leaving cursor
@@ -99,13 +98,19 @@ class ActivityEditor : BaseActivity() {
             }
         }
 
-        btnSalvarMapa.setOnClickListener { onSalvarClick() }
+        // Fora da toolbar: sempre fechar popups antes de agir
+        btnSalvarMapa.setOnClickListener {
+            hideAllToolCards()
+            onSalvarClick()
+        }
 
         btnMergeShapes.setOnClickListener {
+            hideAllToolCards()
             mapEditor.mergeEdgesAndAdjustCorners()
             Toast.makeText(this, "Merge aplicado", Toast.LENGTH_SHORT).show()
         }
         btnPreviewMode.setOnClickListener {
+            hideAllToolCards()
             // Toggle do estado
             val enablePreview = !mapEditor.isPreviewMode()
             mapEditor.setPreviewMode(enablePreview)
@@ -123,10 +128,7 @@ class ActivityEditor : BaseActivity() {
                     }
                 }
                 // Fecha cards de ferramentas
-                poiCard.visibility = View.GONE
-                formasCard.visibility = View.GONE
-                brushCard.visibility = View.GONE
-                cursorCard.visibility = View.GONE
+                hideAllToolCards()
                 // Oculta painel de atributos
                 findViewById<View>(R.id.painelAtributos)?.visibility = View.GONE
                 btnPreviewMode.contentDescription = "Desativar preview"
@@ -351,92 +353,65 @@ class ActivityEditor : BaseActivity() {
 
         toolButtons.forEach { (linearId, tool) ->
             findViewById<LinearLayout>(linearId).setOnClickListener {
+                // Lógica: qualquer clique na toolbar fecha popups abertos.
+                // Se clicar no mesmo botão, alterna (toggle) com base no estado anterior.
+                val wasFormasVisible = formasCard.visibility == View.VISIBLE
+                val wasPoiVisible = poiCard.visibility == View.VISIBLE
+                val wasBrushVisible = brushCard.visibility == View.VISIBLE
+                val wasCursorVisible = cursorCard.visibility == View.VISIBLE
+                val wasSameTool = (mapEditor.currentTool == tool)
+                hideAllToolCards()
+
                 when (tool) {
                     Tool.FORMAS -> {
-                        if (mapEditor.currentTool == Tool.FORMAS) {
-                            // Toggle o card se já estiver na ferramenta
-                            val visible = formasCard.visibility == View.VISIBLE
-                            formasCard.visibility = if (visible) View.GONE else View.VISIBLE
-                            alignCardAbove(R.id.cardFormas, R.id.linearformas)
-                            poiCard.visibility = View.GONE
-                            brushCard.visibility = View.GONE
-                            cursorCard.visibility = View.GONE
+                        if (wasSameTool && wasFormasVisible) {
+                            // estava aberto; mantém fechado (toggle)
                         } else {
                             mapEditor.setTool(Tool.FORMAS)
                             formasCard.visibility = View.VISIBLE
                             alignCardAbove(R.id.cardFormas, R.id.linearformas)
-                            poiCard.visibility = View.GONE
-                            brushCard.visibility = View.GONE
-                            cursorCard.visibility = View.GONE
                         }
                     }
                     Tool.POI -> {
-                        if (mapEditor.currentTool == Tool.POI) {
-                            val visible = poiCard.visibility == View.VISIBLE
-                            poiCard.visibility = if (visible) View.GONE else View.VISIBLE
-                            alignCardAbove(R.id.cardPoi, R.id.linearpoi)
-                            formasCard.visibility = View.GONE
-                            brushCard.visibility = View.GONE
-                            cursorCard.visibility = View.GONE
+                        if (wasSameTool && wasPoiVisible) {
+                            // toggle para fechado
                         } else {
                             mapEditor.setTool(Tool.POI)
                             poiCard.visibility = View.VISIBLE
                             alignCardAbove(R.id.cardPoi, R.id.linearpoi)
-                            formasCard.visibility = View.GONE
-                            brushCard.visibility = View.GONE
-                            cursorCard.visibility = View.GONE
                         }
                     }
                     Tool.BRUSH -> {
-                        if (mapEditor.currentTool == Tool.BRUSH) {
-                            val visible = brushCard.visibility == View.VISIBLE
-                            brushCard.visibility = if (visible) View.GONE else View.VISIBLE
-                            alignCardAbove(R.id.cardBrush, R.id.linearbrush)
-                            formasCard.visibility = View.GONE
-                            poiCard.visibility = View.GONE
-                            cursorCard.visibility = View.GONE
+                        if (wasSameTool && wasBrushVisible) {
+                            // toggle para fechado
                         } else {
                             mapEditor.setTool(Tool.BRUSH)
                             brushCard.visibility = View.VISIBLE
                             alignCardAbove(R.id.cardBrush, R.id.linearbrush)
-                            formasCard.visibility = View.GONE
-                            poiCard.visibility = View.GONE
-                            cursorCard.visibility = View.GONE
                         }
                     }
                     Tool.CURSOR -> {
-                        if (mapEditor.currentTool == Tool.CURSOR) {
-                            val visible = cursorCard.visibility == View.VISIBLE
-                            cursorCard.visibility = if (visible) View.GONE else View.VISIBLE
-                            alignCardAbove(R.id.cardCursor, R.id.linearcursor)
-                            // hide others
-                            formasCard.visibility = View.GONE
-                            poiCard.visibility = View.GONE
-                            brushCard.visibility = View.GONE
+                        if (wasSameTool && wasCursorVisible) {
+                            // toggle para fechado
                         } else {
                             mapEditor.setTool(Tool.CURSOR)
                             cursorCard.visibility = View.VISIBLE
                             alignCardAbove(R.id.cardCursor, R.id.linearcursor)
-                            // hide others
-                            formasCard.visibility = View.GONE
-                            poiCard.visibility = View.GONE
-                            brushCard.visibility = View.GONE
                         }
-                    }
-                    else -> {
-                        mapEditor.setTool(tool)
-                        // Oculta quaisquer cards quando mudar para outras ferramentas
-                        poiCard.visibility = View.GONE
-                        formasCard.visibility = View.GONE
-                        brushCard.visibility = View.GONE
-                        cursorCard.visibility = View.GONE
                     }
                 }
             }
         }
 
-        findViewById<LinearLayout>(R.id.linearlayers).setOnClickListener { mapEditor.toggleGrid() }
-        findViewById<LinearLayout>(R.id.lineardesfazer).setOnClickListener { mapEditor.undo() }
+        // Toolbar: outros botões também fecham popups
+        findViewById<LinearLayout>(R.id.linearlayers).setOnClickListener {
+            hideAllToolCards()
+            mapEditor.toggleGrid()
+        }
+        findViewById<LinearLayout>(R.id.lineardesfazer).setOnClickListener {
+            hideAllToolCards()
+            mapEditor.undo()
+        }
 
         updateSelectedButtonUI(Tool.CURSOR) // Define o estado inicial
     }
@@ -572,4 +547,12 @@ class ActivityEditor : BaseActivity() {
         }
     }
 
+    // Helper: fecha todos os popups/cards de ferramentas
+    private fun hideAllToolCards() {
+        poiCard.visibility = View.GONE
+        formasCard.visibility = View.GONE
+        brushCard.visibility = View.GONE
+        cursorCard.visibility = View.GONE
+    }
 }
+

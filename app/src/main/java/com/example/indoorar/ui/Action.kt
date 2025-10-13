@@ -31,7 +31,8 @@ sealed class Action {
         var height: Float = 100f,
         var iconRes: Int,
         var selected: Boolean = false,
-        var isStartQR: Boolean = false
+        var isStartQR: Boolean = false,
+        var rotation: Float = 0f
     ) : Action()
 
     // Tipos de formas suportadas

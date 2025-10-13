@@ -27,13 +27,12 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.activity.result.contract.ActivityResultContracts
 import android.content.Intent
 import com.google.firebase.firestore.SetOptions
+import com.google.android.material.switchmaterial.SwitchMaterial
+import androidx.core.view.isVisible
 
 class ActivityEditor : BaseActivity() {
 
     private lateinit var mapEditor: MapEditorView
-    private lateinit var colorPreview: ImageView
-    private lateinit var inputHex: EditText
-    private lateinit var btnColorPicker: ImageButton
     private lateinit var btnSalvarMapa: MaterialButton
     private lateinit var poiCard: MaterialCardView
     private lateinit var formasCard: MaterialCardView
@@ -93,7 +92,7 @@ class ActivityEditor : BaseActivity() {
             if (newTool != Tool.CURSOR) {
                 cursorCard.visibility = View.GONE
                 // also ensure eraser off when leaving cursor
-                findViewById<android.widget.Switch>(R.id.cursorEraserSwitch)?.isChecked = false
+                findViewById<SwitchMaterial>(R.id.cursorEraserSwitch)?.isChecked = false
                 mapEditor.setEraserEnabled(false)
             }
         }
@@ -319,9 +318,6 @@ class ActivityEditor : BaseActivity() {
 
     private fun bindViews() {
         mapEditor = findViewById(R.id.mapEditor)
-        colorPreview = findViewById(R.id.colorPreview)
-        inputHex = findViewById(R.id.inputHex)
-        btnColorPicker = findViewById(R.id.btnColorPicker)
         btnSalvarMapa = findViewById(R.id.btnSalvarMapa)
         poiCard = findViewById(R.id.cardPoi)
         formasCard = findViewById(R.id.cardFormas)
@@ -355,10 +351,10 @@ class ActivityEditor : BaseActivity() {
             findViewById<LinearLayout>(linearId).setOnClickListener {
                 // Lógica: qualquer clique na toolbar fecha popups abertos.
                 // Se clicar no mesmo botão, alterna (toggle) com base no estado anterior.
-                val wasFormasVisible = formasCard.visibility == View.VISIBLE
-                val wasPoiVisible = poiCard.visibility == View.VISIBLE
-                val wasBrushVisible = brushCard.visibility == View.VISIBLE
-                val wasCursorVisible = cursorCard.visibility == View.VISIBLE
+                val wasFormasVisible = formasCard.isVisible
+                val wasPoiVisible = poiCard.isVisible
+                val wasBrushVisible = brushCard.isVisible
+                val wasCursorVisible = cursorCard.isVisible
                 val wasSameTool = (mapEditor.currentTool == tool)
                 hideAllToolCards()
 
@@ -453,28 +449,21 @@ class ActivityEditor : BaseActivity() {
     }
 
     private fun setupBrushClicks() {
-        fun currentColor(): Int {
-            val hex = inputHex.text?.toString()?.ifBlank { "#3264FF" } ?: "#3264FF"
-            return try { hex.toColorInt() } catch (_: Exception) { "#3264FF".toColorInt() }
-        }
         // Tamanhos em dp para consistência
         findViewById<LinearLayout>(R.id.brushThin).setOnClickListener {
             mapEditor.getBrushPaint().strokeWidth = mapEditor.dp(2f)
-            mapEditor.getBrushPaint().color = currentColor()
             mapEditor.setTool(Tool.BRUSH)
             brushCard.visibility = View.GONE
             Toast.makeText(this, "Pincel fino ativo. Desenhe no mapa.", Toast.LENGTH_SHORT).show()
         }
         findViewById<LinearLayout>(R.id.brushMedium).setOnClickListener {
             mapEditor.getBrushPaint().strokeWidth = mapEditor.dp(6f)
-            mapEditor.getBrushPaint().color = currentColor()
             mapEditor.setTool(Tool.BRUSH)
             brushCard.visibility = View.GONE
             Toast.makeText(this, "Pincel médio ativo. Desenhe no mapa.", Toast.LENGTH_SHORT).show()
         }
         findViewById<LinearLayout>(R.id.brushThick).setOnClickListener {
             mapEditor.getBrushPaint().strokeWidth = mapEditor.dp(12f)
-            mapEditor.getBrushPaint().color = currentColor()
             mapEditor.setTool(Tool.BRUSH)
             brushCard.visibility = View.GONE
             Toast.makeText(this, "Pincel grosso ativo. Desenhe no mapa.", Toast.LENGTH_SHORT).show()
@@ -482,7 +471,7 @@ class ActivityEditor : BaseActivity() {
         findViewById<LinearLayout>(R.id.brushText).setOnClickListener {
             val input = EditText(this).apply {
                 hint = "Digite o texto"
-                inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
                 maxLines = 2
             }
             AlertDialog.Builder(this)
@@ -508,7 +497,7 @@ class ActivityEditor : BaseActivity() {
 
     private fun setupCursorClicks() {
         // Eraser switch: delete on tap without confirmation
-        findViewById<android.widget.Switch>(R.id.cursorEraserSwitch)?.setOnCheckedChangeListener { _, isChecked ->
+        findViewById<SwitchMaterial>(R.id.cursorEraserSwitch)?.setOnCheckedChangeListener { _, isChecked ->
             mapEditor.setEraserEnabled(isChecked)
         }
         // Bring selected to front

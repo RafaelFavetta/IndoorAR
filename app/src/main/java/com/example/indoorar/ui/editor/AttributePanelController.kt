@@ -14,8 +14,6 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.SeekBar
-import androidx.appcompat.app.AlertDialog
-import com.example.indoorar.views.ColorPickerView
 
 class AttributePanelController(
     activity: Activity,
@@ -37,9 +35,6 @@ class AttributePanelController(
     private val edtPosY = activity.findViewById<EditText>(R.id.inputY)
     private val edtWidth = activity.findViewById<EditText>(R.id.inputWidth)
     private val edtHeight = activity.findViewById<EditText>(R.id.inputHeight)
-    private val edtCor = activity.findViewById<EditText>(R.id.inputHex)
-    private val previewCor = activity.findViewById<View>(R.id.colorPreview)
-    private val btnColorPicker = activity.findViewById<ImageButton>(R.id.btnColorPicker)
 
     private val rotationBar = activity.findViewById<SeekBar>(R.id.rotationSeekBar)
     private val rotationLabel = activity.findViewById<TextView>(R.id.rotationLabel)
@@ -61,7 +56,6 @@ class AttributePanelController(
         setupSwitch()
         setupWalkableCheckbox()
         setupRotation()
-        setupColorPicker()
     }
 
     private fun setupSwitch() {
@@ -86,18 +80,26 @@ class AttributePanelController(
                     // Sala clara
                     it.fillColor = "#ECECEC".toColorInt()
                 }
-                edtCor.setText(String.format("#%06X", (0xFFFFFF and it.fillColor)))
-                updateColorPreview(String.format("#%06X", (0xFFFFFF and it.fillColor)))
+                // Não atualiza nenhum campo de cor no painel (seletor removido)
                 editor.invalidate()
             }
         }
+    }
+
+    private fun setRotationLabel(value: Int) {
+        rotationLabel?.text = "$value°"
+    }
+
+    private fun setRotationLabelFromProgress() {
+        val v = rotationBar?.progress ?: 0
+        rotationLabel?.text = "$v°"
     }
 
     private fun setupRotation() {
         rotationBar?.max = 360
         rotationBar?.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                rotationLabel?.text = "${progress}°"
+                setRotationLabel(progress)
                 if (!fromUser || isProgrammatic) return
                 val obj = editor.actions.firstOrNull { (it is Action.Shape && it.selected) || (it is Action.Poi && it.selected) }
                 when (obj) {
@@ -109,45 +111,6 @@ class AttributePanelController(
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
-    }
-
-    private fun setupColorPicker() {
-        btnColorPicker?.setOnClickListener {
-            // Somente para shapes; para POI não mostramos o seletor
-            val selected = editor.actions.firstOrNull { it is Action.Shape && it.selected } as? Action.Shape
-                ?: run {
-                    // Nada a fazer para POI
-                    return@setOnClickListener
-                }
-            val picker = ColorPickerView(btnColorPicker.context)
-            val padding = (picker.resources.displayMetrics.density * 12).toInt()
-            picker.setPadding(padding, padding, padding, padding)
-            var tempColor = try { edtCor.text.toString().toColorInt() } catch (_: Exception) { selected.fillColor }
-            picker.setOnColorChangedListener { c ->
-                tempColor = c
-                // Atualiza preview e campo hex ao vivo
-                isProgrammatic = true
-                val hex = String.format("#%06X", 0xFFFFFF and c)
-                edtCor.setText(hex)
-                updateColorPreview(hex)
-                isProgrammatic = false
-            }
-            AlertDialog.Builder(btnColorPicker.context)
-                .setTitle("Escolher cor")
-                .setView(picker)
-                .setPositiveButton("Aplicar") { dialog, _ ->
-                    // Aplica no shape
-                    val hex = String.format("#%06X", 0xFFFFFF and tempColor)
-                    isProgrammatic = true
-                    edtCor.setText(hex)
-                    updateColorPreview(hex)
-                    isProgrammatic = false
-                    pushColor()
-                    dialog.dismiss()
-                }
-                .setNegativeButton("Cancelar") { dialog, _ -> dialog.dismiss() }
-                .show()
-        }
     }
 
     // ===== MapEditorView callbacks =====
@@ -166,7 +129,7 @@ class AttributePanelController(
 
         isProgrammatic = true
         edtNome.setText(meta.nome)
-        edtCor.setText(meta.corHex.uppercase())
+        // Não exibe/atualiza campo de cor
         // Posição agora exibida em metros
         edtPosX.setText(fmt(editor.pxToMeters(props.x)))
         edtPosY.setText(fmt(editor.pxToMeters(props.y)))
@@ -175,7 +138,7 @@ class AttributePanelController(
         edtHeight.setText(fmt(editor.pxToMeters(props.height)))
         // Rotação
         rotationBar?.progress = props.rotation.toInt().coerceIn(0, rotationBar.max)
-        rotationLabel?.text = "${rotationBar?.progress ?: 0}°"
+        setRotationLabelFromProgress()
 
         // Mostrar/ocultar seções conforme o tipo selecionado
         when (obj) {
@@ -185,10 +148,6 @@ class AttributePanelController(
                 layoutIsWalkable?.visibility = View.GONE
                 // Oculta campo de nome para POI
                 edtNome?.visibility = View.GONE
-                // Oculta controles de cor para POI
-                previewCor?.visibility = View.GONE
-                edtCor?.visibility = View.GONE
-                btnColorPicker?.visibility = View.GONE
             }
             is Action.Shape -> {
                 layoutIsWalkable?.visibility = View.VISIBLE
@@ -196,22 +155,15 @@ class AttributePanelController(
                 layoutStartQR?.visibility = View.GONE
                 // Exibe nome para Shape
                 edtNome?.visibility = View.VISIBLE
-                // Exibe controles de cor para Shape
-                previewCor?.visibility = View.VISIBLE
-                edtCor?.visibility = View.VISIBLE
-                btnColorPicker?.visibility = View.VISIBLE
             }
             else -> {
                 layoutStartQR?.visibility = View.GONE
                 layoutIsWalkable?.visibility = View.GONE
                 edtNome?.visibility = View.GONE
-                previewCor?.visibility = View.GONE
-                edtCor?.visibility = View.GONE
-                btnColorPicker?.visibility = View.GONE
             }
         }
 
-        updateColorPreview(meta.corHex)
+        // Não atualiza preview de cor
         painel.visibility = View.VISIBLE
         // Reassert Z-order when showing
         painel.bringToFront()
@@ -232,7 +184,7 @@ class AttributePanelController(
         applyOnEdit(edtWidth) { pushSize() }
         applyOnEdit(edtHeight) { pushSize() }
         applyOnEdit(edtNome) { saveMeta() }
-        applyOnEdit(edtCor) { pushColor() }
+        // Removido: applyOnEdit(edtCor) pois seletor/edição de cor foi desativado
     }
 
     private fun pushPosition() {
@@ -289,35 +241,18 @@ class AttributePanelController(
         editor.invalidate()
     }
 
-    private fun pushColor() {
-        if (isProgrammatic) return
-        val hex = edtCor.text.toString().ifBlank { "#D9D9D9" }
-        val color = try { hex.toColorInt() } catch (_: Exception) { "#D9D9D9".toColorInt() }
-
-        val obj = editor.actions.firstOrNull { (it is Action.Shape && it.selected) } as? Action.Shape
-        obj?.fillColor = color
-        editor.invalidate()
-        updateColorPreview(hex)
-        saveMeta()
-    }
-
     private fun saveMeta() {
         if (isProgrammatic) return
         val obj = editor.actions.firstOrNull { (it is Action.Shape && it.selected) || (it is Action.Poi && it.selected) } ?: return
         val m = metaStore.getOrPut(obj) { Meta() }
         m.nome = edtNome.text.toString()
-        m.corHex = edtCor.text.toString().ifBlank { "#D9D9D9" }
-        // propaga direto para o objeto para garantir persistência no salvar
+        // Não salva mais hex manual do painel (seletor removido)
+        // m.corHex = edtCor.text.toString().ifBlank { "#D9D9D9" }
         when (obj) {
             is Action.Shape -> { obj.nome = m.nome }
             is Action.Poi -> { /* POI não possui nome/descrição */ }
             else -> {}
         }
-    }
-
-    private fun updateColorPreview(hex: String) {
-        val color = try { hex.toColorInt() } catch (_: Exception) { "#D9D9D9".toColorInt() }
-        previewCor.setBackgroundColor(color)
     }
 
     private fun fmt(v: Float): String {

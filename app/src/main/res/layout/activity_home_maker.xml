@@ -248,7 +248,6 @@
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Ajuste para o restante do layout -->
 
     <TextView
         android:id="@+id/txtMapasFavoritos"

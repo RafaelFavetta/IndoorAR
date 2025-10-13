@@ -53,7 +53,7 @@ class ActivityCriar : BaseActivity() {
         senhaField = findViewById(R.id.editSenha)
         btnCadastrar = findViewById(R.id.btnCadastrar)
         progressBar = findViewById(R.id.progressBar)
-        btnGoogle = findViewById(R.id.btnGoogle)
+        btnGoogle = findViewById(R.id.btnGoogle3)
         progressBar.bringToFront()
 
         // Máscara manual para telefone brasileiro
@@ -187,7 +187,7 @@ class ActivityCriar : BaseActivity() {
     private fun setLoading(loading: Boolean) {
         progressBar.visibility = if (loading) View.VISIBLE else View.GONE
         btnCadastrar.isEnabled = !loading
-        findViewById<View>(R.id.btnGoogle)?.isEnabled = !loading
+        findViewById<View>(R.id.btnGoogle3)?.isEnabled = !loading
     }
 
     private fun validarCampos(nome: String, email: String, telefone: String, senha: String): Boolean {

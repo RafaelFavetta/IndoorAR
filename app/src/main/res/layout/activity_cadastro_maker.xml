@@ -10,47 +10,17 @@
 
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnFacebook3"
-        android:layout_width="0dp"
-        android:layout_height="45dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
-        app:backgroundTint="#E0E0E0"
-        app:rippleColor="#fdfdfd"
-        android:fontFamily="@font/inter"
-        android:gravity="center"
-        android:text="Entrar com Facebook"
-        android:textColor="#4F4F4F"
-        android:textSize="13sp"
-        app:cornerRadius="12dp"
-        app:icon="@drawable/ic_facebook"
-        app:iconGravity="textStart"
-        app:iconPadding="12dp"
-        app:iconSize="24dp"
-        app:iconTint="@null"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.847" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnGoogle"
-        android:layout_width="0dp"
-        android:layout_height="45dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="532dp"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="7dp"
-        app:backgroundTint="#E0E0E0"
-        app:rippleColor="#fdfdfd"
+        android:id="@+id/btnGoogle2"
+        android:layout_width="330dp"
+        android:layout_height="47dp"
+        android:layout_marginTop="504dp"
+        android:backgroundTint="#E0E0E0"
         android:fontFamily="@font/inter"
         android:gravity="center"
         android:text="Entrar com Google"
         android:textColor="#4F4F4F"
         android:textSize="13sp"
-        app:cornerRadius="12dp"
+        app:cornerRadius="10dp"
         app:icon="@drawable/ic_google"
         app:iconGravity="textStart"
         app:iconPadding="12dp"
@@ -58,10 +28,34 @@
         app:iconTint="@null"
         app:layout_constraintBottom_toTopOf="@+id/btnFacebook3"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintHorizontal_bias="0.493"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.988" />
+        app:layout_constraintVertical_bias="1.0" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnFacebook3"
+        android:layout_width="330dp"
+        android:layout_height="47dp"
+        android:backgroundTint="#E0E0E0"
+        android:fontFamily="@font/inter"
+        android:gravity="center"
+
+        android:text="Entrar com Facebook"
+        android:textColor="#4F4F4F"
+        android:textSize="13sp"
+        app:cornerRadius="10dp"
+        app:icon="@drawable/ic_facebook"
+        app:iconGravity="textStart"
+        app:iconPadding="12dp"
+        app:iconSize="24dp"
+        app:iconTint="@null"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.493"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.868" />
 
     <ImageButton
         android:id="@+id/btnVoltar"
@@ -129,22 +123,24 @@
         android:layout_height="48dp"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
+        android:autofillHints="emailAddress"
         android:background="@drawable/btn_arredondado3"
         android:drawableStart="@drawable/email"
         android:drawablePadding="10dp"
         android:hint="E-mail"
+        android:inputType="textEmailAddress"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:textColor="#121212"
         android:textColorHint="#80121212"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/editTelefone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.376" />
+        app:layout_constraintVertical_bias="0.966" />
 
     <Button
         android:id="@+id/btnCadastro"
@@ -186,28 +182,31 @@
         app:layout_constraintTop_toBottomOf="@+id/txtUsuarioComum"
         app:layout_constraintVertical_bias="0.0" />
 
+
     <EditText
         android:id="@+id/editTelefone"
         android:layout_width="0dp"
         android:layout_height="48dp"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
+        android:autofillHints="phone"
         android:background="@drawable/btn_arredondado3"
         android:drawableStart="@drawable/telephone"
         android:drawablePadding="10dp"
         android:hint="Telefone"
+        android:inputType="phone"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:textColor="#121212"
         android:textColorHint="#80121212"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/editSenha"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.459" />
+        app:layout_constraintVertical_bias="0.975" />
 
     <EditText
         android:id="@+id/editNome"
@@ -215,23 +214,24 @@
         android:layout_height="48dp"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
+        android:autofillHints="name"
         android:background="@drawable/btn_arredondado3"
         android:drawableStart="@drawable/user2"
         android:drawablePadding="10dp"
         android:hint="Nome"
+        android:inputType="textPersonName"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:textColor="#121212"
         android:textColorHint="#80121212"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/editEmail"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.291" />
-
+        app:layout_constraintVertical_bias="0.952" />
 
     <TextView
         android:id="@+id/txtTermos"

@@ -1,66 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/cardMapa"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginBottom="6dp"
-    android:layout_gravity="center_horizontal"
-    app:cardCornerRadius="10dp"
-    app:cardElevation="4dp"
-    app:strokeColor="#32357A"
-    app:strokeWidth="0.55dp">
+    android:layout_height="wrap_content">
 
-    <LinearLayout
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardMapa"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="0dp">
-
-        <ImageView
-            android:id="@+id/ivThumbMapa"
-            android:layout_width="match_parent"
-            android:layout_height="160dp"
-            android:layout_marginTop="0dp"
-            android:layout_marginBottom="0dp"
-            android:scaleType="centerCrop"
-            android:src="@drawable/ic_minimap_placeholder"
-            android:contentDescription="@string/thumb_mapa" />
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="10dp"
+        app:cardElevation="2.5dp"
+        app:strokeColor="#32357A"
+        app:strokeWidth="0.55dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="8dp"
-            android:background="#FDFDFD">
+            android:padding="0dp">
+
+            <ImageView
+                android:id="@+id/ivThumbMapa"
+                android:layout_width="match_parent"
+                android:layout_height="160dp"
+                android:layout_marginTop="0dp"
+                android:layout_marginBottom="0dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_minimap_placeholder"
+                android:contentDescription="@string/thumb_mapa" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:orientation="vertical"
+                android:padding="5dp"
+                android:background="#FDFDFD">
 
-                <TextView
-                    android:id="@+id/txtNome"
-                    android:layout_width="0dp"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="6dp"
-                    android:text="@string/nome_do_mapa"
-                    android:textColor="#32357A"
-                    android:textSize="15sp"
-                    android:textStyle="normal" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-                <ImageButton
-                    android:id="@+id/btnFavorito"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/app_name"
-                    android:padding="4dp"
-                    android:src="@drawable/heartfavorites" />
+                    <TextView
+                        android:paddingStart="5dp"
+                        android:id="@+id/txtNome"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/inter"
+                        android:layout_marginStart="6dp"
+                        android:text="@string/nome_do_mapa"
+                        android:textColor="#32357A"
+                        android:textSize="17sp"
+                        android:textStyle="normal" />
+
+                    <ImageButton
+                        android:id="@+id/btnFavorito"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/app_name"
+                        android:padding="4dp"
+                        android:src="@drawable/heartfavorites" />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
 
-</com.google.android.material.card.MaterialCardView>
+    </com.google.android.material.card.MaterialCardView>
+</FrameLayout>

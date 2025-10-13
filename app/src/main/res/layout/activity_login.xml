@@ -25,23 +25,6 @@
 
 
     <TextView
-        android:id="@+id/txtBemVindo"
-        android:layout_width="wrap_content"
-        android:layout_height="55dp"
-        android:fontFamily="@font/staatliches"
-        android:letterSpacing="0.05"
-        android:text="Bem-vindo (A)"
-        android:textColor="#32357A"
-        android:textSize="50sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.147"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.143" />
-
-    <TextView
         android:id="@+id/txtbemvindo2"
         android:layout_width="wrap_content"
         android:layout_height="55dp"
@@ -53,10 +36,27 @@
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.081"
+        app:layout_constraintHorizontal_bias="0.127"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.21" />
+        app:layout_constraintVertical_bias="0.189" />
+
+    <TextView
+        android:id="@+id/txtBemVindo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/staatliches"
+        android:letterSpacing="0.05"
+        android:text="Bem-vindo (A)"
+        android:textColor="#32357A"
+        android:textSize="55sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.284"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.128" />
 
 
     <TextView
@@ -71,11 +71,10 @@
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.125"
+        app:layout_constraintHorizontal_bias="0.193"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.303" />
-
+        app:layout_constraintVertical_bias="0.27" />
 
     <EditText
         android:id="@+id/editSenha"
@@ -98,10 +97,10 @@
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
+        app:layout_constraintHorizontal_bias="0.524"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editNome"
-        app:layout_constraintVertical_bias="0.035" />
+        app:layout_constraintVertical_bias="0.03" />
 
     <EditText
         android:id="@+id/editNome"
@@ -124,10 +123,31 @@
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
+        app:layout_constraintHorizontal_bias="0.524"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.428" />
+        app:layout_constraintVertical_bias="0.39" />
+
+    <Button
+        android:id="@+id/btnEntrar"
+        android:layout_width="350dp"
+        android:layout_height="55dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/btn_arredondado"
+        android:backgroundTint="#32357A"
+        android:elevation="5dp"
+        android:fontFamily="@font/staatliches"
+        android:letterSpacing="0.1"
+        android:text="ENTRAR"
+        android:textAllCaps="true"
+        android:textColor="#FDFDFD"
+        android:textSize="25sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.524"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editSenha"
+        app:layout_constraintVertical_bias="0.013" />
 
     <TextView
         android:id="@+id/txt2"
@@ -141,65 +161,44 @@
         android:textStyle="normal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.89"
+        app:layout_constraintHorizontal_bias="0.898"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btnEntrar"
-        app:layout_constraintVertical_bias="0.012" />
-
-    <Button
-        android:id="@+id/btnEntrar"
-        android:layout_width="350dp"
-        android:layout_height="50dp"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/btn_arredondado"
-        android:backgroundTint="#32357A"
-        android:elevation="5dp"
-        android:fontFamily="@font/staatliches"
-        android:letterSpacing="0.1"
-        android:text="ENTRAR"
-        android:textAllCaps="true"
-        android:textColor="#FDFDFD"
-        android:textSize="25sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editSenha"
-        app:layout_constraintVertical_bias="0.014" />
+        app:layout_constraintVertical_bias="0.022" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnFacebook"
-        android:layout_width="350dp"
-        android:layout_height="50dp"
+        android:layout_width="330dp"
+        android:layout_height="47dp"
         android:backgroundTint="#E0E0E0"
         android:fontFamily="@font/inter"
         android:gravity="center"
-        android:letterSpacing="0.1"
-        android:text="Entrar com Google"
+
+        android:text="Entrar com Facebook"
         android:textColor="#4F4F4F"
         android:textSize="13sp"
         app:cornerRadius="10dp"
-        app:icon="@drawable/ic_google"
+        app:icon="@drawable/ic_facebook"
         app:iconGravity="textStart"
         app:iconPadding="12dp"
         app:iconSize="24dp"
         app:iconTint="@null"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
+        app:layout_constraintHorizontal_bias="0.493"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.911" />
+        app:layout_constraintVertical_bias="0.916" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnGoogle"
-        android:layout_width="350dp"
-        android:layout_height="50dp"
-        android:layout_marginTop="8dp"
+        android:layout_width="330dp"
+        android:layout_height="47dp"
+        android:layout_marginTop="520dp"
+        android:layout_marginBottom="7dp"
         android:backgroundTint="#E0E0E0"
         android:fontFamily="@font/inter"
         android:gravity="center"
-        android:letterSpacing="0.1"
         android:text="Entrar com Google"
         android:textColor="#4F4F4F"
         android:textSize="13sp"
@@ -211,10 +210,10 @@
         app:iconTint="@null"
         app:layout_constraintBottom_toTopOf="@+id/btnFacebook"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.475"
+        app:layout_constraintHorizontal_bias="0.493"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.989" />
+        app:layout_constraintVertical_bias="1.0" />
 
     <ProgressBar
         android:id="@+id/progressBar"

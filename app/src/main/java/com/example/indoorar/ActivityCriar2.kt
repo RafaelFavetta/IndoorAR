@@ -79,7 +79,7 @@ class ActivityCriar2 : BaseActivity() {
 
         btnCadastrar = findViewById(R.id.btnCadastro)
         progressBar = findViewById(R.id.progressBar)
-        btnGoogle = findViewById(R.id.btnGoogle)
+        btnGoogle = findViewById(R.id.btnGoogle2)
         progressBar.bringToFront()
 
         val btnVoltar = findViewById<ImageView>(R.id.btnVoltar)
@@ -188,7 +188,7 @@ class ActivityCriar2 : BaseActivity() {
     private fun setLoading(loading: Boolean) {
         progressBar.visibility = if (loading) View.VISIBLE else View.GONE
         btnCadastrar.isEnabled = !loading
-        findViewById<View>(R.id.btnGoogle)?.isEnabled = !loading
+        findViewById<View>(R.id.btnGoogle2)?.isEnabled = !loading
     }
 
     private fun validarCampos(nome: String, email: String, telefone: String, senha: String): Boolean {

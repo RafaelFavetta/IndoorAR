@@ -24,7 +24,7 @@
             <ImageView
                 android:id="@+id/ivThumbMapa"
                 android:layout_width="match_parent"
-                android:layout_height="150dp"
+                android:layout_height="170dp"
                 android:layout_marginTop="0dp"
                 android:layout_marginBottom="0dp"
                 android:scaleType="centerCrop"
@@ -41,6 +41,7 @@
 
                 <TextView
                     android:id="@+id/txtNome"
+                    android:paddingStart="5dp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"

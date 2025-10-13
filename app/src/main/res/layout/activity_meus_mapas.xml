@@ -92,6 +92,8 @@
         android:padding="12dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         android:clipToPadding="false"
+        android:clipChildren="false"
+        android:paddingBottom="24dp"
         android:scrollbars="vertical" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

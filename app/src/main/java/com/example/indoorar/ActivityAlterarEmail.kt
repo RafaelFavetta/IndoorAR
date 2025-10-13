@@ -9,7 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
-class ActivityAlterarEmail : AppCompatActivity() {
+class ActivityAlterarEmail : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_alterar_email)
@@ -34,6 +34,12 @@ class ActivityAlterarEmail : AppCompatActivity() {
             val user = FirebaseAuth.getInstance().currentUser
             if (user == null) {
                 Toast.makeText(this, "Usuário não autenticado", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            // Check provider
+            val providers = user.providerData.map { it.providerId }
+            if (!providers.contains("password")) {
+                Toast.makeText(this, "Você está logado com Google/Facebook. Não é possível alterar o email por aqui.", Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
             val emailAtual = user.email ?: ""

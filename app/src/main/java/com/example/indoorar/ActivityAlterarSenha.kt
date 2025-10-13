@@ -42,6 +42,12 @@ class ActivityAlterarSenha : BaseActivity() {
                 Toast.makeText(this, "Usuário não autenticado", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+            // Check provider
+            val providers = user.providerData.map { it.providerId }
+            if (!providers.contains("password")) {
+                Toast.makeText(this, "Você está logado com Google/Facebook. Não é possível alterar a senha por aqui.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
             val emailAtual = user.email ?: ""
             val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(emailAtual, senhaAtual)
             user.reauthenticate(credential)

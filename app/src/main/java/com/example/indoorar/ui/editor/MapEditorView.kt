@@ -1049,26 +1049,21 @@ class MapEditorView @JvmOverloads constructor(
                         }
                     }
                     if (!previewMode && action.selected) {
-                        val styleKey = getPoiCacheKey(action) + "::pinV1"
-                        val bmp = poiBitmapCache[styleKey] ?: getBitmapForPoi(action)
+                        val styleKey = getPoiCacheKey(action) + "::circleV1"
+                        val bmpSel = poiBitmapCache[styleKey] ?: getBitmapForPoi(action)
                         val content = poiContentBoundsCache[styleKey]
-                        // Se temos bounds precisos do conteúdo, usa-os; caso contrário, fallback para bounds do POI
-                        val b = if (bmp != null && content != null) {
-                            // Retângulo do conteúdo no espaço local (centrado no POI)
-                            val localLeft = -bmp.width / 2f + content.left
-                            val localTop = -bmp.height / 2f + content.top
+                        val b = if (bmpSel != null && content != null) {
+                            val localLeft = -bmpSel.width / 2f + content.left
+                            val localTop = -bmpSel.height / 2f + content.top
                             val localRight = localLeft + content.width()
                             val localBottom = localTop + content.height()
                             RectF(action.x + localLeft, action.y + localTop, action.x + localRight, action.y + localBottom)
                         } else getActionBounds(action)
                         if (b != null) {
-                            // Desenha envelope rotacionado em torno do centro do POI
                             canvas.withSave {
                                 rotate(action.rotation, action.x, action.y)
                                 drawSelectionEnvelope(canvas, b)
-                                // POI não exibe handles
                             }
-                            // Quick buttons não-rotacionados
                             drawQuickButtons(canvas, action, b)
                         }
                     }
@@ -1459,59 +1454,6 @@ class MapEditorView @JvmOverloads constructor(
         }
     } catch (_: Exception) { "#32357A".toColorInt() }
 
-    private fun getBitmapForPoi(poi: Action.Poi): Bitmap? {
-        val styleKey = getPoiCacheKey(poi) + "::pinV1"
-        poiBitmapCache[styleKey]?.let { return it }
-        return try {
-            val targetW = max(1, poi.width.toInt())
-            val targetH = max(1, poi.height.toInt())
-            if (targetW <= 2 || targetH <= 4) return null
-            val bmp = createBitmap(targetW, targetH)
-            val c = Canvas(bmp)
-            val pinColor = colorForPoiIcon(poi.iconRes)
-            val paintFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = pinColor; style = Paint.Style.FILL }
-            val paintStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = targetW * 0.05f }
-            val cx = targetW / 2f
-            val topPadding = targetH * 0.04f
-            val r = min(targetW * 0.42f, (targetH * 0.50f)) * 0.9f
-            val cy = topPadding + r
-            val bottomTipY = targetH.toFloat() - paintStroke.strokeWidth * 0.6f
-            val angleStart = 200f
-            val sweep = 140f
-            val radStart = Math.toRadians(angleStart.toDouble())
-            val p1x = (cx + r * kotlin.math.cos(radStart)).toFloat()
-            val p1y = (cy + r * kotlin.math.sin(radStart)).toFloat()
-            val path = Path().apply {
-                moveTo(cx, bottomTipY)
-                lineTo(p1x, p1y)
-                addArc(RectF(cx - r, cy - r, cx + r, cy + r), angleStart, sweep)
-                lineTo(cx, bottomTipY)
-                close()
-            }
-            c.drawPath(path, paintFill)
-            c.drawPath(path, paintStroke)
-            val innerR = r * 0.60f
-            val innerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL }
-            c.drawCircle(cx, cy, innerR, innerPaint)
-            val drawable = try { ContextCompat.getDrawable(context, poi.iconRes) } catch (_: Exception) { null }
-                ?: ContextCompat.getDrawable(context, com.example.indoorar.R.drawable.ic_poi_default)
-            drawable?.let { dr ->
-                val iconSize = (innerR * 1.4f).coerceAtMost(innerR * 1.8f)
-                val iconLeft = (cx - iconSize / 2f).toInt()
-                val iconTop = (cy - iconSize / 2f).toInt()
-                val iconRight = (iconLeft + iconSize).toInt()
-                val iconBottom = (iconTop + iconSize).toInt()
-                try { dr.mutate(); dr.setTint(pinColor) } catch (_: Exception) {}
-                dr.setBounds(iconLeft, iconTop, iconRight, iconBottom)
-                dr.draw(c)
-            }
-            val contentRect = computeOpaqueBounds(bmp)
-            poiBitmapCache[styleKey] = bmp
-            poiContentBoundsCache[styleKey] = contentRect
-            bmp
-        } catch (_: Exception) { null }
-    }
-
     private fun computeOpaqueBounds(bmp: Bitmap, alphaThreshold: Int = 10): Rect {
         val w = bmp.width
         val h = bmp.height
@@ -1535,8 +1477,47 @@ class MapEditorView @JvmOverloads constructor(
         return if (right >= left && bottom >= top) Rect(left, top, right + 1, bottom + 1) else Rect(0, 0, w, h)
     }
 
+    private fun getBitmapForPoi(poi: Action.Poi): Bitmap? {
+        val styleKey = getPoiCacheKey(poi) + "::circleV1"
+        poiBitmapCache[styleKey]?.let { return it }
+        return try {
+            val targetW = max(1, poi.width.toInt())
+            val targetH = max(1, poi.height.toInt())
+            if (targetW <= 2 || targetH <= 2) return null
+            val bmp = createBitmap(targetW, targetH)
+            val c = Canvas(bmp)
+            val fillColor = colorForPoiIcon(poi.iconRes)
+            val cx = targetW / 2f
+            val cy = targetH / 2f
+            val r = min(targetW, targetH) * 0.45f
+            // filled circle
+            val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = fillColor; style = Paint.Style.FILL }
+            c.drawCircle(cx, cy, r, fillPaint)
+            // white outline
+            val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = (min(targetW, targetH) * 0.06f).coerceIn(2f, 6f) }
+            c.drawCircle(cx, cy, r, strokePaint)
+            // icon centered, tinted white
+            val drawable = try { ContextCompat.getDrawable(context, poi.iconRes) } catch (_: Exception) { null }
+                ?: ContextCompat.getDrawable(context, com.example.indoorar.R.drawable.ic_poi_default)
+            drawable?.let { dr ->
+                val iconSize = (r * 1.2f).coerceAtMost(r * 1.6f)
+                val iconLeft = (cx - iconSize / 2f).toInt()
+                val iconTop = (cy - iconSize / 2f).toInt()
+                val iconRight = (iconLeft + iconSize).toInt()
+                val iconBottom = (iconTop + iconSize).toInt()
+                try { dr.mutate(); dr.setTint(Color.WHITE) } catch (_: Exception) {}
+                dr.setBounds(iconLeft, iconTop, iconRight, iconBottom)
+                dr.draw(c)
+            }
+            val contentRect = computeOpaqueBounds(bmp)
+            poiBitmapCache[styleKey] = bmp
+            poiContentBoundsCache[styleKey] = contentRect
+            bmp
+        } catch (_: Exception) { null }
+    }
+
     private fun getPoiContentRectInWorld(poi: Action.Poi): RectF? {
-        val styleKey = getPoiCacheKey(poi) + "::pinV1"
+        val styleKey = getPoiCacheKey(poi) + "::circleV1"
         val bmp = poiBitmapCache[styleKey] ?: getBitmapForPoi(poi) ?: return null
         val content = poiContentBoundsCache[styleKey] ?: return null
         val left = poi.x - bmp.width / 2f + content.left

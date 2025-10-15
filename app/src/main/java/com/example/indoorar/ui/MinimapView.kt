@@ -14,6 +14,7 @@ import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
+import androidx.core.graphics.createBitmap
 
 class MinimapView @JvmOverloads constructor(
     context: Context,
@@ -93,8 +94,8 @@ class MinimapView @JvmOverloads constructor(
         miniIconCache[key]?.let { return it }
         return try {
             val dr = context.getDrawable(iconRes) ?: return null
-            val bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
-            val c = android.graphics.Canvas(bmp)
+            val bmp = createBitmap(size, size)
+            val c = Canvas(bmp)
             try { dr.mutate(); dr.setTint(tint) } catch (_: Exception) {}
             dr.setBounds(0, 0, size, size)
             dr.draw(c)
@@ -191,46 +192,38 @@ class MinimapView @JvmOverloads constructor(
             canvas.drawCircle((dx - minX) * scaleX, (dz - minZ) * scaleY, 5f, paint)
         }
 
-        // POIs
+        // POIs (render as colored circles with centered icon)
         pois.forEach { p ->
-            val tipX = (p.x - minX) * scaleX
-            val tipY = (p.z - minZ) * scaleY
-            val pinHeight = pinHeightBase
-            val r = pinHeight * 0.35f
-            val centerY = tipY - (pinHeight - r)
-            val centerX = tipX
-            val path = Path()
-            val startAngle = 200f
-            val sweep = 140f
-            val radStart = Math.toRadians(startAngle.toDouble())
-            val p1x = (centerX + r * kotlin.math.cos(radStart)).toFloat()
-            val p1y = (centerY + r * kotlin.math.sin(radStart)).toFloat()
-            path.moveTo(tipX, tipY)
-            path.lineTo(p1x, p1y)
-            path.addArc(centerX - r, centerY - r, centerX + r, centerY + r, startAngle, sweep)
-            path.close()
+            val cx = (p.x - minX) * scaleX
+            val cy = (p.z - minZ) * scaleY
+            // scale radius relative to world size for consistent look
+            val r = (pinHeightBase * 0.5f).coerceAtLeast(6f)
+
+            // filled circle with POI color
             paint.style = Paint.Style.FILL
             paint.color = p.color
-            canvas.drawPath(path, paint)
+            canvas.drawCircle(cx, cy, r, paint)
+
+            // thin white outline for contrast
             paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 1.2f
+            paint.strokeWidth = 1.5f
             paint.color = Color.WHITE
-            canvas.drawPath(path, paint)
+            canvas.drawCircle(cx, cy, r, paint)
+
+            // start POI highlight ring
             if (p.isStart) {
                 paint.style = Paint.Style.STROKE
                 paint.strokeWidth = 2.6f
-                paint.color = 0xFFFFD54F.toInt()
-                canvas.drawCircle(centerX, centerY, r * 0.95f, paint)
+                paint.color = 0xFFFFD54F.toInt() // amber
+                canvas.drawCircle(cx, cy, r + 2f, paint)
             }
-            paint.style = Paint.Style.FILL
-            paint.color = Color.WHITE
-            val innerR = r * 0.60f
-            canvas.drawCircle(centerX, centerY, innerR, paint)
+
+            // icon centered inside, tinted white to contrast the colored background
             if (p.iconRes != null) {
-                val iconSize = (innerR * 1.3f).toInt().coerceAtLeast(6)
-                getMiniIcon(p.iconRes, iconSize, p.color)?.let { bmp ->
-                    val left = (centerX - bmp.width / 2f)
-                    val top = (centerY - bmp.height / 2f)
+                val iconSize = (r * 1.2f).toInt().coerceAtLeast(8)
+                getMiniIcon(p.iconRes, iconSize, Color.WHITE)?.let { bmp ->
+                    val left = (cx - bmp.width / 2f)
+                    val top = (cy - bmp.height / 2f)
                     canvas.drawBitmap(bmp, left, top, null)
                 }
             }
@@ -255,8 +248,8 @@ class MinimapView @JvmOverloads constructor(
         if (!rotateWithHeading) {
             val len = 18f
             val half = 6f
-            val cosH = kotlin.math.cos(userHeadingRad)
-            val sinH = kotlin.math.sin(userHeadingRad)
+            val cosH = cos(userHeadingRad)
+            val sinH = sin(userHeadingRad)
             val tipX = ux + cosH * len
             val tipY = uz + sinH * len
             val leftX = ux + (-sinH * half)

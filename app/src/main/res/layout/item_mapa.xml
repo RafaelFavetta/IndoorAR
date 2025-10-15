@@ -24,7 +24,7 @@
             <ImageView
                 android:id="@+id/ivThumbMapa"
                 android:layout_width="match_parent"
-                android:layout_height="120dp"
+                android:layout_height="110dp"
                 android:layout_marginTop="0dp"
                 android:layout_marginBottom="0dp"
                 android:scaleType="centerCrop"
@@ -33,24 +33,24 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:layout_height="29dp"
+                android:background="#FDFDFD"
                 android:gravity="center_vertical"
-                android:padding="5dp"
-                android:background="#FDFDFD">
+                android:orientation="horizontal"
+                android:padding="5dp">
 
                 <TextView
-                    android:paddingStart="5dp"
-                    android:paddingEnd="5dp"
                     android:id="@+id/txtNome"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="6dp"
                     android:layout_weight="1"
                     android:fontFamily="@font/inter"
-                    android:layout_marginStart="6dp"
+                    android:paddingStart="5dp"
+                    android:paddingEnd="5dp"
                     android:text="@string/nome_do_mapa"
                     android:textColor="#32357A"
-                    android:textSize="17sp"
+                    android:textSize="15sp"
                     android:textStyle="normal" />
 
                 <ImageButton

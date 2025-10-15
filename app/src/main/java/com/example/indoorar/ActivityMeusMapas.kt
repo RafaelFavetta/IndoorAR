@@ -48,7 +48,8 @@ class ActivityMeusMapas : BaseActivity() {
                 val listaMapas = snapshots?.documents?.map { doc ->
                     docParaMapaResumoSeguro(doc)
                 } ?: emptyList()
-                adapter.submit(listaMapas)
+                val ordenada = listaMapas.sortedByDescending { it.dataCriacao?.seconds ?: 0 }
+                adapter.submit(ordenada)
             }
     }
 

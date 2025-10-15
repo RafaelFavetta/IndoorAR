@@ -9,17 +9,6 @@
     android:fitsSystemWindows="true"
     tools:context=".ActivityHomeComum">
 
-    <ImageView
-        android:id="@+id/logo"
-        android:layout_width="36dp"
-        android:layout_height="46dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="20dp"
-        android:contentDescription="@string/logo"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/logo_branca" />
-
     <ProgressBar
         android:id="@+id/progressRecentes"
         style="@android:style/Widget.Material.ProgressBar.Small"
@@ -101,11 +90,22 @@
 
 
         <ImageView
+            android:id="@+id/logo"
+            android:layout_width="36dp"
+            android:layout_height="46dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
+            android:contentDescription="@string/logo"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/logo_branca" />
+
+        <ImageView
             android:id="@+id/btnPerfil"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:layout_marginTop="88dp"
-            android:layout_marginEnd="32dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="20dp"
             android:background="@drawable/ripple_clickable"
             android:contentDescription="Configurações"
             app:layout_constraintEnd_toEndOf="parent"

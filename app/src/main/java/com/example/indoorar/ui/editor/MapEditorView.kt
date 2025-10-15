@@ -112,9 +112,11 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     // Suavização do snap/alinhamento (ajustado para ficar mais leve)
-    private var baseSnapThresholdPx = 14f // antes 10f: aumenta levemente o alcance do snap suave
-    private var softSnapStrength = 0.28f  // antes 0.2f: puxa um pouco mais, ainda sutil
-    private var baseHardSnapThresholdPx = 5f // antes 3f: snap forte um pouco menos exigente
+    private var baseSnapThresholdPx = 64f // alcance de snap (suave) maior para média distância
+    private var softSnapStrength = 0.45f  // fração aplicada no snap suave (quando fora do hard)
+    private var baseHardSnapThresholdPx = 22f // hard snap quando muito próximo
+    // Novo: limiar maior apenas para exibir guias (sem aplicar snap)
+    private var baseGuideThresholdPx = 48f
 
     // ===== SELECTION/DRAG (Mantido do seu código original) =====
     private var lastDragPoint: PointF? = null
@@ -387,6 +389,28 @@ class MapEditorView @JvmOverloads constructor(
         else -> null
     }
 
+    // Get center and rotation for actions that support rotation
+    private fun getCenterAndRotation(action: Action): Pair<PointF, Float>? = when (action) {
+        is Action.Shape -> {
+            val b = getActionBounds(action) ?: return null
+            Pair(PointF(b.centerX(), b.centerY()), action.rotation)
+        }
+        is Action.Poi -> Pair(PointF(action.x, action.y), action.rotation)
+        else -> null
+    }
+
+    // Map a world point into the object's local (unrotated) space
+    private fun worldToLocalForAction(action: Action, point: PointF): PointF {
+        val cr = getCenterAndRotation(action)
+        if (cr == null) return PointF(point.x, point.y)
+        val (c, rot) = cr
+        if (rot == 0f) return PointF(point.x, point.y)
+        val m = Matrix().apply { setRotate(-rot, c.x, c.y) }
+        val pts = floatArrayOf(point.x, point.y)
+        m.mapPoints(pts)
+        return PointF(pts[0], pts[1])
+    }
+
     private fun getHandlePositions(bounds: RectF): Map<Handle, PointF> {
         val cx = bounds.centerX()
         val cy = bounds.centerY()
@@ -431,10 +455,12 @@ class MapEditorView @JvmOverloads constructor(
     private fun hitTestHandles(hit: Action, point: PointF): Handle? {
         val bounds = getActionBounds(hit) ?: return null
         val r = max(handleRadiusWorld() * 1.5f, dp(16f) / max(0.001f, scale))
+        // Transform point into local (unrotated) space before testing against handle positions
+        val localPoint = worldToLocalForAction(hit, point)
         val positions = getHandlePositions(bounds)
         return positions.entries.firstOrNull { (_, pos) ->
-            val dx = point.x - pos.x
-            val dy = point.y - pos.y
+            val dx = localPoint.x - pos.x
+            val dy = localPoint.y - pos.y
             dx * dx + dy * dy <= r * r
         }?.key
     }
@@ -563,6 +589,7 @@ class MapEditorView @JvmOverloads constructor(
                             activeHandle = handle
                             draggingObject = selectedAct
                             dragSnapshotBefore = snapshotOf(draggingObject)
+                            // Guardar bounds iniciais no espaço local (não-rotacionado) para resize coerente
                             resizeInitialBounds = getActionBounds(selectedAct)
                             // mantém seleção como está
                             invalidate()
@@ -614,31 +641,33 @@ class MapEditorView @JvmOverloads constructor(
                 if (hasMovedBeyondSlop) {
                     draggingObject?.let { obj ->
                         if (activeHandle != null) {
-                            // Redimensionamento
+                            // Redimensionamento (usa coordenadas locais alinhadas à rotação do objeto)
                             val init = resizeInitialBounds ?: getActionBounds(obj)
                             if (init != null) {
                                 val minSize = dp(12f) / max(0.001f, scale)
+                                // Transformar ponto de toque atual para espaço local do objeto
+                                val local = worldToLocalForAction(obj, world)
                                 var left = init.left
                                 var top = init.top
                                 var right = init.right
                                 var bottom = init.bottom
                                 when (activeHandle) {
-                                    Handle.LEFT, Handle.TOP_LEFT, Handle.BOTTOM_LEFT -> { left = world.x }
+                                    Handle.LEFT, Handle.TOP_LEFT, Handle.BOTTOM_LEFT -> { left = local.x }
                                     else -> {}
                                 }
                                 when (activeHandle) {
-                                    Handle.RIGHT, Handle.TOP_RIGHT, Handle.BOTTOM_RIGHT -> { right = world.x }
+                                    Handle.RIGHT, Handle.TOP_RIGHT, Handle.BOTTOM_RIGHT -> { right = local.x }
                                     else -> {}
                                 }
                                 when (activeHandle) {
-                                    Handle.TOP, Handle.TOP_LEFT, Handle.TOP_RIGHT -> { top = world.y }
+                                    Handle.TOP, Handle.TOP_LEFT, Handle.TOP_RIGHT -> { top = local.y }
                                     else -> {}
                                 }
                                 when (activeHandle) {
-                                    Handle.BOTTOM, Handle.BOTTOM_LEFT, Handle.BOTTOM_RIGHT -> { bottom = world.y }
+                                    Handle.BOTTOM, Handle.BOTTOM_LEFT, Handle.BOTTOM_RIGHT -> { bottom = local.y }
                                     else -> {}
                                 }
-                                // Normaliza e aplica tamanho mínimo
+                                // Normaliza e aplica tamanho mínimo (no espaço local)
                                 var nLeft = min(left, right)
                                 var nRight = max(left, right)
                                 var nTop = min(top, bottom)
@@ -664,13 +693,7 @@ class MapEditorView @JvmOverloads constructor(
                                         selectionListener?.onShapeSelected(shapeToProperties(obj))
                                     }
                                     is Action.Poi -> {
-                                        val newW = (nRight - nLeft).coerceAtLeast(minSize)
-                                        val newH = (nBottom - nTop).coerceAtLeast(minSize)
-                                        obj.x = (nLeft + nRight) / 2f
-                                        obj.y = (nTop + nBottom) / 2f
-                                        obj.width = newW
-                                        obj.height = newH
-                                        selectionListener?.onShapeSelected(poiToProperties(obj))
+                                        // POI não possui handles dedicados; mantemos comportamento anterior
                                     }
                                     else -> {}
                                 }
@@ -693,10 +716,12 @@ class MapEditorView @JvmOverloads constructor(
                                 is Action.BrushStroke -> {}
                             }
 
-                            // Alinhamento e snap (prioriza vizinho mais próximo e tentativa de "juntar" em X e Y ao mesmo tempo)
+                            // Alinhamento e snap (guia com alcance maior; snap com alcance maior e hard+soft)
                             alignmentGuides.clear()
                             val snapThreshold = baseSnapThresholdPx / max(0.001f, scale)
-                            val proximityPx = 450f
+                            val hardThreshold = baseHardSnapThresholdPx / max(0.001f, scale)
+                            val guideThreshold = baseGuideThresholdPx / max(0.001f, scale)
+                            val proximityPx = 900f
                             val proximityWorld = proximityPx / max(0.001f, scale)
 
                             // Bounds do item arrastado
@@ -713,13 +738,11 @@ class MapEditorView @JvmOverloads constructor(
                             val dCx = draggedBounds?.centerX() ?: 0f
                             val dCy = draggedBounds?.centerY() ?: 0f
 
-                            // Melhores candidatos para "juntar" (ambos eixos) e individuais
                             data class AxisSnap(val delta: Float, val guide: Float)
                             data class JoinSnap(val dx: AxisSnap, val dy: AxisSnap, val dist2: Float)
                             var bestJoin: JoinSnap? = null
-
-                            var bestX: AxisSnap? = null // melhor em X (centro/borda)
-                            var bestY: AxisSnap? = null // melhor em Y (centro/borda)
+                            var bestX: AxisSnap? = null
+                            var bestY: AxisSnap? = null
 
                             fun updBestX(c: AxisSnap) { if (bestX == null || abs(c.delta) < abs(bestX!!.delta)) bestX = c }
                             fun updBestY(c: AxisSnap) { if (bestY == null || abs(c.delta) < abs(bestY!!.delta)) bestY = c }
@@ -730,61 +753,80 @@ class MapEditorView @JvmOverloads constructor(
 
                                 // Candidatos para X
                                 val candX = listOf(
-                                    AxisSnap(ocx - dCx, ocx),                  // centro-centro
-                                    AxisSnap(ob.left - dLeft, ob.left),        // left->left
-                                    AxisSnap(ob.right - dLeft, ob.right),      // right(other)->left(dragged)
-                                    AxisSnap(ob.left - dRight, ob.left),       // left(other)->right(dragged)
-                                    AxisSnap(ob.right - dRight, ob.right)      // right->right
+                                    AxisSnap(ocx - dCx, ocx),
+                                    AxisSnap(ob.left - dLeft, ob.left),
+                                    AxisSnap(ob.right - dLeft, ob.right),
+                                    AxisSnap(ob.left - dRight, ob.left),
+                                    AxisSnap(ob.right - dRight, ob.right)
                                 ).minByOrNull { abs(it.delta) }!!
 
                                 // Candidatos para Y
                                 val candY = listOf(
-                                    AxisSnap(ocy - dCy, ocy),                  // centro-centro
-                                    AxisSnap(ob.top - dTop, ob.top),           // top->top
-                                    AxisSnap(ob.bottom - dTop, ob.bottom),     // bottom(other)->top(dragged)
-                                    AxisSnap(ob.top - dBottom, ob.top),        // top(other)->bottom(dragged)
-                                    AxisSnap(ob.bottom - dBottom, ob.bottom)   // bottom->bottom
+                                    AxisSnap(ocy - dCy, ocy),
+                                    AxisSnap(ob.top - dTop, ob.top),
+                                    AxisSnap(ob.bottom - dTop, ob.bottom),
+                                    AxisSnap(ob.top - dBottom, ob.top),
+                                    AxisSnap(ob.bottom - dBottom, ob.bottom)
                                 ).minByOrNull { abs(it.delta) }!!
 
-                                // Filtra por proximidade geral para não poluir
                                 val dxC = ocx - dCx
                                 val dyC = ocy - dCy
-                                if (dxC*dxC + dyC*dyC > proximityWorld*proximityWorld) {
-                                    // ainda pode ser útil para melhor eixo individual, mas não para join; apenas atualiza individuais
-                                    if (abs(candX.delta) < snapThreshold) updBestX(candX)
-                                    if (abs(candY.delta) < snapThreshold) updBestY(candY)
-                                    return@forEach
-                                }
+                                val far = dxC*dxC + dyC*dyC > proximityWorld*proximityWorld
 
-                                // Tenta join (ambos eixos no mesmo vizinho)
-                                if (abs(candX.delta) < snapThreshold && abs(candY.delta) < snapThreshold) {
+                                if (!far) {
+                                    // Join candidate (considera snap por eixo)
                                     val dist2 = candX.delta * candX.delta + candY.delta * candY.delta
                                     if (bestJoin == null || dist2 < bestJoin!!.dist2) {
                                         bestJoin = JoinSnap(candX, candY, dist2)
                                     }
                                 }
 
-                                // Atualiza melhores individuais
-                                if (abs(candX.delta) < snapThreshold) updBestX(candX)
-                                if (abs(candY.delta) < snapThreshold) updBestY(candY)
+                                // Atualiza melhores individuais com limiar de guia (alcance maior)
+                                if (abs(candX.delta) < guideThreshold) updBestX(candX)
+                                if (abs(candY.delta) < guideThreshold) updBestY(candY)
                             }
 
                             if (bestJoin != null) {
-                                // Aplica snap simultâneo X e Y para "juntar"
                                 val j = bestJoin!!
-                                applySnapX(j.dx.delta)
-                                applySnapY(j.dy.delta)
-                                alignmentGuides.add(Pair(PointF(j.dx.guide, 0f), PointF(j.dx.guide, height.toFloat())))
-                                alignmentGuides.add(Pair(PointF(0f, j.dy.guide), PointF(width.toFloat(), j.dy.guide)))
+                                val joinX = j.dx
+                                val joinY = j.dy
+                                val adx = abs(joinX.delta)
+                                val ady = abs(joinY.delta)
+
+                                // Aplica hard snap se muito perto; senão soft snap dentro do snapThreshold
+                                if (adx < hardThreshold) {
+                                    applySnapX(joinX.delta)
+                                } else if (adx < snapThreshold) {
+                                    applySnapX(joinX.delta * softSnapStrength)
+                                }
+                                if (ady < hardThreshold) {
+                                    applySnapY(joinY.delta)
+                                } else if (ady < snapThreshold) {
+                                    applySnapY(joinY.delta * softSnapStrength)
+                                }
+
+                                // Guias se dentro do alcance de guia
+                                if (adx < guideThreshold) alignmentGuides.add(Pair(PointF(joinX.guide, 0f), PointF(joinX.guide, height.toFloat())))
+                                if (ady < guideThreshold) alignmentGuides.add(Pair(PointF(0f, joinY.guide), PointF(width.toFloat(), joinY.guide)))
                             } else {
-                                // Fallback: melhores individuais por eixo
+                                // Individuais por eixo
                                 bestX?.let { x ->
-                                    applySnapX(x.delta)
-                                    alignmentGuides.add(Pair(PointF(x.guide, 0f), PointF(x.guide, height.toFloat())))
+                                    val adx = abs(x.delta)
+                                    if (adx < hardThreshold) {
+                                        applySnapX(x.delta)
+                                    } else if (adx < snapThreshold) {
+                                        applySnapX(x.delta * softSnapStrength)
+                                    }
+                                    if (adx < guideThreshold) alignmentGuides.add(Pair(PointF(x.guide, 0f), PointF(x.guide, height.toFloat())))
                                 }
                                 bestY?.let { y ->
-                                    applySnapY(y.delta)
-                                    alignmentGuides.add(Pair(PointF(0f, y.guide), PointF(width.toFloat(), y.guide)))
+                                    val ady = abs(y.delta)
+                                    if (ady < hardThreshold) {
+                                        applySnapY(y.delta)
+                                    } else if (ady < snapThreshold) {
+                                        applySnapY(y.delta * softSnapStrength)
+                                    }
+                                    if (ady < guideThreshold) alignmentGuides.add(Pair(PointF(0f, y.guide), PointF(width.toFloat(), y.guide)))
                                 }
                             }
 
@@ -986,8 +1028,13 @@ class MapEditorView @JvmOverloads constructor(
                     }
                     if (!previewMode && action.selected) {
                         val b = RectF(left, top, right, bottom)
-                        drawSelectionEnvelope(canvas, b)
-                        drawHandles(canvas, b)
+                        // Desenha envelope e handles rotacionados em torno do centro
+                        canvas.withSave {
+                            rotate(action.rotation, cx, cy)
+                            drawSelectionEnvelope(canvas, b)
+                            drawHandles(canvas, b)
+                        }
+                        // Botões rápidos permanecem não-rotacionados (hit-test consistente)
                         drawQuickButtons(canvas, action, b)
                     }
                 }
@@ -1002,9 +1049,26 @@ class MapEditorView @JvmOverloads constructor(
                         }
                     }
                     if (!previewMode && action.selected) {
-                        val b = getPoiContentRectInWorld(action) ?: getActionBounds(action)
+                        val styleKey = getPoiCacheKey(action) + "::pinV1"
+                        val bmp = poiBitmapCache[styleKey] ?: getBitmapForPoi(action)
+                        val content = poiContentBoundsCache[styleKey]
+                        // Se temos bounds precisos do conteúdo, usa-os; caso contrário, fallback para bounds do POI
+                        val b = if (bmp != null && content != null) {
+                            // Retângulo do conteúdo no espaço local (centrado no POI)
+                            val localLeft = -bmp.width / 2f + content.left
+                            val localTop = -bmp.height / 2f + content.top
+                            val localRight = localLeft + content.width()
+                            val localBottom = localTop + content.height()
+                            RectF(action.x + localLeft, action.y + localTop, action.x + localRight, action.y + localBottom)
+                        } else getActionBounds(action)
                         if (b != null) {
-                            drawSelectionEnvelope(canvas, b)
+                            // Desenha envelope rotacionado em torno do centro do POI
+                            canvas.withSave {
+                                rotate(action.rotation, action.x, action.y)
+                                drawSelectionEnvelope(canvas, b)
+                                // POI não exibe handles
+                            }
+                            // Quick buttons não-rotacionados
                             drawQuickButtons(canvas, action, b)
                         }
                     }
@@ -1388,10 +1452,10 @@ class MapEditorView @JvmOverloads constructor(
     private fun colorForPoiIcon(resId: Int): Int = try {
         when (resId) {
             com.example.indoorar.R.drawable.ic_door_azul, com.example.indoorar.R.drawable.ic_banheiro_azul -> "#32357A".toColorInt() // azul
-            com.example.indoorar.R.drawable.ic_stairs_azul -> Color.parseColor("#FF9800") // laranja
-            com.example.indoorar.R.drawable.ic_extintor_azul -> Color.parseColor("#F44336") // vermelho
-            com.example.indoorar.R.drawable.ic_elevator_azul -> Color.parseColor("#4CAF50") // verde
-            else -> Color.parseColor("#32357A")
+            com.example.indoorar.R.drawable.ic_stairs_azul -> "#FF9800".toColorInt() // laranja
+            com.example.indoorar.R.drawable.ic_extintor_azul -> "#F44336".toColorInt() // vermelho
+            com.example.indoorar.R.drawable.ic_elevator_azul -> "#4CAF50".toColorInt() // verde
+            else -> "#32357A".toColorInt()
         }
     } catch (_: Exception) { "#32357A".toColorInt() }
 
@@ -1486,15 +1550,58 @@ class MapEditorView @JvmOverloads constructor(
         return actions.asReversed().find { action ->
             when (action) {
                 is Action.Poi -> {
+                    // Testa hit no espaço local (des-rotacionado)
+                    val local = worldToLocalForAction(action, point)
                     val rect = getPoiContentRectInWorld(action) ?: return@find false
-                    point.x in rect.left..rect.right && point.y in rect.top..rect.bottom
+                    local.x in rect.left..rect.right && local.y in rect.top..rect.bottom
                 }
                 is Action.Shape -> {
-                    val left = min(action.start.x, action.end.x)
-                    val top = min(action.start.y, action.end.y)
-                    val right = max(action.start.x, action.end.x)
-                    val bottom = max(action.start.y, action.end.y)
-                    point.x in left..right && point.y in top..bottom
+                    // Des-rotaciona o ponto e testa contra o retângulo base da shape
+                    val local = worldToLocalForAction(action, point)
+                    val b = getActionBounds(action) ?: return@find false
+                    when (action.type) {
+                        Action.ShapeType.CIRCLE -> {
+                            val cx = b.centerX(); val cy = b.centerY()
+                            val r = min(b.width(), b.height()) / 2f
+                            val dx = local.x - cx
+                            val dy = local.y - cy
+                            dx*dx + dy*dy <= r*r
+                        }
+                        Action.ShapeType.TRIANGLE -> {
+                            // Usa path no espaço local
+                            val path = Path().apply {
+                                moveTo((b.left + b.right)/2f, b.top)
+                                lineTo(b.left, b.bottom)
+                                lineTo(b.right, b.bottom)
+                                close()
+                            }
+                            val rp = Region(
+                                RectF(b.left, b.top, b.right, b.bottom).let { Rect(it.left.toInt(), it.top.toInt(), it.right.toInt(), it.bottom.toInt()) }
+                            )
+                            val rgn = Region()
+                            rgn.setPath(path, rp)
+                            rgn.contains(local.x.toInt(), local.y.toInt())
+                        }
+                        Action.ShapeType.LINE -> {
+                            // Caixa de interseção em torno da linha
+                            val threshold = dp(8f) / max(0.001f, scale)
+                            val x1 = action.start.x; val y1 = action.start.y
+                            val x2 = action.end.x; val y2 = action.end.y
+                            // Distância ponto-linha segment
+                            val dx = x2 - x1
+                            val dy = y2 - y1
+                            val len2 = dx*dx + dy*dy
+                            val t = if (len2 == 0f) 0f else (((local.x - x1) * dx + (local.y - y1) * dy) / len2).coerceIn(0f, 1f)
+                            val px = x1 + t * dx
+                            val py = y1 + t * dy
+                            val ddx = local.x - px
+                            val ddy = local.y - py
+                            ddx*ddx + ddy*ddy <= threshold*threshold
+                        }
+                        else -> {
+                            local.x in b.left..b.right && local.y in b.top..b.bottom
+                        }
+                    }
                 }
                 is Action.Text -> {
                     val rect = getActionBounds(action) ?: return@find false
@@ -1560,10 +1667,8 @@ class MapEditorView @JvmOverloads constructor(
         invalidate()
     }
 
-    /** Merge edges of adjacent rectangle shapes and adjust corner radii. */
     fun mergeEdgesAndAdjustCorners() {
         mergeRectShapeEdges()
-        // Corner radii serão recalculados no próximo onDraw (ou chamamos explicitamente)
         updateAutoCornerRadii()
         invalidate()
     }

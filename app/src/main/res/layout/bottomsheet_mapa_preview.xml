@@ -39,29 +39,28 @@
             android:src="@drawable/ic_minimap_placeholder" />
     </com.google.android.material.card.MaterialCardView>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnIniciarNavegacao"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:layout_marginTop="16dp"
-        android:background="@drawable/btn_arredondado"
-        android:backgroundTint="#32357A"
         android:text="INICIAR NAVEGAÇÃO"
         android:textAllCaps="true"
         android:textColor="#FDFDFD"
-        android:textStyle="normal" />
+        app:backgroundTint="#32357A"
+        app:cornerRadius="30dp" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnBaixarQRCode"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:layout_marginTop="12dp"
-        android:background="@drawable/btn_arredondado"
-        android:backgroundTint="#32357A"
         android:text="BAIXAR QR CODE"
         android:textAllCaps="true"
         android:textStyle="normal"
-        android:textColor="#FDFDFD" />
+        android:textColor="#FDFDFD"
+        app:backgroundTint="#32357A"
+        app:cornerRadius="30dp" />
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardDownloadQRCode"
@@ -76,23 +75,25 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDownloadPDF"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:background="@drawable/btn_arredondado"
                 android:text="baixar como PDF"
                 android:textAllCaps="true"
-                android:textColor="#FFFFFF"
-                android:layout_marginBottom="8dp" />
-            <Button
+                android:textColor="#FDFDFD"
+                android:layout_marginBottom="8dp"
+                app:backgroundTint="#32357A"
+                app:cornerRadius="30dp" />
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDownloadPNG"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:background="@drawable/btn_arredondado"
                 android:text="baixar como PNG"
                 android:textAllCaps="true"
-                android:textColor="#FFFFFF" />
+                android:textColor="#FDFDFD"
+                app:backgroundTint="#32357A"
+                app:cornerRadius="30dp" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

@@ -20,19 +20,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/txtEmptyRecentes"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/inter"
-        android:text="Nenhum mapa recente ainda"
-        android:textColor="#32357A"
-        android:visibility="gone"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/txtMapasFavoritos"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="16dp"/>
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerRecentes"
         android:layout_width="0dp"

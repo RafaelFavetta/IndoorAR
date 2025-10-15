@@ -24,7 +24,6 @@ class ActivityHomeMaker : BaseActivity() {
 
     private lateinit var recyclerRecentes: RecyclerView
     private lateinit var progressRecentes: ProgressBar
-    private lateinit var txtEmptyRecentes: TextView
     private lateinit var indicatorsRecentes: LinearLayout
     private lateinit var snapHelper: PagerSnapHelper
     private var recentesListener: ListenerRegistration? = null
@@ -64,7 +63,6 @@ class ActivityHomeMaker : BaseActivity() {
         // Views de recentes (carrossel horizontal paginado)
         recyclerRecentes = findViewById(R.id.recyclerRecentes)
         progressRecentes = findViewById(R.id.progressRecentes)
-        txtEmptyRecentes = findViewById(R.id.txtEmptyRecentes)
         indicatorsRecentes = findViewById(R.id.indicatorsRecentes)
 
         recyclerRecentes.layoutManager = LinearLayoutManager(this, RecyclerView.HORIZONTAL, false)
@@ -97,40 +95,46 @@ class ActivityHomeMaker : BaseActivity() {
         val url = m.imagemUrl
         if (!url.isNullOrBlank()) return "url:$url"
         val t = m.imagemBlobThumb?.toBytes()
-        if (t != null && t.isNotEmpty()) return "thumb:${java.util.Arrays.hashCode(t)}:${t.size}"
+        if (t != null && t.isNotEmpty()) return "thumb:${t.contentHashCode()}:${t.size}"
         val b = m.imagemBlob?.toBytes()
-        if (b != null && b.isNotEmpty()) return "blob:${java.util.Arrays.hashCode(b)}:${b.size}"
+        if (b != null && b.isNotEmpty()) return "blob:${b.contentHashCode()}:${b.size}"
         return "id:${m.id}"
     }
 
     private fun carregarMapasRecentesEmTempoReal() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid == null) {
-            mostrarVazio()
+            // vazio/sem usuário: esconder lista e indicadores
+            progressRecentes.visibility = View.GONE
+            recyclerRecentes.visibility = View.GONE
             buildIndicators(0)
             return
         }
         progressRecentes.visibility = View.VISIBLE
-        txtEmptyRecentes.visibility = View.GONE
+        recyclerRecentes.visibility = View.GONE
 
         recentesListener?.remove()
         recentesListener = FirebaseFirestore.getInstance().collection("mapas")
             .whereEqualTo("criadorUid", uid)
-            .orderBy("dataCriacao", Query.Direction.DESCENDING)
-            .limit(30) // busca mais para garantir itens suficientes após deduplicação
+            .limit(200)
             .addSnapshotListener { snap, err ->
                 if (err != null) {
                     progressRecentes.visibility = View.GONE
-                    mostrarVazio()
+                    recyclerRecentes.visibility = View.GONE
                     buildIndicators(0)
                     return@addSnapshotListener
                 }
                 val lista = snap?.documents?.map { docParaMapaResumoMaker(it, uid) } ?: emptyList()
-                val unicos = lista.distinctBy { imageKeyFor(it) }
+                val ordenada = lista.sortedByDescending { it.dataCriacao?.seconds ?: 0 }
+                val unicos = ordenada.distinctBy { imageKeyFor(it) }
                 val limited = unicos.take(10) // 5 páginas x 2 itens por página
                 recentAdapter.submit(limited)
                 progressRecentes.visibility = View.GONE
-                txtEmptyRecentes.visibility = if (limited.isEmpty()) View.VISIBLE else View.GONE
+                if (recentAdapter.itemCount == 0) {
+                    recyclerRecentes.visibility = View.GONE
+                } else {
+                    recyclerRecentes.visibility = View.VISIBLE
+                }
                 buildIndicators(recentAdapter.itemCount)
 
                 val lm = recyclerRecentes.layoutManager
@@ -181,10 +185,5 @@ class ActivityHomeMaker : BaseActivity() {
             val iv = indicatorsRecentes.getChildAt(i) as? ImageView ?: continue
             iv.setImageResource(if (i == index) R.drawable.dot_selected else R.drawable.dot_unselected)
         }
-    }
-
-    private fun mostrarVazio() {
-        progressRecentes.visibility = View.GONE
-        txtEmptyRecentes.visibility = View.VISIBLE
     }
 }

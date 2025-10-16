@@ -5,12 +5,15 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
-import android.view.WindowInsets
 import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.toColorInt
 import androidx.core.view.*
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import android.util.Log
 
 open class BaseActivity : AppCompatActivity() {
 
@@ -76,5 +79,49 @@ open class BaseActivity : AppCompatActivity() {
         anchorView?.let { snackbar.setAnchorView(it) }
 
         snackbar.show()
+    }
+
+    // Sincroniza o e-mail do usuário do Auth com o documento do Firestore após alterações (como verificação de novo e-mail)
+    fun syncUserEmailToFirestore(onDone: ((Boolean) -> Unit)? = null) {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null) {
+            onDone?.invoke(false)
+            return
+        }
+        user.reload()
+            .addOnSuccessListener {
+                val emailAtual = user.email
+                if (emailAtual.isNullOrEmpty()) {
+                    onDone?.invoke(false)
+                    return@addOnSuccessListener
+                }
+                val db = FirebaseFirestore.getInstance()
+                val docRef = db.collection("usuarios").document(user.uid)
+                docRef.get()
+                    .addOnSuccessListener { doc ->
+                        val precisaAtualizar = !doc.exists() || doc.getString("email") != emailAtual
+                        if (!precisaAtualizar) {
+                            onDone?.invoke(true)
+                            return@addOnSuccessListener
+                        }
+                        docRef.set(mapOf("email" to emailAtual), SetOptions.merge())
+                            .addOnSuccessListener {
+                                Log.d("BaseActivity", "Email sincronizado no Firestore: $emailAtual")
+                                onDone?.invoke(true)
+                            }
+                            .addOnFailureListener { ex ->
+                                Log.w("BaseActivity", "Falha ao sincronizar email no Firestore", ex)
+                                onDone?.invoke(false)
+                            }
+                    }
+                    .addOnFailureListener { ex ->
+                        Log.w("BaseActivity", "Falha ao buscar documento do usuário para sincronizar", ex)
+                        onDone?.invoke(false)
+                    }
+            }
+            .addOnFailureListener { ex ->
+                Log.w("BaseActivity", "Falha ao recarregar usuário antes de sincronizar email", ex)
+                onDone?.invoke(false)
+            }
     }
 }

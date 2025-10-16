@@ -76,7 +76,7 @@ class ActivityPerfil : BaseActivity() {
                         setShowCropGrid(false)
                     })
                 cropImageLauncher.launch(uCrop.getIntent(this))
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 android.widget.Toast.makeText(this, "Erro ao abrir editor de corte", android.widget.Toast.LENGTH_LONG).show()
             }
         }
@@ -100,7 +100,7 @@ class ActivityPerfil : BaseActivity() {
 
         val txtNomeUsuario = findViewById<android.widget.TextView>(R.id.txtNomeUsuario)
         val txtEmailUsuario = findViewById<android.widget.TextView>(R.id.txtEmailUsuario)
-        userImage = findViewById<ImageView>(R.id.userImage)
+        userImage = findViewById(R.id.userImage)
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val savedPath = prefs.getString(KEY_IMAGE_PATH, null)
         val savedUri = prefs.getString(KEY_IMAGE_URI, null)
@@ -137,7 +137,7 @@ class ActivityPerfil : BaseActivity() {
                     .placeholder(R.drawable.account_circle)
                     .error(R.drawable.account_circle)
                     .into(userImage)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 userImage.setImageResource(R.drawable.account_circle)
             }
         } else {
@@ -206,6 +206,16 @@ class ActivityPerfil : BaseActivity() {
         val itemConfiguracoes = findViewById<LinearLayout>(R.id.itemConfiguracoes)
         itemConfiguracoes.setOnClickListener {
             startActivity(Intent(this, ActivityConfigConta::class.java))
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Ao voltar para o perfil, sincroniza Firestore e atualiza
+        syncUserEmailToFirestore {
+            val user = FirebaseAuth.getInstance().currentUser
+            val emailAtual = user?.email ?: "Email não disponível"
+            findViewById<android.widget.TextView>(R.id.txtEmailUsuario)?.text = emailAtual
         }
     }
 }

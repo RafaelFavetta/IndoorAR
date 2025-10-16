@@ -274,8 +274,10 @@ class ActivityHomeComum : BaseActivity() {
         }
 
         btnBaixar?.setOnClickListener {
-            val visible = cardDownload?.isVisible == true
-            cardDownload?.visibility = if (visible) View.GONE else View.VISIBLE
+            // Substituir os botões principais pelos botões de download
+            btnIniciar?.visibility = View.GONE
+            btnBaixar.visibility = View.GONE
+            cardDownload?.visibility = View.VISIBLE
         }
 
         btnPNG?.setOnClickListener {

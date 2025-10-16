@@ -152,7 +152,9 @@ class ActivityMapasExistentes : BaseActivity() {
         }
 
         btnBaixar?.setOnClickListener {
-            cardDownload?.visibility = if (cardDownload.isVisible) View.GONE else View.VISIBLE
+            btnIniciar?.visibility = View.GONE
+            btnBaixar.visibility = View.GONE
+            cardDownload?.visibility = View.VISIBLE
         }
 
         btnPNG?.setOnClickListener {

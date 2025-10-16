@@ -8,13 +8,16 @@ import android.widget.TextView
 import android.widget.Button
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.indoorar.ui.ActivityEditor
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.bumptech.glide.Glide
 import com.google.firebase.storage.FirebaseStorage
+import android.view.View
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.set
+import androidx.core.graphics.scale
 
 class ActivityMeusMapas : BaseActivity() {
 
@@ -77,6 +80,10 @@ class ActivityMeusMapas : BaseActivity() {
         val txtDesc = dialog.findViewById<TextView>(R.id.txtDescricaoMapa)
         val ivPreview = dialog.findViewById<ImageView>(R.id.ivPreview)
         val btnIniciar = dialog.findViewById<Button>(R.id.btnIniciarNavegacao)
+        val btnBaixar = dialog.findViewById<Button>(R.id.btnBaixarQRCode)
+        val cardDownload = dialog.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardDownloadQRCode)
+        val btnPDF = dialog.findViewById<Button>(R.id.btnDownloadPDF)
+        val btnPNG = dialog.findViewById<Button>(R.id.btnDownloadPNG)
 
         txtTitulo?.text = m.nome
         txtDesc?.text = m.descricao.ifBlank { "Sem descrição" }
@@ -140,6 +147,109 @@ class ActivityMeusMapas : BaseActivity() {
             })
         }
 
+        btnBaixar?.setOnClickListener {
+            // Substituir os botões principais pelos botões de download
+            btnIniciar?.visibility = View.GONE
+            btnBaixar.visibility = View.GONE
+            cardDownload?.visibility = View.VISIBLE
+        }
+
+        btnPNG?.setOnClickListener {
+            val ok = saveQrAsPng(m.id)
+            Toast.makeText(this, if (ok) "QR salvo em Imagens/IndoorAR" else "Falha ao salvar QR", Toast.LENGTH_SHORT).show()
+        }
+        btnPDF?.setOnClickListener {
+            val ok = saveQrAsPdf(m.id)
+            Toast.makeText(this, if (ok) "PDF salvo em Downloads" else "Falha ao salvar PDF", Toast.LENGTH_SHORT).show()
+        }
+
         dialog.show()
+    }
+
+    private fun generateQrBitmap(content: String, size: Int = 1024): android.graphics.Bitmap? {
+        return try {
+            val hints = mapOf(
+                com.google.zxing.EncodeHintType.ERROR_CORRECTION to com.google.zxing.qrcode.decoder.ErrorCorrectionLevel.M,
+                com.google.zxing.EncodeHintType.CHARACTER_SET to "UTF-8",
+                com.google.zxing.EncodeHintType.MARGIN to 1
+            )
+            val bitMatrix = com.google.zxing.qrcode.QRCodeWriter().encode(content, com.google.zxing.BarcodeFormat.QR_CODE, size, size, hints)
+            val width = bitMatrix.width
+            val height = bitMatrix.height
+            val bmp = createBitmap(width, height)
+            for (x in 0 until width) {
+                for (y in 0 until height) {
+                    bmp[x, y] = if (bitMatrix.get(
+                            x,
+                            y
+                        )
+                    ) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+                }
+            }
+            bmp
+        } catch (_: Exception) { null }
+    }
+
+    private fun saveQrAsPng(mapId: String): Boolean {
+        val bmp = generateQrBitmap(mapId) ?: return false
+        return try {
+            val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
+            val filename = "QR_${mapId}_${timestamp}.png"
+            val values = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, filename)
+                put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/png")
+                put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, "Pictures/IndoorAR")
+                put(android.provider.MediaStore.Images.Media.IS_PENDING, 1)
+            }
+            val resolver = contentResolver
+            val uri = resolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return false
+            resolver.openOutputStream(uri)?.use { out ->
+                bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+            } ?: return false
+            values.clear(); values.put(android.provider.MediaStore.Images.Media.IS_PENDING, 0)
+            resolver.update(uri, values, null, null)
+            true
+        } catch (_: Exception) { false }
+    }
+
+    private fun saveQrAsPdf(mapId: String): Boolean {
+        return try {
+            val bmp = generateQrBitmap(mapId, 1024) ?: return false
+            val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
+            val filename = "QR_${mapId}_${timestamp}.pdf"
+            val values = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.Downloads.DISPLAY_NAME, filename)
+                put(android.provider.MediaStore.Downloads.MIME_TYPE, "application/pdf")
+                put(android.provider.MediaStore.Downloads.IS_PENDING, 1)
+            }
+            val resolver = contentResolver
+            val collection = android.provider.MediaStore.Downloads.getContentUri(android.provider.MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            val uri: android.net.Uri = resolver.insert(collection, values) ?: return false
+            resolver.openOutputStream(uri)?.use { out ->
+                writeSimplePdfWithBitmap(bmp, out)
+            } ?: return false
+            values.clear(); values.put(android.provider.MediaStore.Downloads.IS_PENDING, 0)
+            resolver.update(uri, values, null, null)
+            true
+        } catch (_: Exception) { false }
+    }
+
+    private fun writeSimplePdfWithBitmap(bmp: android.graphics.Bitmap, out: java.io.OutputStream) {
+        val pageWidth = 595 // A4 width at 72dpi (~8.27in * 72)
+        val pageHeight = 842 // A4 height at 72dpi (~11.69in * 72)
+        val scale = kotlin.math.min(pageWidth.toFloat() / bmp.width, pageHeight.toFloat() / bmp.height)
+        val scaled = bmp.scale((bmp.width * scale).toInt(), (bmp.height * scale).toInt())
+        val document = android.graphics.pdf.PdfDocument()
+        val pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
+        val page = document.startPage(pageInfo)
+        val canvas = page.canvas
+        val left = (pageWidth - scaled.width) / 2f
+        val top = (pageHeight - scaled.height) / 2f
+        canvas.drawColor(android.graphics.Color.WHITE)
+        canvas.drawBitmap(scaled, left, top, null)
+        document.finishPage(page)
+        document.writeTo(out)
+        document.close()
+        if (!scaled.isRecycled) scaled.recycle()
     }
 }

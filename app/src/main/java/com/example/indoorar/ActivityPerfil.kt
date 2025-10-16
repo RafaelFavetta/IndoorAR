@@ -20,12 +20,15 @@ import java.io.InputStream
 import androidx.core.net.toUri
 import androidx.core.content.edit
 import com.yalantis.ucrop.UCrop
+import androidx.core.content.FileProvider
 
 class ActivityPerfil : BaseActivity() {
+    companion object {
+        private const val prefsName = "perfil_prefs"
+        private const val keyImageUri = "image_uri"
+        private const val keyImagePath = "image_path"
+    }
     private lateinit var userImage: ImageView
-    private val PREFS_NAME = "perfil_prefs"
-    private val KEY_IMAGE_URI = "image_uri"
-    private val KEY_IMAGE_PATH = "image_path"
     private fun saveImageToInternalStorage(uri: Uri): String? {
         return try {
             val inputStream: InputStream? = contentResolver.openInputStream(uri)
@@ -53,21 +56,33 @@ class ActivityPerfil : BaseActivity() {
                         .placeholder(R.drawable.account_circle)
                         .error(R.drawable.account_circle)
                         .into(userImage)
-                    val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                    prefs.edit { putString(KEY_IMAGE_PATH, imagePath).remove(KEY_IMAGE_URI) }
+                    val prefs = getSharedPreferences(prefsName, MODE_PRIVATE)
+                    prefs.edit { putString(keyImagePath, imagePath).remove(keyImageUri) }
                 } else {
                     userImage.setImageResource(R.drawable.account_circle)
                 }
             } else {
+                // Se UCrop não retornou URI, tenta obter erro para log
+                val err = UCrop.getError(data)
+                if (err != null) Log.e("Perfil", "UCrop error", err)
                 userImage.setImageResource(R.drawable.account_circle)
             }
+        } else if (result.data != null) {
+            // Resultado de erro específico do UCrop
+            val err = UCrop.getError(result.data!!)
+            if (err != null) Log.e("Perfil", "UCrop RESULT_ERROR", err)
         }
     }
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             try {
+                // Usar FileProvider para o destino do UCrop e garantir permissões temporárias
                 val destinationFile = File(getExternalFilesDir(null), "cropped_profile_image.jpg")
-                val destinationUri = Uri.fromFile(destinationFile)
+                val destinationUri = FileProvider.getUriForFile(
+                    this,
+                    "$packageName.fileprovider",
+                    destinationFile
+                )
                 val uCrop = UCrop.of(it, destinationUri)
                     .withAspectRatio(1f, 1f)
                     .withOptions(UCrop.Options().apply {
@@ -75,9 +90,41 @@ class ActivityPerfil : BaseActivity() {
                         setShowCropFrame(false)
                         setShowCropGrid(false)
                     })
-                cropImageLauncher.launch(uCrop.getIntent(this))
-            } catch (_: Exception) {
-                android.widget.Toast.makeText(this, "Erro ao abrir editor de corte", android.widget.Toast.LENGTH_LONG).show()
+                val intent = uCrop.getIntent(this).apply {
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                }
+                // Concede permissões explícitas ao Activity do UCrop
+                val targetPkg = intent.component?.packageName
+                    ?: intent.resolveActivity(packageManager)?.packageName
+                if (!targetPkg.isNullOrBlank()) {
+                    try {
+                        grantUriPermission(targetPkg, it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    } catch (_: Exception) {}
+                    try {
+                        grantUriPermission(targetPkg, destinationUri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                    } catch (_: Exception) {}
+                }
+                cropImageLauncher.launch(intent)
+            } catch (e: Exception) {
+                // Fallback: se não conseguir abrir o crop, salva a imagem direta sem cortar
+                Log.e("Perfil", "Falha ao abrir UCrop, aplicando fallback", e)
+                try {
+                    val imagePath = saveImageToInternalStorage(it)
+                    if (imagePath != null) {
+                        com.bumptech.glide.Glide.with(this)
+                            .load(imagePath)
+                            .apply(RequestOptions.circleCropTransform())
+                            .placeholder(R.drawable.account_circle)
+                            .error(R.drawable.account_circle)
+                            .into(userImage)
+                        val prefs = getSharedPreferences(prefsName, MODE_PRIVATE)
+                        prefs.edit { putString(keyImagePath, imagePath).remove(keyImageUri) }
+                    } else {
+                        userImage.setImageResource(R.drawable.account_circle)
+                    }
+                } catch (_: Exception) {
+                    android.widget.Toast.makeText(this, "Erro ao processar imagem selecionada", android.widget.Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
@@ -101,9 +148,9 @@ class ActivityPerfil : BaseActivity() {
         val txtNomeUsuario = findViewById<android.widget.TextView>(R.id.txtNomeUsuario)
         val txtEmailUsuario = findViewById<android.widget.TextView>(R.id.txtEmailUsuario)
         userImage = findViewById(R.id.userImage)
-        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        val savedPath = prefs.getString(KEY_IMAGE_PATH, null)
-        val savedUri = prefs.getString(KEY_IMAGE_URI, null)
+        val prefs = getSharedPreferences(prefsName, MODE_PRIVATE)
+        val savedPath = prefs.getString(keyImagePath, null)
+        val savedUri = prefs.getString(keyImageUri, null)
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
             txtEmailUsuario.text = user.email ?: "Email não disponível"
@@ -153,8 +200,8 @@ class ActivityPerfil : BaseActivity() {
                 .setItems(options) { dialog, which ->
                     when (which) {
                         0 -> { // Remover foto de perfil
-                            val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                            prefs.edit { remove(KEY_IMAGE_PATH).remove(KEY_IMAGE_URI) }
+                            val prefs = getSharedPreferences(prefsName, MODE_PRIVATE)
+                            prefs.edit { remove(keyImagePath).remove(keyImageUri) }
                             userImage.setImageResource(R.drawable.account_circle)
                         }
                         1 -> { // Escolher da galeria

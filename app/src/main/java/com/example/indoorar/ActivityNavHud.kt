@@ -28,6 +28,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.example.indoorar.graph.FirestoreGraphLoader
 import com.example.indoorar.graph.AStarPathfinder
 import com.example.indoorar.graph.PathUtils
+import android.graphics.Color
+import androidx.core.graphics.toColorInt
 
 /**
  * Navegação em RA com HUD 2D sobre a câmera, sem ARCore/Sceneform.
@@ -73,6 +75,23 @@ class ActivityNavHud : BaseActivity() {
     // Optional: currently active mapId for diagnostics
     private var mapId: String? = null
 
+    // Cache dos POIs para seleção e resolução de nós
+    private data class PoiInfo(
+        val id: String,
+        val x: Float,
+        val y: Float,
+        val iconName: String?,
+        val iconRes: Int?,
+        val isStart: Boolean
+    )
+    private val poisCache = mutableListOf<PoiInfo>()
+
+    // Controle de bounds acumulados para o minimapa
+    private var boundsMinX: Float? = null
+    private var boundsMinZ: Float? = null
+    private var boundsMaxX: Float? = null
+    private var boundsMaxZ: Float? = null
+
     // Broadcast actions/extras para atualizar rota de outras telas
     companion object {
         const val ACTION_UPDATE_ROUTE = "com.example.indoorar.UPDATE_ROUTE"
@@ -117,6 +136,9 @@ class ActivityNavHud : BaseActivity() {
         // Tenta aplicar rota/limites vindos por Intent (opcional)
         applyRouteFromIntent(intent)
 
+        // Carrega formas/POIs para preencher o minimapa
+        mapId?.let { loadMinimapContent(it) }
+
         ensureCameraPermission()
         // Se já tem câmera concedida (ex.: retorno do sistema), garantimos o tracker também
         if (hasCameraPermission()) ensureActivityRecognitionPermission()
@@ -133,27 +155,29 @@ class ActivityNavHud : BaseActivity() {
             val db = FirebaseFirestore.getInstance()
             db.collection("mapas").document(id).collection("pois").get()
                 .addOnSuccessListener { snap ->
+                    poisCache.clear()
                     val pois = snap.documents.map { d ->
-                        Triple(
-                            d.getString("id") ?: d.id,
-                            d.getString("iconName") ?: "poi",
-                            d.getBoolean("isStartQR") ?: false
-                        )
-                    }.sortedBy { it.first }
+                        val pid = d.getString("id") ?: d.id
+                        val iconName = d.getString("iconName")
+                        val isStart = d.getBoolean("isStartQR") ?: false
+                        val x = (d.getDouble("x") ?: 0.0).toFloat()
+                        val y = (d.getDouble("y") ?: 0.0).toFloat()
+                        val iconRes = (d.getLong("iconRes")?.toInt())
+                        PoiInfo(pid, x, y, iconName, iconRes, isStart)
+                    }.sortedBy { it.id }
+                    poisCache.addAll(pois)
                     if (pois.size < 2) {
                         setInstruction(null, visible = false)
                         Toast.makeText(this, "Mapa sem POIs suficientes", Toast.LENGTH_LONG).show()
                         return@addOnSuccessListener
                     }
-                    val startId = pois.firstOrNull { it.third }?.first
-                    val labels = pois.map { (pid, icon, isStart) ->
-                        if (isStart) "$icon (início)" else pid
-                    }.toTypedArray()
+                    val startPoi = pois.firstOrNull { it.isStart }
+                    val labels = pois.map { p -> if (p.isStart) "${p.iconName ?: p.id} (início)" else p.id }.toTypedArray()
                     AlertDialog.Builder(this)
                         .setTitle("Escolha o destino")
                         .setItems(labels) { _, which ->
-                            val destId = pois[which].first
-                            if (destId == startId) {
+                            val dest = pois[which]
+                            if (dest.isStart) {
                                 Toast.makeText(this, "Destino igual à origem", Toast.LENGTH_SHORT).show()
                                 return@setItems
                             }
@@ -166,25 +190,20 @@ class ActivityNavHud : BaseActivity() {
                                     }
                                     res.onSuccess { loaded ->
                                         // Bounds via nodes
-                                        val xs = loaded.nodes.values.map { it.x }
-                                        val ys = loaded.nodes.values.map { it.y }
-                                        if (xs.isNotEmpty() && ys.isNotEmpty()) {
-                                            val minX = xs.minOrNull() ?: 0f
-                                            val maxX = xs.maxOrNull() ?: 10f
-                                            val minY = ys.minOrNull() ?: 0f
-                                            val maxY = ys.maxOrNull() ?: 10f
-                                            setWorldBounds(minX, minY, maxX, maxY)
-                                        }
-                                        val origin = startId ?: loaded.poiNodeIds.firstOrNull()
-                                        if (origin == null) {
+                                        applyBoundsFromNodes(loaded.nodes.values.map { it.x to it.y })
+                                        // Resolve origem/destino para nós do grafo
+                                        val originPoi = startPoi ?: pois.first()
+                                        val originNodeId = resolveNodeIdForPoi(originPoi.id, originPoi.x, originPoi.y, loaded.nodes)
+                                        val destNodeId = resolveNodeIdForPoi(dest.id, dest.x, dest.y, loaded.nodes)
+                                        if (originNodeId == null || destNodeId == null) {
                                             setInstruction(null, visible = false)
-                                            Toast.makeText(this, "Sem origem definida", Toast.LENGTH_LONG).show()
+                                            Toast.makeText(this, "POIs não mapeados em nós", Toast.LENGTH_LONG).show()
                                             return@onSuccess
                                         }
-                                        val path = AStarPathfinder.findPath(loaded.graph, origin, destId)
+                                        val path = AStarPathfinder.findPath(loaded.graph, originNodeId, destNodeId)
                                         if (!path.found || path.nodes.isEmpty()) {
                                             setInstruction(null, visible = false)
-                                            Toast.makeText(this, "Sem caminho entre $origin e $destId", Toast.LENGTH_LONG).show()
+                                            Toast.makeText(this, "Sem caminho entre $originNodeId e $destNodeId", Toast.LENGTH_LONG).show()
                                         } else {
                                             val points = PathUtils.densify(path.nodes, 0.25f)
                                             setRoute(points)
@@ -550,6 +569,124 @@ class ActivityNavHud : BaseActivity() {
                 .show()
         } catch (_: Exception) {
             Toast.makeText(this, "$title: $message", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // --------- Minimap content loading ---------
+    private fun loadMinimapContent(mapId: String) {
+        // limpa
+        minimap.clearFormas()
+        minimap.clearPois()
+        poisCache.clear()
+        resetBounds()
+
+        val db = FirebaseFirestore.getInstance()
+        val mapaRef = db.collection("mapas").document(mapId)
+
+        // NODES: apenas para bounds
+        mapaRef.collection("nodes").get()
+            .addOnSuccessListener { snap ->
+                val pts = snap.documents.mapNotNull { d ->
+                    val x = (d.getDouble("x") ?: return@mapNotNull null).toFloat()
+                    val y = (d.getDouble("y") ?: return@mapNotNull null).toFloat()
+                    x to y
+                }
+                applyBoundsFromNodes(pts)
+            }
+            .addOnFailureListener { /* ignore */ }
+
+        // FORMAS: desenha retângulos básicos
+        mapaRef.collection("formas").get()
+            .addOnSuccessListener { snap ->
+                snap.documents.forEach { d ->
+                    val pos = (d.get("posicao") as? List<*>)?.mapNotNull { (it as? Number)?.toFloat() }
+                    val tam = (d.get("tamanho") as? List<*>)?.mapNotNull { (it as? Number)?.toFloat() }
+                    val tipo = d.getString("tipo") ?: ""
+                    val corStr = d.getString("cor")
+                    val isRect = tipo == "retangulo" || tipo == "quadrado"
+                    if (pos != null && tam != null && pos.size >= 2 && tam.size >= 2 && isRect) {
+                        val x = pos[0]; val y = pos[1]
+                        val h = tam[0]; val w = tam[1] // salvo como [altura, largura]
+                        val color: Int = try {
+                            corStr?.toColorInt() ?: 0xFF888888.toInt()
+                        } catch (_: Exception) { 0xFF888888.toInt() }
+                        minimap.addForma(x, y, w, h, color)
+                        accumulateRect(x, y, w, h)
+                    }
+                }
+                pushBoundsToMinimap()
+            }
+            .addOnFailureListener { /* ignore */ }
+
+        // POIs: icones e origem
+        mapaRef.collection("pois").get()
+            .addOnSuccessListener { snap ->
+                snap.documents.forEach { d ->
+                    val pid = d.getString("id") ?: d.id
+                    val x = (d.getDouble("x") ?: 0.0).toFloat()
+                    val y = (d.getDouble("y") ?: 0.0).toFloat()
+                    val iconName = d.getString("iconName")
+                    val iconRes = (d.getLong("iconRes")?.toInt())
+                    val isStart = d.getBoolean("isStartQR") ?: false
+                    poisCache += PoiInfo(pid, x, y, iconName, iconRes, isStart)
+                    val res = iconRes ?: mapIconNameToRes(iconName)
+                    minimap.addPoi(x, y, Color.YELLOW, res, isStart)
+                    accumulatePoint(x, y)
+                }
+                pushBoundsToMinimap()
+                minimap.invalidate()
+            }
+            .addOnFailureListener { /* ignore */ }
+    }
+
+    private fun resolveNodeIdForPoi(poiId: String, px: Float, py: Float, nodes: Map<String, com.example.indoorar.graph.Node>): String? {
+        if (nodes.containsKey(poiId)) return poiId
+        // fallback: pega o nó mais próximo pela coordenada do POI
+        if (nodes.isEmpty()) return null
+        var bestId: String? = null
+        var bestD2 = Float.MAX_VALUE
+        nodes.values.forEach { n ->
+            val dx = n.x - px
+            val dy = n.y - py
+            val d2 = dx*dx + dy*dy
+            if (d2 < bestD2) { bestD2 = d2; bestId = n.id }
+        }
+        return bestId
+    }
+
+    private fun mapIconNameToRes(name: String?): Int? = when (name) {
+        "door" -> R.drawable.ic_door_azul
+        "stairs" -> R.drawable.ic_stairs_azul
+        "elevator" -> R.drawable.ic_elevator_azul
+        "bathroom" -> R.drawable.ic_banheiro_azul
+        "fire_extinguisher" -> R.drawable.ic_extintor_azul
+        else -> null
+    }
+
+    private fun resetBounds() {
+        boundsMinX = null; boundsMinZ = null; boundsMaxX = null; boundsMaxZ = null
+    }
+    private fun accumulatePoint(x: Float, z: Float) {
+        boundsMinX = (boundsMinX ?: x).coerceAtMost(x)
+        boundsMinZ = (boundsMinZ ?: z).coerceAtMost(z)
+        boundsMaxX = (boundsMaxX ?: x).coerceAtLeast(x)
+        boundsMaxZ = (boundsMaxZ ?: z).coerceAtLeast(z)
+    }
+    private fun accumulateRect(x: Float, z: Float, w: Float, h: Float) {
+        accumulatePoint(x, z)
+        accumulatePoint(x + w, z + h)
+    }
+    private fun applyBoundsFromNodes(nodes: List<Pair<Float, Float>>) {
+        nodes.forEach { (x, y) -> accumulatePoint(x, y) }
+        pushBoundsToMinimap()
+    }
+    private fun pushBoundsToMinimap() {
+        val minX = boundsMinX; val minZ = boundsMinZ; val maxX = boundsMaxX; val maxZ = boundsMaxZ
+        if (minX != null && minZ != null && maxX != null && maxZ != null) {
+            // pequena margem
+            val padX = (maxX - minX) * 0.05f
+            val padZ = (maxZ - minZ) * 0.05f
+            minimap.setWorldBounds(minX - padX, minZ - padZ, maxX + padX, maxZ + padZ)
         }
     }
 }

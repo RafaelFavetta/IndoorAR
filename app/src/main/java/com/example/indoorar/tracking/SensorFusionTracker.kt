@@ -96,7 +96,8 @@ class SensorFusionTracker(
         linAccel?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
         accelerometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
         magnetometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
-        startMotionFallback()
+        // Start motion fallback only if no dedicated step sensor exists on device
+        if (!anyStepSensorAvailable) startMotionFallback() else stopMotionFallback()
         onPosition(currX, currZ, headingRad)
     }
 
@@ -245,7 +246,7 @@ class SensorFusionTracker(
     private fun maybeDispatchHeadingOnly() {
         if (!started) return
         val now = SystemClock.uptimeMillis()
-        val d = kotlin.math.abs(angularDiff(headingRad, lastHeadingDispatch))
+        val d = abs(angularDiff(headingRad, lastHeadingDispatch))
         if (d >= headingMinDelta || (now - lastHeadingDispatchTime) >= headingMaxIntervalMs) {
             lastHeadingDispatch = headingRad
             lastHeadingDispatchTime = now

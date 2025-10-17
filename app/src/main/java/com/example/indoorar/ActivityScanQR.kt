@@ -16,7 +16,7 @@ import com.google.zxing.*
 import com.google.zxing.common.HybridBinarizer
 import android.content.res.ColorStateList
 import android.graphics.Color
-import com.google.ar.core.ArCoreApk
+import androidx.core.graphics.toColorInt
 
 
 class ActivityScanQR : BaseActivity() {
@@ -59,7 +59,7 @@ class ActivityScanQR : BaseActivity() {
         // Estado inicial: desabilitado e cinza
         btnEscanear.isEnabled = false
         btnEscanear.text = "ESCANEAR"
-        btnEscanear.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#BDBDBD"))
+        btnEscanear.backgroundTintList = ColorStateList.valueOf("#BDBDBD".toColorInt())
         btnEscanear.setOnClickListener {
             val value = lastScanned ?: return@setOnClickListener
             if (navigating) return@setOnClickListener
@@ -68,17 +68,9 @@ class ActivityScanQR : BaseActivity() {
             handleResult(value)
         }
 
-        // Antes bloqueava. Agora apenas avisa e segue com o scanner mesmo sem ARCore.
-        warnIfNoArCoreSupport()
         ensureCameraPermissionAndStart()
     }
 
-    private fun warnIfNoArCoreSupport() {
-        val availability = ArCoreApk.getInstance().checkAvailability(this)
-        if (availability.isUnsupported) {
-            Toast.makeText(this, "Dispositivo sem ARCore. Você ainda pode escanear o QR, porém recursos AR avançados podem ficar limitados.", Toast.LENGTH_LONG).show()
-        }
-    }
 
     override fun onPause() {
         super.onPause()
@@ -144,7 +136,7 @@ class ActivityScanQR : BaseActivity() {
                             // Update UI: enable and turn blue with ESCANEAR
                             btnEscanear.isEnabled = true
                             btnEscanear.text = "ESCANEAR"
-                            btnEscanear.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#32357A"))
+                            btnEscanear.backgroundTintList = ColorStateList.valueOf("#32357A".toColorInt())
                         }
                     } catch (_: NotFoundException) {
                         // nada encontrado no frame
@@ -203,7 +195,7 @@ class ActivityScanQR : BaseActivity() {
             setResult(RESULT_OK, intent)
             finish()
         } else {
-            val mapIntent = Intent(this, ActivityMap::class.java).apply {
+            val mapIntent = Intent(this, ActivityNavHud::class.java).apply {
                 putExtra("MAP_ID", mapId)
             }
             startActivity(mapIntent)

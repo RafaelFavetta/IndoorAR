@@ -268,7 +268,7 @@ class ActivityHomeComum : BaseActivity() {
 
         btnIniciar?.setOnClickListener {
             dialog.dismiss()
-            startActivity(Intent(this, ActivityMap::class.java).apply {
+            startActivity(Intent(this, ActivityNavHud::class.java).apply {
                 putExtra("MAP_ID", m.id)
             })
         }

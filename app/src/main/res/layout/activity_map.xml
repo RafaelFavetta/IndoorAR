@@ -2,176 +2,95 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/main"
+    android:id="@+id/root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#FDFDFD">
+    android:layout_height="match_parent">
 
-    <!-- ARSceneView agora visível por padrão e mantém tela ligada -->
-    <io.github.sceneview.ar.ARSceneView
-        android:id="@+id/arSceneView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:keepScreenOn="true"
-        android:visibility="visible"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Overlay para desenhar setas da rota em AR (2D) -->
-    <com.example.indoorar.ui.ARRouteOverlayView
-        android:id="@+id/arRouteOverlay"
+    <!-- Preview da câmera ocupando toda a tela -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:clickable="false"
-        android:focusable="false"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- CameraX fallback preview -->
-    <androidx.camera.view.PreviewView
-        android:id="@+id/cameraPreview"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+    <!-- Texto opcional de instrução -->
+    <TextView
+        android:id="@+id/instructionText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:padding="12dp"
+        android:background="#66000000"
         android:visibility="gone"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="24dp"/>
 
-    <!-- Texto de loading, centralizado -->
-    <TextView
-        android:id="@+id/textViewMap"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Carregando mapa..."
-        android:textColor="#32357A"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:fontFamily="@font/staatliches"
+    <!-- Seta da navegação sobreposta, centralizada por padrão -->
+    <ImageView
+        android:id="@+id/arrowView"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:src="@drawable/ic_nav_arrow"
+        android:contentDescription="@string/app_name"
+        app:tint="#FFFFFFFF"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Botão escolher destino -->
+    <!-- Botão: escolher destino -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnEscolherDestino"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="ESCOLHER DESTINO"
-        android:layout_margin="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
         app:cornerRadius="12dp"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Botão limpar rota -->
+    <!-- Botão: limpar rota -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnLimparRota"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="LIMPAR ROTA"
+        android:layout_marginTop="8dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginTop="4dp"
         app:cornerRadius="12dp"
         app:layout_constraintTop_toBottomOf="@id/btnEscolherDestino"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Texto da distância restante -->
+    <!-- Distância até o destino -->
     <TextView
         android:id="@+id/tvDistancia"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Distância: --"
-        android:textColor="#32357A"
+        android:textColor="#FFFFFF"
         android:textSize="14sp"
         android:padding="8dp"
-        android:background="#80000000"
-        app:layout_constraintTop_toBottomOf="@id/btnLimparRota"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="4dp"/>
-
-    <!-- Novo: Contador de passos -->
-    <TextView
-        android:id="@+id/tvPassos"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Passos: 0"
-        android:textColor="#FFFFFF"
-        android:textSize="12sp"
-        android:padding="6dp"
         android:background="#66000000"
-        app:layout_constraintTop_toBottomOf="@id/tvDistancia"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="2dp"/>
-
-    <!-- Debug overlay -->
-    <TextView
-        android:id="@+id/tvDebug"
-        android:layout_width="180dp"
-        android:layout_height="wrap_content"
-        android:text="DBG"
-        android:textColor="#FFFFFF"
-        android:textSize="10sp"
-        android:padding="6dp"
-        android:background="#80000000"
-        android:maxLines="8"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"/>
-
-    <!-- Card lista de destinos -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardDestino"
-        android:layout_width="250dp"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        android:layout_marginEnd="16dp"
         android:layout_marginTop="8dp"
-        app:cardElevation="8dp"
-        app:cardCornerRadius="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvPassos"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:layout_marginEnd="16dp"
+        app:layout_constraintTop_toBottomOf="@id/btnLimparRota"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-        <LinearLayout
-            android:orientation="vertical"
-            android:padding="12dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:id="@+id/tvTituloDestino"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Escolha o destino"
-                android:textStyle="bold"
-                android:textSize="16sp"
-                android:paddingBottom="4dp"/>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerDestino"
-                android:layout_width="match_parent"
-                android:layout_height="200dp"/>
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Minimap -->
+    <!-- Minimap no canto inferior direito -->
     <com.example.indoorar.ui.MinimapView
         android:id="@+id/minimap"
         android:layout_width="150dp"
         android:layout_height="150dp"
         android:background="#99000000"
-        android:layout_margin="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="16dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

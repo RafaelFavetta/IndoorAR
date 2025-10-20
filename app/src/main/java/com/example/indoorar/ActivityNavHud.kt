@@ -30,6 +30,8 @@ import com.example.indoorar.graph.AStarPathfinder
 import com.example.indoorar.graph.PathUtils
 import android.graphics.Color
 import androidx.core.graphics.toColorInt
+import android.location.LocationManager
+import android.provider.Settings
 
 /**
  * Navegação em RA com HUD 2D sobre a câmera, sem ARCore/Sceneform.
@@ -140,6 +142,7 @@ class ActivityNavHud : BaseActivity() {
         mapId?.let { loadMinimapContent(it) }
 
         ensureCameraPermission()
+        ensureLocationEnabled() // sugere ligar localização do aparelho
         // Se já tem câmera concedida (ex.: retorno do sistema), garantimos o tracker também
         if (hasCameraPermission()) ensureActivityRecognitionPermission()
 
@@ -296,7 +299,11 @@ class ActivityNavHud : BaseActivity() {
     // -------- Tracker de sensores (pose ao vivo) --------
     private fun startTracker() {
         if (trackerStarted) return
-        val (initX, initZ) = if (routePoints.isNotEmpty()) routePoints.first() else 0f to 0f
+        val (initX, initZ) = when {
+            initialX != null && initialZ != null -> initialX!! to initialZ!!
+            routePoints.isNotEmpty() -> routePoints.first()
+            else -> 0f to 0f
+        }
         sensorTracker = SensorFusionTracker(
             context = this,
             mapNorthDegrees = 0f,
@@ -559,6 +566,8 @@ class ActivityNavHud : BaseActivity() {
 
     private var sensorTracker: SensorFusionTracker? = null
     private var trackerStarted: Boolean = false
+    private var initialX: Float? = null
+    private var initialZ: Float? = null
 
     private fun showDiagDialog(title: String, message: String) {
         try {
@@ -630,8 +639,27 @@ class ActivityNavHud : BaseActivity() {
                     val isStart = d.getBoolean("isStartQR") ?: false
                     poisCache += PoiInfo(pid, x, y, iconName, iconRes, isStart)
                     val res = iconRes ?: mapIconNameToRes(iconName)
-                    minimap.addPoi(x, y, Color.YELLOW, res, isStart)
+                    val poiColor = Color.rgb(33, 150, 243) // azul consistente com tema
+                    minimap.addPoi(x, y, poiColor, res, isStart)
                     accumulatePoint(x, y)
+                }
+                // Define pose inicial: POI de início, senão primeiro POI, senão centro dos bounds
+                val startPoi = poisCache.firstOrNull { it.isStart }
+                val (sx, sz) = when {
+                    startPoi != null -> startPoi.x to startPoi.y
+                    poisCache.isNotEmpty() -> poisCache.first().x to poisCache.first().y
+                    else -> {
+                        val cx = ((boundsMinX ?: 0f) + (boundsMaxX ?: 0f)) / 2f
+                        val cz = ((boundsMinZ ?: 0f) + (boundsMaxZ ?: 0f)) / 2f
+                        cx to cz
+                    }
+                }
+                initialX = sx; initialZ = sz
+                minimap.updateUserPose(sx, sz, 0f)
+                // Se o tracker já estava rodando, reinicia a partir da nova origem
+                if (trackerStarted) {
+                    stopTracker()
+                    startTracker()
                 }
                 pushBoundsToMinimap()
                 minimap.invalidate()
@@ -639,6 +667,26 @@ class ActivityNavHud : BaseActivity() {
             .addOnFailureListener { /* ignore */ }
     }
 
+    // --------- Location (ligar localização) ---------
+    private fun ensureLocationEnabled() {
+        try {
+            val lm = getSystemService(LOCATION_SERVICE) as? LocationManager ?: return
+            val enabled =
+                lm.isLocationEnabled
+            if (!enabled) {
+                AlertDialog.Builder(this)
+                    .setTitle("Ativar localização")
+                    .setMessage("Para melhor navegação, ative a localização do dispositivo.")
+                    .setPositiveButton("Abrir configurações") { _, _ ->
+                        try { startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) } catch (_: Exception) {}
+                    }
+                    .setNegativeButton("Agora não", null)
+                    .show()
+            }
+        } catch (_: Exception) { }
+    }
+
+    // -------- Resolução de nós para POIs --------
     private fun resolveNodeIdForPoi(poiId: String, px: Float, py: Float, nodes: Map<String, com.example.indoorar.graph.Node>): String? {
         if (nodes.containsKey(poiId)) return poiId
         // fallback: pega o nó mais próximo pela coordenada do POI

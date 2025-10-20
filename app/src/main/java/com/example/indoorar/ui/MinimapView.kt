@@ -117,10 +117,6 @@ class MinimapView @JvmOverloads constructor(
         val dynamicFactor = (referenceDiag / worldDiag).coerceIn(0.6f, 1.6f)
         val pinHeightBase = basePin * dynamicFactor
 
-        // fundo
-        paint.style = Paint.Style.FILL; paint.color = Color.argb(80, 0, 0, 0)
-        canvas.drawRect(0f, 0f, wView, hView, paint)
-
         val ux = (userX - minX) * scaleX
         val uz = (userZ - minZ) * scaleY
 

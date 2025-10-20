@@ -96,8 +96,8 @@ class SensorFusionTracker(
         linAccel?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
         accelerometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
         magnetometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
-        // Start motion fallback only if no dedicated step sensor exists on device
-        if (!anyStepSensorAvailable) startMotionFallback() else stopMotionFallback()
+        // Always start fallback; actual advancing is gated by sensors availability and motion energy
+        startMotionFallback()
         onPosition(currX, currZ, headingRad)
     }
 
@@ -304,7 +304,9 @@ class SensorFusionTracker(
                 if (!motionTickRunning) return
                 val now = SystemClock.uptimeMillis()
                 val noStepForLong = (now - lastStepWallMs) > motionNoStepMs
-                val shouldAdvance = noStepForLong && motionScore > motionThreshold
+                // Only advance if (no step sensor, or none seen yet) AND we've had no steps for a while AND motion suggests movement
+                val sensorsUnavailableOrNotSeen = (!anyStepSensorAvailable) || !stepSensorSeen
+                val shouldAdvance = sensorsUnavailableOrNotSeen && noStepForLong && motionScore > motionThreshold
                 if (shouldAdvance) {
                     advanceBy(motionAdvanceMeters)
                 }

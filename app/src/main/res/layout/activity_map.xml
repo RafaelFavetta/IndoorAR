@@ -88,7 +88,6 @@
         android:id="@+id/minimap"
         android:layout_width="150dp"
         android:layout_height="150dp"
-        android:background="#99000000"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="16dp" />

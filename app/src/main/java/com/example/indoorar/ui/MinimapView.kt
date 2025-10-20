@@ -117,6 +117,10 @@ class MinimapView @JvmOverloads constructor(
         val dynamicFactor = (referenceDiag / worldDiag).coerceIn(0.6f, 1.6f)
         val pinHeightBase = basePin * dynamicFactor
 
+        // fundo
+        paint.style = Paint.Style.FILL; paint.color = Color.argb(80, 0, 0, 0)
+        canvas.drawRect(0f, 0f, wView, hView, paint)
+
         val ux = (userX - minX) * scaleX
         val uz = (userZ - minZ) * scaleY
 
@@ -181,7 +185,10 @@ class MinimapView @JvmOverloads constructor(
                 leftover = (dist + arrowSpacingPx) - segLen
                 if (leftover < 0f) leftover = 0f
             }
-            // destino
+        }
+
+        // destino: sempre destacar o último ponto da rota, mesmo quando há apenas um
+        if (route.isNotEmpty()) {
             paint.style = Paint.Style.FILL
             paint.color = Color.RED
             val (dx, dz) = route.last()

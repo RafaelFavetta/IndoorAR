@@ -32,6 +32,7 @@ import android.graphics.Color
 import androidx.core.graphics.toColorInt
 import android.location.LocationManager
 import android.provider.Settings
+import com.example.indoorar.graph.Node
 
 /**
  * Navegação em RA com HUD 2D sobre a câmera, sem ARCore/Sceneform.
@@ -195,22 +196,22 @@ class ActivityNavHud : BaseActivity() {
                                         // Bounds via nodes
                                         applyBoundsFromNodes(loaded.nodes.values.map { it.x to it.y })
                                         // Resolve origem/destino para nós do grafo
-                                        val originPoi = startPoi ?: pois.first()
-                                        val originNodeId = resolveNodeIdForPoi(originPoi.id, originPoi.x, originPoi.y, loaded.nodes)
+                                        val originNodeId = startPoi?.let { sp ->
+                                            resolveNodeIdForPoi(sp.id, sp.x, sp.y, loaded.nodes)
+                                        } ?: resolveOriginNodeId(loaded.nodes)
                                         val destNodeId = resolveNodeIdForPoi(dest.id, dest.x, dest.y, loaded.nodes)
                                         if (originNodeId == null || destNodeId == null) {
                                             setInstruction(null, visible = false)
-                                            Toast.makeText(this, "POIs não mapeados em nós", Toast.LENGTH_LONG).show()
+                                            Toast.makeText(this, "Não foi possível preparar a rota (nós inválidos)", Toast.LENGTH_LONG).show()
                                             return@onSuccess
                                         }
                                         val path = AStarPathfinder.findPath(loaded.graph, originNodeId, destNodeId)
                                         if (!path.found || path.nodes.isEmpty()) {
                                             setInstruction(null, visible = false)
-                                            Toast.makeText(this, "Sem caminho entre $originNodeId e $destNodeId", Toast.LENGTH_LONG).show()
+                                            Toast.makeText(this, "Não foi possível traçar a rota até o destino.", Toast.LENGTH_LONG).show()
                                         } else {
                                             val points = PathUtils.densify(path.nodes, 0.25f)
                                             setRoute(points)
-                                            setInstruction("Rota definida", visible = true)
                                         }
                                     }
                                 }
@@ -226,7 +227,7 @@ class ActivityNavHud : BaseActivity() {
         }
         btnLimparRota.setOnClickListener {
             clearRoute()
-            tvDistancia.text = "Distância: --"
+            tvDistancia.text = getString(R.string.distance_placeholder)
         }
     }
 
@@ -391,7 +392,18 @@ class ActivityNavHud : BaseActivity() {
         routePoints.addAll(points)
         minimap.setRoute(points)
         rebuildCumulativeDistances()
-        updateDistanceLabelForLastPose()
+        // Se rota tem 1 ponto, já estamos no destino
+        if (routePoints.size == 1) {
+            lastDirectionLabel = "chegou"
+            setInstruction("Você já está no destino", visible = true)
+            tvDistancia.text = getString(R.string.distance_arrived)
+        } else if (routePoints.size >= 2) {
+            setInstruction("Rota definida", visible = true)
+            updateDistanceLabelForLastPose()
+        } else {
+            setInstruction(null, visible = false)
+            tvDistancia.text = getString(R.string.distance_placeholder)
+        }
     }
 
     @Keep
@@ -403,12 +415,13 @@ class ActivityNavHud : BaseActivity() {
         totalDistance = 0.0
         lastDirectionLabel = null
         setInstruction(null, visible = false)
-        tvDistancia.text = "Distância: --"
+        tvDistancia.text = getString(R.string.distance_placeholder)
     }
 
     @Keep
     @Suppress("unused")
     fun updateUserPose(x: Float, z: Float, headingRad: Float) {
+        lastUserX = x; lastUserZ = z
         minimap.updateUserPose(x, z, headingRad)
         updateGuidanceFromPose(x, z, headingRad)
         updateDistanceLabel(x, z)
@@ -430,21 +443,25 @@ class ActivityNavHud : BaseActivity() {
 
     private fun updateDistanceLabelForLastPose() {
         // Não armazenamos a última pose explicitamente; distância será atualizada no próximo updateUserPose
-        if (routePoints.size < 2) {
-            tvDistancia.text = "Distância: --"
+        if (routePoints.isEmpty()) {
+            tvDistancia.text = getString(R.string.distance_placeholder)
+        } else if (routePoints.size == 1) {
+            tvDistancia.text = getString(R.string.distance_arrived)
         }
     }
 
     private fun updateDistanceLabel(ux: Float, uz: Float) {
-        if (routePoints.size < 2 || cumulativeDistances.size != routePoints.size) {
-            tvDistancia.text = "Distância: --"; return
+        if (routePoints.isEmpty()) { tvDistancia.text = getString(R.string.distance_placeholder); return }
+        if (routePoints.size == 1) { tvDistancia.text = getString(R.string.distance_arrived); return }
+        if (cumulativeDistances.size != routePoints.size) {
+            tvDistancia.text = getString(R.string.distance_placeholder); return
         }
         val distAlong = distanceAlongRoute(ux, uz)
         val remaining = (totalDistance - distAlong).coerceAtLeast(0.0)
         tvDistancia.text = if (remaining < 1.0) {
-            "Você chegou"
+            getString(R.string.distance_arrived)
         } else {
-            "Distância: %.1f m".format(remaining)
+            getString(R.string.distance_meters, remaining)
         }
     }
 
@@ -474,7 +491,15 @@ class ActivityNavHud : BaseActivity() {
 
     // --- Guidance logic: decide arrow/instruction from route + pose ---
     private fun updateGuidanceFromPose(x: Float, z: Float, headingRad: Float) {
-        if (routePoints.size < 2) return
+        if (routePoints.isEmpty()) return
+        if (routePoints.size == 1) {
+            if (lastDirectionLabel != "chegou") {
+                lastDirectionLabel = "chegou"
+                updateArrow("frente")
+                setInstruction("Você já está no destino", visible = true)
+            }
+            return
+        }
         // Find a target point ahead along route
         val target = findTargetPointAhead(x, z)
         val (tx, tz) = target ?: return
@@ -550,7 +575,7 @@ class ActivityNavHud : BaseActivity() {
         }
         // Route points
         val packed = intent.getFloatArrayExtra(EXTRA_ROUTE)
-        if (packed != null && packed.size >= 4) {
+        if (packed != null && packed.size >= 2) {
             val list = ArrayList<Pair<Float, Float>>(packed.size / 2)
             var i = 0
             while (i + 1 < packed.size) {
@@ -568,6 +593,8 @@ class ActivityNavHud : BaseActivity() {
     private var trackerStarted: Boolean = false
     private var initialX: Float? = null
     private var initialZ: Float? = null
+    private var lastUserX: Float? = null
+    private var lastUserZ: Float? = null
 
     private fun showDiagDialog(title: String, message: String) {
         try {
@@ -644,9 +671,7 @@ class ActivityNavHud : BaseActivity() {
                     accumulatePoint(x, y)
                 }
                 // Define pose inicial: POI de início, senão primeiro POI, senão centro dos bounds
-                val startPoi = poisCache.firstOrNull { it.isStart }
                 val (sx, sz) = when {
-                    startPoi != null -> startPoi.x to startPoi.y
                     poisCache.isNotEmpty() -> poisCache.first().x to poisCache.first().y
                     else -> {
                         val cx = ((boundsMinX ?: 0f) + (boundsMaxX ?: 0f)) / 2f
@@ -687,9 +712,20 @@ class ActivityNavHud : BaseActivity() {
     }
 
     // -------- Resolução de nós para POIs --------
-    private fun resolveNodeIdForPoi(poiId: String, px: Float, py: Float, nodes: Map<String, com.example.indoorar.graph.Node>): String? {
-        if (nodes.containsKey(poiId)) return poiId
-        // fallback: pega o nó mais próximo pela coordenada do POI
+    private fun resolveOriginNodeId(nodes: Map<String, Node>): String? {
+        // Prefer the nearest node to the last known user pose
+        val ux = lastUserX; val uz = lastUserZ
+        if (ux != null && uz != null) {
+            return resolveNodeIdForCoord(ux, uz, nodes)
+        }
+        // Fallback: use initial pose if available
+        val ix = initialX; val iz = initialZ
+        if (ix != null && iz != null) return resolveNodeIdForCoord(ix, iz, nodes)
+        // Final fallback: first node id
+        return nodes.values.firstOrNull()?.id
+    }
+
+    private fun resolveNodeIdForCoord(px: Float, py: Float, nodes: Map<String, Node>): String? {
         if (nodes.isEmpty()) return null
         var bestId: String? = null
         var bestD2 = Float.MAX_VALUE
@@ -700,6 +736,15 @@ class ActivityNavHud : BaseActivity() {
             if (d2 < bestD2) { bestD2 = d2; bestId = n.id }
         }
         return bestId
+    }
+
+    private fun resolveNodeIdForPoi(poiId: String, px: Float, py: Float, nodes: Map<String, Node>): String? {
+        // 1) Exact node id match
+        nodes[poiId]?.let { return it.id }
+        // 2) Node advertising this POI id
+        nodes.values.firstOrNull { it.poiIds.contains(poiId) }?.let { return it.id }
+        // 3) Nearest node by coordinates
+        return resolveNodeIdForCoord(px, py, nodes)
     }
 
     private fun mapIconNameToRes(name: String?): Int? = when (name) {

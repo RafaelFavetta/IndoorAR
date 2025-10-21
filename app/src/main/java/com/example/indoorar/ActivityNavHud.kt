@@ -33,6 +33,7 @@ import androidx.core.graphics.toColorInt
 import android.location.LocationManager
 import android.provider.Settings
 import com.example.indoorar.graph.Node
+import androidx.core.view.isVisible
 
 /**
  * Navegação em RA com HUD 2D sobre a câmera, sem ARCore/Sceneform.
@@ -132,6 +133,7 @@ class ActivityNavHud : BaseActivity() {
         arrowView.rotation = 0f
         arrowView.translationX = 0f
         arrowView.translationY = 0f
+        arrowView.visibility = View.GONE // inicia oculta; só aparece com rota ativa
 
         // Minimap: por padrão não rotaciona com heading (HUD já indica a direção)
         minimap.setRotateWithHeading(false)
@@ -175,16 +177,11 @@ class ActivityNavHud : BaseActivity() {
                         Toast.makeText(this, "Mapa sem POIs suficientes", Toast.LENGTH_LONG).show()
                         return@addOnSuccessListener
                     }
-                    val startPoi = pois.firstOrNull { it.isStart }
                     val labels = pois.map { p -> if (p.isStart) "${p.iconName ?: p.id} (início)" else p.id }.toTypedArray()
                     AlertDialog.Builder(this)
                         .setTitle("Escolha o destino")
                         .setItems(labels) { _, which ->
                             val dest = pois[which]
-                            if (dest.isStart) {
-                                Toast.makeText(this, "Destino igual à origem", Toast.LENGTH_SHORT).show()
-                                return@setItems
-                            }
                             setInstruction("Calculando rota…", visible = true)
                             FirestoreGraphLoader.load(id) { res ->
                                 runOnUiThread {
@@ -196,12 +193,29 @@ class ActivityNavHud : BaseActivity() {
                                         // Bounds via nodes
                                         applyBoundsFromNodes(loaded.nodes.values.map { it.x to it.y })
 
-                                        // Garante que origem e destino tenham nós válidos (cria temporários se necessário)
-                                        val originPoi = startPoi ?: poisCache.firstOrNull()
+                                        // ORIGEM: Posição atual do usuário
+                                        val userX = lastUserX ?: initialX ?: 0f
+                                        val userZ = lastUserZ ?: initialZ ?: 0f
+                                        
+                                        // DEBUG: Mostra posição de origem
+                                        android.util.Log.d("ActivityNavHud", "Criando rota: Origem=(${userX}, ${userZ}), Destino=(${dest.x}, ${dest.y})")
+                                        Toast.makeText(this, "Origem: (${"%.1f".format(userX)}, ${"%.1f".format(userZ)})", Toast.LENGTH_SHORT).show()
+                                        
+                                        // Cria PoiInfo temporário para representar a posição do usuário
+                                        val userOrigin = PoiInfo(
+                                            id = "user_current_position",
+                                            x = userX,
+                                            y = userZ,
+                                            iconName = null,
+                                            iconRes = null,
+                                            isStart = false
+                                        )
+
+                                        // Garante que origem (usuário) e destino tenham nós válidos
                                         val (enhancedGraph, originNodeId, destNodeId) = ensureNodesExist(
                                             loaded.graph,
                                             loaded.nodes,
-                                            originPoi,
+                                            userOrigin,
                                             dest
                                         )
 
@@ -209,15 +223,26 @@ class ActivityNavHud : BaseActivity() {
                                         val path = AStarPathfinder.findPath(enhancedGraph, originNodeId, destNodeId)
 
                                         if (!path.found || path.nodes.isEmpty()) {
-                                            // Fallback: cria rota direta entre origem e destino
+                                            // Fallback: cria rota direta entre posição do usuário e destino
                                             setInstruction("Rota criada (linha direta)", visible = true)
                                             val directRoute = listOf(
-                                                (originPoi?.x ?: 0f) to (originPoi?.y ?: 0f),
+                                                userX to userZ,
                                                 dest.x to dest.y
                                             )
                                             setRoute(directRoute)
                                         } else {
-                                            val points = PathUtils.densify(path.nodes, 0.25f)
+                                            // Densifica e garante que a rota comece exatamente na posição atual do usuário
+                                            val rawPoints = PathUtils.densify(path.nodes, 0.25f)
+                                            val points = if (rawPoints.isNotEmpty()) {
+                                                val fx = rawPoints.first().first
+                                                val fz = rawPoints.first().second
+                                                val dx = fx - userX
+                                                val dz = fz - userZ
+                                                val d2 = dx*dx + dz*dz
+                                                if (d2 > 0.01f) listOf(userX to userZ) + rawPoints else rawPoints
+                                            } else {
+                                                listOf(userX to userZ, dest.x to dest.y)
+                                            }
                                             setRoute(points)
                                         }
                                     }
@@ -236,6 +261,35 @@ class ActivityNavHud : BaseActivity() {
             clearRoute()
             tvDistancia.text = getString(R.string.distance_placeholder)
         }
+        
+        // Controles manuais de movimento (para debug/teste quando sensores não funcionam)
+        findViewById<android.widget.Button>(R.id.btnMoveUp).setOnClickListener {
+            moveUserManually(0f, -0.5f) // Move para cima (Z negativo)
+        }
+        findViewById<android.widget.Button>(R.id.btnMoveDown).setOnClickListener {
+            moveUserManually(0f, 0.5f) // Move para baixo (Z positivo)
+        }
+        findViewById<android.widget.Button>(R.id.btnMoveLeft).setOnClickListener {
+            moveUserManually(-0.5f, 0f) // Move para esquerda (X negativo)
+        }
+        findViewById<android.widget.Button>(R.id.btnMoveRight).setOnClickListener {
+            moveUserManually(0.5f, 0f) // Move para direita (X positivo)
+        }
+    }
+    
+    /**
+     * Move o usuário manualmente (para debug quando sensores não funcionam)
+     */
+    private fun moveUserManually(deltaX: Float, deltaZ: Float) {
+        val currentX = lastUserX ?: initialX ?: 0f
+        val currentZ = lastUserZ ?: initialZ ?: 0f
+        val newX = currentX + deltaX
+        val newZ = currentZ + deltaZ
+        
+        // Atualiza a posição do usuário
+        updateUserPose(newX, newZ, 0f)
+        
+        Toast.makeText(this, "Posição: (${"%.1f".format(newX)}, ${"%.1f".format(newZ)})", Toast.LENGTH_SHORT).show()
     }
 
     override fun onStart() {
@@ -307,11 +361,10 @@ class ActivityNavHud : BaseActivity() {
     // -------- Tracker de sensores (pose ao vivo) --------
     private fun startTracker() {
         if (trackerStarted) return
-        val (initX, initZ) = when {
-            initialX != null && initialZ != null -> initialX!! to initialZ!!
-            routePoints.isNotEmpty() -> routePoints.first()
-            else -> 0f to 0f
-        }
+        // USA APENAS a posição inicial definida (POI StartQR)
+        val initX = initialX ?: 0f
+        val initZ = initialZ ?: 0f
+        
         sensorTracker = SensorFusionTracker(
             context = this,
             mapNorthDegrees = 0f,
@@ -404,12 +457,23 @@ class ActivityNavHud : BaseActivity() {
             lastDirectionLabel = "chegou"
             setInstruction("Você já está no destino", visible = true)
             tvDistancia.text = getString(R.string.distance_arrived)
+            if (arrowView.isVisible) {
+                arrowView.animate().alpha(0f).setDuration(150).withEndAction { arrowView.visibility = View.GONE }.start()
+            }
         } else if (routePoints.size >= 2) {
             setInstruction("Rota definida", visible = true)
             updateDistanceLabelForLastPose()
+            if (arrowView.visibility != View.VISIBLE) {
+                arrowView.alpha = 0f
+                arrowView.visibility = View.VISIBLE
+                arrowView.animate().alpha(1f).setDuration(150).start()
+            }
         } else {
             setInstruction(null, visible = false)
             tvDistancia.text = getString(R.string.distance_placeholder)
+            if (arrowView.isVisible) {
+                arrowView.animate().alpha(0f).setDuration(150).withEndAction { arrowView.visibility = View.GONE }.start()
+            }
         }
     }
 
@@ -423,6 +487,9 @@ class ActivityNavHud : BaseActivity() {
         lastDirectionLabel = null
         setInstruction(null, visible = false)
         tvDistancia.text = getString(R.string.distance_placeholder)
+        if (arrowView.isVisible) {
+            arrowView.animate().alpha(0f).setDuration(150).withEndAction { arrowView.visibility = View.GONE }.start()
+        }
     }
 
     @Keep
@@ -430,8 +497,63 @@ class ActivityNavHud : BaseActivity() {
     fun updateUserPose(x: Float, z: Float, headingRad: Float) {
         lastUserX = x; lastUserZ = z
         minimap.updateUserPose(x, z, headingRad)
+
+        // Remove waypoints da rota conforme o usuário passa por eles
+        prunePassedWaypoints(x, z)
+
         updateGuidanceFromPose(x, z, headingRad)
         updateDistanceLabel(x, z)
+    }
+
+    /**
+     * Remove pontos da rota que o usuário já passou, fazendo a rota "desaparecer" gradualmente.
+     */
+    private fun prunePassedWaypoints(ux: Float, uz: Float) {
+        if (routePoints.size <= 1) return
+
+        val passingThreshold = 1.5f // metros - considera que passou pelo waypoint
+        val arrivalThreshold = 2.0f // metros - distância para considerar que chegou ao destino final
+
+        // Remove waypoints que já passou (exceto o último, que é o destino)
+        var removedAny = false
+        while (routePoints.size > 1) {
+            val firstPoint = routePoints.first()
+            val dx = firstPoint.first - ux
+            val dz = firstPoint.second - uz
+            val dist = kotlin.math.sqrt(dx * dx + dz * dz)
+
+            if (dist <= passingThreshold) {
+                routePoints.removeAt(0)
+                removedAny = true
+            } else {
+                break
+            }
+        }
+
+        // Se removeu algum waypoint, atualiza a rota visual
+        if (removedAny) {
+            minimap.setRoute(routePoints)
+            rebuildCumulativeDistances()
+        }
+
+        // Verifica se chegou ao destino final
+        if (routePoints.size == 1) {
+            val destPoint = routePoints.first()
+            val dx = destPoint.first - ux
+            val dz = destPoint.second - uz
+            val distToDestination = kotlin.math.sqrt(dx * dx + dz * dz)
+
+            if (distToDestination <= arrivalThreshold) {
+                // Chegou ao destino!
+                lastDirectionLabel = "chegou"
+                setInstruction("Você chegou ao destino!", visible = true)
+                tvDistancia.text = getString(R.string.distance_arrived)
+                // Limpa a rota após 3 segundos
+                arrowView.postDelayed({
+                    clearRoute()
+                }, 3000)
+            }
+        }
     }
 
     // ---- Distância restante ----
@@ -498,28 +620,42 @@ class ActivityNavHud : BaseActivity() {
 
     // --- Guidance logic: decide arrow/instruction from route + pose ---
     private fun updateGuidanceFromPose(x: Float, z: Float, headingRad: Float) {
-        if (routePoints.isEmpty()) return
+        if (routePoints.isEmpty()) {
+            // No active route: hide arrow
+            if (arrowView.isVisible) {
+                arrowView.animate().alpha(0f).setDuration(150).withEndAction { arrowView.visibility = View.GONE }.start()
+            }
+            return
+        }
         if (routePoints.size == 1) {
             if (lastDirectionLabel != "chegou") {
                 lastDirectionLabel = "chegou"
-                updateArrow("frente")
+                // Arrived: hide arrow and show message
+                if (arrowView.isVisible) {
+                    arrowView.animate().alpha(0f).setDuration(150).withEndAction { arrowView.visibility = View.GONE }.start()
+                }
                 setInstruction("Você já está no destino", visible = true)
             }
             return
+        }
+        // Ensure arrow is visible when we have an active multi-point route
+        if (arrowView.visibility != View.VISIBLE) {
+            arrowView.alpha = 0f
+            arrowView.visibility = View.VISIBLE
+            arrowView.animate().alpha(1f).setDuration(150).start()
         }
         // Find a target point ahead along route
         val target = findTargetPointAhead(x, z)
         val (tx, tz) = target ?: return
         val dx = tx - x
         val dz = tz - z
-        // angle between user's forward (headingRad) and vector to target
         val angleToTarget = kotlin.math.atan2(dx.toDouble(), dz.toDouble()).toFloat()
         val delta = normalizeAngle(angleToTarget - headingRad)
         val absDeg = kotlin.math.abs(Math.toDegrees(delta.toDouble()))
         val label = when {
             absDeg <= 30 -> "frente"
             absDeg >= 150 -> "para trás"
-            delta > 0 -> "direita" // right-hand turn
+            delta > 0 -> "direita"
             else -> "esquerda"
         }
         if (label != lastDirectionLabel) {
@@ -689,8 +825,9 @@ class ActivityNavHud : BaseActivity() {
                     }
                 }
                 initialX = sx; initialZ = sz
-                minimap.updateUserPose(sx, sz, 0f)
-                // Se o tracker já estava rodando, reinicia a partir da nova origem
+                // Use central API to keep lastUserX/lastUserZ in sync
+                updateUserPose(sx, sz, 0f)
+                // If the tracker was already running, restart from new origin
                 if (trackerStarted) {
                     stopTracker()
                     startTracker()

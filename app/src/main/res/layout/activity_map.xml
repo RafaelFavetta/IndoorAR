@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -47,26 +48,30 @@
     <!-- Botão: escolher destino -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnEscolherDestino"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="ESCOLHER DESTINO"
+        android:layout_width="100dp"
+        android:layout_height="48dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
+        android:text="Escolher destino"
+        android:textAllCaps="true"
+        android:textSize="10sp"
         app:cornerRadius="12dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!-- Botão: limpar rota -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnLimparRota"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="LIMPAR ROTA"
+        android:layout_width="100dp"
+        android:layout_height="48dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="16dp"
+        android:text="Limpar rota"
+        android:textAllCaps="true"
+        android:textSize="10sp"
         app:cornerRadius="12dp"
-        app:layout_constraintTop_toBottomOf="@id/btnEscolherDestino"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnEscolherDestino" />
 
     <!-- Distância até o destino -->
     <TextView
@@ -74,7 +79,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Distância: --"
-        android:textColor="#FFFFFF"
+        android:textColor="#FDFDFD"
         android:textSize="14sp"
         android:padding="8dp"
         android:background="#66000000"
@@ -91,5 +96,59 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="16dp" />
+
+    <!-- Controles manuais de movimento (para debug/teste) -->
+    <LinearLayout
+        android:id="@+id/manualControls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#99000000"
+        android:padding="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_margin="16dp">
+
+        <!-- Botão: Frente -->
+        <Button
+            android:id="@+id/btnMoveUp"
+            android:layout_width="60dp"
+            android:layout_height="48dp"
+            android:text="↑"
+            android:textSize="20sp"
+            android:layout_gravity="center_horizontal" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <!-- Botão: Esquerda -->
+            <Button
+                android:id="@+id/btnMoveLeft"
+                android:layout_width="60dp"
+                android:layout_height="48dp"
+                android:text="←"
+                android:textSize="20sp" />
+
+            <!-- Botão: Direita -->
+            <Button
+                android:id="@+id/btnMoveRight"
+                android:layout_width="60dp"
+                android:layout_height="48dp"
+                android:text="→"
+                android:textSize="20sp" />
+        </LinearLayout>
+
+        <!-- Botão: Trás -->
+        <Button
+            android:id="@+id/btnMoveDown"
+            android:layout_width="60dp"
+            android:layout_height="48dp"
+            android:text="↓"
+            android:textSize="20sp"
+            android:layout_gravity="center_horizontal" />
+    </LinearLayout>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

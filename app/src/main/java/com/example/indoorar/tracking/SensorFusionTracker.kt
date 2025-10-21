@@ -14,7 +14,8 @@ class SensorFusionTracker(
     private val onPosition: (x: Float, z: Float, headingRad: Float) -> Unit,
     private val mapMatch: ((x: Float, z: Float) -> Pair<Float, Float>)? = null,
     private val reanchorCheck: ((x: Float, z: Float) -> Pair<Boolean, Pair<Float, Float>?>)? = null,
-    private val onStep: ((totalSteps: Int) -> Unit)? = null
+    private val onStep: ((totalSteps: Int) -> Unit)? = null,
+    private val useAccelFallbackSteps: Boolean = false
 ) : SensorEventListener {
 
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -68,10 +69,10 @@ class SensorFusionTracker(
 
     // Fallback tunables
     private val motionAlpha = 0.1f           // EWMA smoothing for motion energy
-    private val motionThreshold = 0.2f       // threshold to consider moving (more sensitive)
-    private val motionTickMs = 500L          // faster tick
-    private val motionNoStepMs = 800L        // fallback sooner
-    private val motionAdvanceMeters = 0.4f   // advance per tick when moving (more visible)
+    private val motionThreshold = 2.5f       // threshold to consider moving (mais conservador para evitar falsos positivos)
+    private val motionTickMs = 1000L         // tick mais lento
+    private val motionNoStepMs = 3000L       // espera mais tempo antes de usar fallback
+    private val motionAdvanceMeters = 0.15f  // avança menos por tick para evitar drift
 
     // Total steps counter
     private var totalSteps = 0
@@ -96,8 +97,9 @@ class SensorFusionTracker(
         linAccel?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
         accelerometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
         magnetometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
-        // Always start fallback; actual advancing is gated by sensors availability and motion energy
-        startMotionFallback()
+        // NÃO inicia fallback automaticamente para evitar movimento fantasma
+        // startMotionFallback()
+        lastStepWallMs = SystemClock.uptimeMillis() // Inicializa para evitar fallback imediato
         onPosition(currX, currZ, headingRad)
     }
 
@@ -132,15 +134,16 @@ class SensorFusionTracker(
                 handleStepCounter(event)
             }
             Sensor.TYPE_LINEAR_ACCELERATION -> {
-                if (!anyStepSensorAvailable || !stepSensorSeen) handleAccelMagnitude(event)
+                // Only use accel fallback if explicitly enabled
+                if (useAccelFallbackSteps && (!anyStepSensorAvailable || !stepSensorSeen)) handleAccelMagnitude(event)
             }
             Sensor.TYPE_ACCELEROMETER -> {
                 // Capture for fallback heading and optional step detection
                 System.arraycopy(event.values, 0, lastAccel, 0, 3)
                 haveAccel = true
                 if (rotationVector == null && haveMag) updateHeadingFromAccelMag()
-                // Always allow accelerometer-based fallback if step sensors not seen yet
-                if (!anyStepSensorAvailable || !stepSensorSeen) handleAccelMagnitude(event)
+                // Only use accel fallback if explicitly enabled
+                if (useAccelFallbackSteps && (!anyStepSensorAvailable || !stepSensorSeen)) handleAccelMagnitude(event)
             }
             Sensor.TYPE_MAGNETIC_FIELD -> {
                 System.arraycopy(event.values, 0, lastMag, 0, 3)
@@ -226,7 +229,6 @@ class SensorFusionTracker(
         SensorManager.getOrientation(rotMat, orientation)
         val azimuthRad = orientation[0]
         val mapNorthRad = Math.toRadians(mapNorthDegrees.toDouble()).toFloat()
-        // Heading correto: azimute relativo ao norte do mapa
         headingRad = azimuthRad - mapNorthRad
         maybeDispatchHeadingOnly()
     }
@@ -252,6 +254,7 @@ class SensorFusionTracker(
         if (d >= headingMinDelta || (now - lastHeadingDispatchTime) >= headingMaxIntervalMs) {
             lastHeadingDispatch = headingRad
             lastHeadingDispatchTime = now
+            // Dispatch heading updates (does not move the user)
             onPosition(currX, currZ, headingRad)
         }
     }

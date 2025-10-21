@@ -226,6 +226,7 @@ class SensorFusionTracker(
         SensorManager.getOrientation(rotMat, orientation)
         val azimuthRad = orientation[0]
         val mapNorthRad = Math.toRadians(mapNorthDegrees.toDouble()).toFloat()
+        // Heading correto: azimute relativo ao norte do mapa
         headingRad = azimuthRad - mapNorthRad
         maybeDispatchHeadingOnly()
     }
@@ -238,6 +239,7 @@ class SensorFusionTracker(
             SensorManager.getOrientation(R, orientation)
             val azimuthRad = orientation[0]
             val mapNorthRad = Math.toRadians(mapNorthDegrees.toDouble()).toFloat()
+            // Heading correto: azimute relativo ao norte do mapa
             headingRad = azimuthRad - mapNorthRad
             maybeDispatchHeadingOnly()
         }

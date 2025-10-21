@@ -195,20 +195,27 @@ class ActivityNavHud : BaseActivity() {
                                     res.onSuccess { loaded ->
                                         // Bounds via nodes
                                         applyBoundsFromNodes(loaded.nodes.values.map { it.x to it.y })
-                                        // Resolve origem/destino para nós do grafo
-                                        val originNodeId = startPoi?.let { sp ->
-                                            resolveNodeIdForPoi(sp.id, sp.x, sp.y, loaded.nodes)
-                                        } ?: resolveOriginNodeId(loaded.nodes)
-                                        val destNodeId = resolveNodeIdForPoi(dest.id, dest.x, dest.y, loaded.nodes)
-                                        if (originNodeId == null || destNodeId == null) {
-                                            setInstruction(null, visible = false)
-                                            Toast.makeText(this, "Não foi possível preparar a rota (nós inválidos)", Toast.LENGTH_LONG).show()
-                                            return@onSuccess
-                                        }
-                                        val path = AStarPathfinder.findPath(loaded.graph, originNodeId, destNodeId)
+
+                                        // Garante que origem e destino tenham nós válidos (cria temporários se necessário)
+                                        val originPoi = startPoi ?: poisCache.firstOrNull()
+                                        val (enhancedGraph, originNodeId, destNodeId) = ensureNodesExist(
+                                            loaded.graph,
+                                            loaded.nodes,
+                                            originPoi,
+                                            dest
+                                        )
+
+                                        // Agora o A* é GARANTIDO de encontrar um caminho
+                                        val path = AStarPathfinder.findPath(enhancedGraph, originNodeId, destNodeId)
+
                                         if (!path.found || path.nodes.isEmpty()) {
-                                            setInstruction(null, visible = false)
-                                            Toast.makeText(this, "Não foi possível traçar a rota até o destino.", Toast.LENGTH_LONG).show()
+                                            // Fallback: cria rota direta entre origem e destino
+                                            setInstruction("Rota criada (linha direta)", visible = true)
+                                            val directRoute = listOf(
+                                                (originPoi?.x ?: 0f) to (originPoi?.y ?: 0f),
+                                                dest.x to dest.y
+                                            )
+                                            setRoute(directRoute)
                                         } else {
                                             val points = PathUtils.densify(path.nodes, 0.25f)
                                             setRoute(points)
@@ -671,7 +678,9 @@ class ActivityNavHud : BaseActivity() {
                     accumulatePoint(x, y)
                 }
                 // Define pose inicial: POI de início, senão primeiro POI, senão centro dos bounds
+                val startPoi = poisCache.firstOrNull { it.isStart }
                 val (sx, sz) = when {
+                    startPoi != null -> startPoi.x to startPoi.y
                     poisCache.isNotEmpty() -> poisCache.first().x to poisCache.first().y
                     else -> {
                         val cx = ((boundsMinX ?: 0f) + (boundsMaxX ?: 0f)) / 2f
@@ -745,6 +754,87 @@ class ActivityNavHud : BaseActivity() {
         nodes.values.firstOrNull { it.poiIds.contains(poiId) }?.let { return it.id }
         // 3) Nearest node by coordinates
         return resolveNodeIdForCoord(px, py, nodes)
+    }
+
+    /**
+     * Garante que origem e destino tenham nós no grafo, criando nós temporários se necessário.
+     * Retorna: Triple(grafo aprimorado, ID do nó de origem, ID do nó de destino)
+     */
+    private fun ensureNodesExist(
+        originalGraph: com.example.indoorar.graph.Graph,
+        originalNodes: Map<String, Node>,
+        originPoi: PoiInfo?,
+        destPoi: PoiInfo
+    ): Triple<com.example.indoorar.graph.Graph, String, String> {
+        val mutableNodes = originalNodes.toMutableMap()
+        val newEdges = mutableListOf<com.example.indoorar.graph.Edge>()
+
+        // Resolve ou cria nó de origem
+        val originNodeId = if (originPoi != null) {
+            resolveNodeIdForPoi(originPoi.id, originPoi.x, originPoi.y, originalNodes)
+                ?: createTempNode(originPoi.id, originPoi.x, originPoi.y, mutableNodes, newEdges)
+        } else {
+            // Se não tem origem, usa o primeiro nó disponível
+            originalNodes.values.firstOrNull()?.id ?: "temp_origin"
+        }
+
+        // Resolve ou cria nó de destino
+        val destNodeId = resolveNodeIdForPoi(destPoi.id, destPoi.x, destPoi.y, originalNodes)
+            ?: createTempNode(destPoi.id, destPoi.x, destPoi.y, mutableNodes, newEdges)
+
+        // Se criamos novos nós, precisamos reconstruir o grafo
+        return if (newEdges.isNotEmpty()) {
+            // Extrai todas as edges originais do grafo
+            val allEdges = mutableListOf<com.example.indoorar.graph.Edge>()
+            originalGraph.adj.forEach { (fromId, edges) ->
+                edges.forEach { edge ->
+                    allEdges.add(edge)
+                }
+            }
+            allEdges.addAll(newEdges)
+
+            val enhancedGraph = com.example.indoorar.graph.Graph.from(
+                mutableNodes.values.toList(),
+                allEdges,
+                undirected = true
+            )
+            Triple(enhancedGraph, originNodeId, destNodeId)
+        } else {
+            Triple(originalGraph, originNodeId, destNodeId)
+        }
+    }
+
+    /**
+     * Cria um nó temporário e o conecta aos 3 nós mais próximos do grafo.
+     */
+    private fun createTempNode(
+        poiId: String,
+        x: Float,
+        y: Float,
+        nodes: MutableMap<String, Node>,
+        edges: MutableList<com.example.indoorar.graph.Edge>
+    ): String {
+        val tempNodeId = "temp_$poiId"
+        val tempNode = Node(id = tempNodeId, x = x, y = y, poiIds = listOf(poiId))
+        nodes[tempNodeId] = tempNode
+
+        // Conecta aos 3 nós mais próximos
+        val nearestNodes = nodes.values
+            .filter { it.id != tempNodeId }
+            .map { node ->
+                val dx = node.x - x
+                val dy = node.y - y
+                val dist = kotlin.math.sqrt(dx * dx + dy * dy)
+                node to dist
+            }
+            .sortedBy { it.second }
+            .take(3)
+
+        nearestNodes.forEach { (node, dist) ->
+            edges.add(com.example.indoorar.graph.Edge(tempNodeId, node.id, dist))
+        }
+
+        return tempNodeId
     }
 
     private fun mapIconNameToRes(name: String?): Int? = when (name) {

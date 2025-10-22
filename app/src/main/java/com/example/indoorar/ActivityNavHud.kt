@@ -177,7 +177,10 @@ class ActivityNavHud : BaseActivity() {
                         Toast.makeText(this, "Mapa sem POIs suficientes", Toast.LENGTH_LONG).show()
                         return@addOnSuccessListener
                     }
-                    val labels = pois.map { p -> if (p.isStart) "${p.iconName ?: p.id} (início)" else p.id }.toTypedArray()
+                    val labels = pois.map { p ->
+                        val nome = p.iconName ?: p.id
+                        if (p.isStart) "$nome (início)" else nome
+                    }.toTypedArray()
                     AlertDialog.Builder(this)
                         .setTitle("Escolha o destino")
                         .setItems(labels) { _, which ->
@@ -197,7 +200,7 @@ class ActivityNavHud : BaseActivity() {
                                         val userX = lastUserX ?: initialX ?: 0f
                                         val userZ = lastUserZ ?: initialZ ?: 0f
 
-
+                                        
                                         // Cria PoiInfo temporário para representar a posição do usuário
                                         val userOrigin = PoiInfo(
                                             id = "user_current_position",
@@ -890,10 +893,6 @@ class ActivityNavHud : BaseActivity() {
         return resolveNodeIdForCoord(px, py, nodes)
     }
 
-    /**
-     * Garante que origem e destino tenham nós no grafo, criando nós temporários se necessário.
-     * Retorna: Triple(grafo aprimorado, ID do nó de origem, ID do nó de destino)
-     */
     private fun ensureNodesExist(
         originalGraph: com.example.indoorar.graph.Graph,
         originalNodes: Map<String, Node>,

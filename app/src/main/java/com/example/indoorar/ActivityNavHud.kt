@@ -196,11 +196,8 @@ class ActivityNavHud : BaseActivity() {
                                         // ORIGEM: Posição atual do usuário
                                         val userX = lastUserX ?: initialX ?: 0f
                                         val userZ = lastUserZ ?: initialZ ?: 0f
-                                        
-                                        // DEBUG: Mostra posição de origem
-                                        android.util.Log.d("ActivityNavHud", "Criando rota: Origem=(${userX}, ${userZ}), Destino=(${dest.x}, ${dest.y})")
-                                        Toast.makeText(this, "Origem: (${"%.1f".format(userX)}, ${"%.1f".format(userZ)})", Toast.LENGTH_SHORT).show()
-                                        
+
+
                                         // Cria PoiInfo temporário para representar a posição do usuário
                                         val userOrigin = PoiInfo(
                                             id = "user_current_position",
@@ -289,7 +286,7 @@ class ActivityNavHud : BaseActivity() {
         // Atualiza a posição do usuário
         updateUserPose(newX, newZ, 0f)
         
-        Toast.makeText(this, "Posição: (${"%.1f".format(newX)}, ${"%.1f".format(newZ)})", Toast.LENGTH_SHORT).show()
+        // Removido: Toast de posição durante movimento manual
     }
 
     override fun onStart() {

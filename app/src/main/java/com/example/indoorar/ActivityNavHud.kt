@@ -197,10 +197,7 @@ class ActivityNavHud : BaseActivity() {
                                         val userX = lastUserX ?: initialX ?: 0f
                                         val userZ = lastUserZ ?: initialZ ?: 0f
                                         
-                                        // DEBUG: Mostra posição de origem
-                                        android.util.Log.d("ActivityNavHud", "Criando rota: Origem=(${userX}, ${userZ}), Destino=(${dest.x}, ${dest.y})")
-                                        Toast.makeText(this, "Origem: (${"%.1f".format(userX)}, ${"%.1f".format(userZ)})", Toast.LENGTH_SHORT).show()
-                                        
+
                                         // Cria PoiInfo temporário para representar a posição do usuário
                                         val userOrigin = PoiInfo(
                                             id = "user_current_position",
@@ -288,8 +285,6 @@ class ActivityNavHud : BaseActivity() {
         
         // Atualiza a posição do usuário
         updateUserPose(newX, newZ, 0f)
-        
-        Toast.makeText(this, "Posição: (${"%.1f".format(newX)}, ${"%.1f".format(newZ)})", Toast.LENGTH_SHORT).show()
     }
 
     override fun onStart() {
@@ -505,55 +500,84 @@ class ActivityNavHud : BaseActivity() {
         updateDistanceLabel(x, z)
     }
 
+    // --- NOVO: projeção do usuário na rota ---
+    private data class RouteProjection(
+        val segIndex: Int,
+        val t: Float,
+        val px: Float,
+        val pz: Float,
+        val along: Double,
+        val distToUser: Double
+    )
+
+    private fun computeProjectionOnRoute(ux: Float, uz: Float): RouteProjection? {
+        if (routePoints.size < 2) return null
+        var best: RouteProjection? = null
+        var acc = 0.0
+        for (i in 0 until routePoints.size - 1) {
+            val (ax, az) = routePoints[i]
+            val (bx, bz) = routePoints[i + 1]
+            val vx = bx - ax; val vz = bz - az
+            val wx = ux - ax; val wz = uz - az
+            val len2 = (vx * vx + vz * vz)
+            val segLen = hypot(vx.toDouble(), vz.toDouble())
+            val t = if (len2 <= 1e-6f) 0f else ((wx * vx + wz * vz) / len2).coerceIn(0f, 1f)
+            val px = ax + vx * t
+            val pz = az + vz * t
+            val d = hypot((px - ux).toDouble(), (pz - uz).toDouble())
+            val along = acc + segLen * t
+            if (best == null || d < best!!.distToUser) {
+                best = RouteProjection(i, t, px, pz, along, d)
+            }
+            acc += segLen
+        }
+        return best
+    }
+
     /**
-     * Remove pontos da rota que o usuário já passou, fazendo a rota "desaparecer" gradualmente.
+     * Remove pontos da rota que o usuário já passou, encurtando a linha a partir da projeção atual.
      */
     private fun prunePassedWaypoints(ux: Float, uz: Float) {
         if (routePoints.size <= 1) return
 
-        val passingThreshold = 1.5f // metros - considera que passou pelo waypoint
-        val arrivalThreshold = 2.0f // metros - distância para considerar que chegou ao destino final
+        val arrivalThresholdM = 1.8
+        val keepTailBehindM = 0.6
 
-        // Remove waypoints que já passou (exceto o último, que é o destino)
-        var removedAny = false
-        while (routePoints.size > 1) {
-            val firstPoint = routePoints.first()
-            val dx = firstPoint.first - ux
-            val dz = firstPoint.second - uz
-            val dist = kotlin.math.sqrt(dx * dx + dz * dz)
+        if (cumulativeDistances.size != routePoints.size) rebuildCumulativeDistances()
+        val initialProj = computeProjectionOnRoute(ux, uz) ?: return
 
-            if (dist <= passingThreshold) {
-                routePoints.removeAt(0)
-                removedAny = true
-            } else {
-                break
+        val remaining = (totalDistance - initialProj.along).coerceAtLeast(0.0)
+        if (remaining <= arrivalThresholdM) {
+            lastDirectionLabel = "chegou"
+            setInstruction("Você chegou ao destino!", visible = true)
+            tvDistancia.text = getString(R.string.distance_arrived)
+            if (arrowView.isVisible) {
+                arrowView.animate().alpha(0f).setDuration(150).withEndAction { arrowView.visibility = View.GONE }.start()
             }
+            arrowView.postDelayed({ clearRoute() }, 1500)
+            return
         }
 
-        // Se removeu algum waypoint, atualiza a rota visual
-        if (removedAny) {
-            minimap.setRoute(routePoints)
+        // Remove pontos antes do rastro permitido atrás do usuário
+        val cutBefore = (initialProj.along - keepTailBehindM).coerceAtLeast(0.0)
+        var keepFromIndex = 0
+        for (i in 0 until cumulativeDistances.size) {
+            if (cumulativeDistances[i] + 1e-6 < cutBefore) keepFromIndex = i + 1 else break
+        }
+        if (keepFromIndex > 0) {
+            repeat(keepFromIndex) { if (routePoints.size > 1) routePoints.removeAt(0) }
             rebuildCumulativeDistances()
         }
 
-        // Verifica se chegou ao destino final
-        if (routePoints.size == 1) {
-            val destPoint = routePoints.first()
-            val dx = destPoint.first - ux
-            val dz = destPoint.second - uz
-            val distToDestination = kotlin.math.sqrt(dx * dx + dz * dz)
-
-            if (distToDestination <= arrivalThreshold) {
-                // Chegou ao destino!
-                lastDirectionLabel = "chegou"
-                setInstruction("Você chegou ao destino!", visible = true)
-                tvDistancia.text = getString(R.string.distance_arrived)
-                // Limpa a rota após 3 segundos
-                arrowView.postDelayed({
-                    clearRoute()
-                }, 3000)
+        // Recalcula a projeção para a rota atual e ajusta o primeiro ponto para começar exatamente da projeção
+        computeProjectionOnRoute(ux, uz)?.let { proj2 ->
+            if (routePoints.size >= 2) {
+                routePoints[0] = proj2.px to proj2.pz
             }
         }
+        // Empurra sempre a rota atualizada para o minimapa
+        minimap.setRoute(routePoints)
+        rebuildCumulativeDistances()
     }
 
     // ---- Distância restante ----
@@ -571,51 +595,26 @@ class ActivityNavHud : BaseActivity() {
     }
 
     private fun updateDistanceLabelForLastPose() {
-        // Não armazenamos a última pose explicitamente; distância será atualizada no próximo updateUserPose
-        if (routePoints.isEmpty()) {
-            tvDistancia.text = getString(R.string.distance_placeholder)
-        } else if (routePoints.size == 1) {
-            tvDistancia.text = getString(R.string.distance_arrived)
+        when {
+            routePoints.isEmpty() -> tvDistancia.text = getString(R.string.distance_placeholder)
+            routePoints.size == 1 -> tvDistancia.text = getString(R.string.distance_arrived)
+            else -> {
+                val ux = lastUserX
+                val uz = lastUserZ
+                if (ux != null && uz != null) updateDistanceLabel(ux, uz)
+                else tvDistancia.text = getString(R.string.distance_placeholder)
+            }
         }
     }
 
     private fun updateDistanceLabel(ux: Float, uz: Float) {
         if (routePoints.isEmpty()) { tvDistancia.text = getString(R.string.distance_placeholder); return }
         if (routePoints.size == 1) { tvDistancia.text = getString(R.string.distance_arrived); return }
-        if (cumulativeDistances.size != routePoints.size) {
-            tvDistancia.text = getString(R.string.distance_placeholder); return
-        }
-        val distAlong = distanceAlongRoute(ux, uz)
-        val remaining = (totalDistance - distAlong).coerceAtLeast(0.0)
-        tvDistancia.text = if (remaining < 1.0) {
-            getString(R.string.distance_arrived)
-        } else {
-            getString(R.string.distance_meters, remaining)
-        }
-    }
-
-    private fun distanceAlongRoute(ux: Float, uz: Float): Double {
-        if (routePoints.size < 2) return 0.0
-        var bestDist = Double.MAX_VALUE
-        var bestAlong = 0.0
-        var acc = 0.0
-        for (i in 0 until routePoints.size - 1) {
-            val (ax, az) = routePoints[i]
-            val (bx, bz) = routePoints[i + 1]
-            val vx = bx - ax; val vz = bz - az
-            val wx = ux - ax; val wz = uz - az
-            val len2 = (vx * vx + vz * vz)
-            val t = if (len2 <= 1e-6f) 0f else ((wx * vx + wz * vz) / len2).coerceIn(0f, 1f)
-            val px = ax + vx * t
-            val pz = az + vz * t
-            val d = hypot((px - ux).toDouble(), (pz - uz).toDouble())
-            if (d < bestDist) {
-                bestDist = d
-                bestAlong = acc + hypot(vx.toDouble(), vz.toDouble()) * t
-            }
-            acc += hypot(vx.toDouble(), vz.toDouble())
-        }
-        return bestAlong
+        if (cumulativeDistances.size != routePoints.size) { tvDistancia.text = getString(R.string.distance_placeholder); return }
+        val proj = computeProjectionOnRoute(ux, uz)
+        val along = proj?.along ?: 0.0
+        val remaining = (totalDistance - along).coerceAtLeast(0.0)
+        tvDistancia.text = if (remaining < 1.0) getString(R.string.distance_arrived) else getString(R.string.distance_meters, remaining)
     }
 
     // --- Guidance logic: decide arrow/instruction from route + pose ---

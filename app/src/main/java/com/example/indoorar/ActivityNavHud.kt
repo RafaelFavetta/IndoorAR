@@ -443,6 +443,8 @@ class ActivityNavHud : BaseActivity() {
     @Keep
     @Suppress("unused")
     fun setRoute(points: List<Pair<Float, Float>>) {
+        // Reinicia estado de chegada quando definimos uma nova rota
+        hasArrived = false
         routePoints.clear()
         routePoints.addAll(points)
         minimap.setRoute(points)
@@ -450,15 +452,17 @@ class ActivityNavHud : BaseActivity() {
         // Se rota tem 1 ponto, já estamos no destino
         if (routePoints.size == 1) {
             lastDirectionLabel = "chegou"
+            hasArrived = true
             setInstruction("Você já está no destino", visible = true)
             tvDistancia.text = getString(R.string.distance_arrived)
+            showArrivalAnimation()
             if (arrowView.isVisible) {
                 arrowView.animate().alpha(0f).setDuration(150).withEndAction { arrowView.visibility = View.GONE }.start()
             }
         } else if (routePoints.size >= 2) {
             setInstruction("Rota definida", visible = true)
             updateDistanceLabelForLastPose()
-            if (arrowView.visibility != View.VISIBLE) {
+            if (arrowView.visibility != View.VISIBLE && !hasArrived) {
                 arrowView.alpha = 0f
                 arrowView.visibility = View.VISIBLE
                 arrowView.animate().alpha(1f).setDuration(150).start()
@@ -480,6 +484,7 @@ class ActivityNavHud : BaseActivity() {
         cumulativeDistances.clear()
         totalDistance = 0.0
         lastDirectionLabel = null
+        hasArrived = false
         setInstruction(null, visible = false)
         tvDistancia.text = getString(R.string.distance_placeholder)
         if (arrowView.isVisible) {
@@ -526,7 +531,8 @@ class ActivityNavHud : BaseActivity() {
             val pz = az + vz * t
             val d = hypot((px - ux).toDouble(), (pz - uz).toDouble())
             val along = acc + segLen * t
-            if (best == null || d < best!!.distToUser) {
+            val isBetter = best?.distToUser?.let { d < it } ?: true
+            if (isBetter) {
                 best = RouteProjection(i, t, px, pz, along, d)
             }
             acc += segLen
@@ -549,11 +555,14 @@ class ActivityNavHud : BaseActivity() {
         val remaining = (totalDistance - initialProj.along).coerceAtLeast(0.0)
         if (remaining <= arrivalThresholdM) {
             lastDirectionLabel = "chegou"
+            hasArrived = true
             setInstruction("Você chegou ao destino!", visible = true)
             tvDistancia.text = getString(R.string.distance_arrived)
+            showArrivalAnimation()
             if (arrowView.isVisible) {
                 arrowView.animate().alpha(0f).setDuration(150).withEndAction { arrowView.visibility = View.GONE }.start()
             }
+            // Mantemos a rota por um curto período para feedback visual no minimapa, mas garantimos que a seta não reapareça
             arrowView.postDelayed({ clearRoute() }, 1500)
             return
         }
@@ -619,6 +628,13 @@ class ActivityNavHud : BaseActivity() {
 
     // --- Guidance logic: decide arrow/instruction from route + pose ---
     private fun updateGuidanceFromPose(x: Float, z: Float, headingRad: Float) {
+        // Se já marcamos chegada, não reexibir setas
+        if (hasArrived) {
+            if (arrowView.isVisible) {
+                arrowView.animate().alpha(0f).setDuration(150).withEndAction { arrowView.visibility = View.GONE }.start()
+            }
+            return
+        }
         if (routePoints.isEmpty()) {
             // No active route: hide arrow
             if (arrowView.isVisible) {
@@ -638,7 +654,7 @@ class ActivityNavHud : BaseActivity() {
             return
         }
         // Ensure arrow is visible when we have an active multi-point route
-        if (arrowView.visibility != View.VISIBLE) {
+        if (arrowView.visibility != View.VISIBLE && !hasArrived) {
             arrowView.alpha = 0f
             arrowView.visibility = View.VISIBLE
             arrowView.animate().alpha(1f).setDuration(150).start()
@@ -737,6 +753,8 @@ class ActivityNavHud : BaseActivity() {
     private var initialZ: Float? = null
     private var lastUserX: Float? = null
     private var lastUserZ: Float? = null
+    // Controla se já marcamos o estado de chegada (para não reexibir setas)
+    private var hasArrived: Boolean = false
 
     private fun showDiagDialog(title: String, message: String) {
         try {
@@ -747,6 +765,41 @@ class ActivityNavHud : BaseActivity() {
                 .show()
         } catch (_: Exception) {
             Toast.makeText(this, "$title: $message", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // Pequena animação de "chegada" para dar feedback visual
+    private fun showArrivalAnimation() {
+        // Garante o texto visível e com mensagem
+        if (instructionText.visibility != View.VISIBLE) {
+            instructionText.alpha = 0f
+            instructionText.visibility = View.VISIBLE
+        }
+        instructionText.animate().alpha(1f).setDuration(200).start()
+        // Efeito de "pulso" no texto
+        instructionText.scaleX = 0.9f
+        instructionText.scaleY = 0.9f
+        instructionText.animate()
+            .scaleX(1.05f)
+            .scaleY(1.05f)
+            .setDuration(220)
+            .withEndAction {
+                instructionText.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(180)
+                    .start()
+            }
+            .start()
+        // Some com a seta suavemente, caso ainda visível
+        if (arrowView.isVisible) {
+            arrowView.animate()
+                .alpha(0f)
+                .scaleX(0.95f)
+                .scaleY(0.95f)
+                .setDuration(180)
+                .withEndAction { arrowView.visibility = View.GONE }
+                .start()
         }
     }
 
@@ -922,7 +975,7 @@ class ActivityNavHud : BaseActivity() {
         return if (newEdges.isNotEmpty()) {
             // Extrai todas as edges originais do grafo
             val allEdges = mutableListOf<com.example.indoorar.graph.Edge>()
-            originalGraph.adj.forEach { (fromId, edges) ->
+            originalGraph.adj.forEach { (_, edges) ->
                 edges.forEach { edge ->
                     allEdges.add(edge)
                 }

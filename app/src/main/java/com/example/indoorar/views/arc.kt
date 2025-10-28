@@ -1,4 +1,4 @@
-package com.example.indoorar
+package com.example.indoorar.views
 
 import android.content.Context
 import android.graphics.Canvas
@@ -6,6 +6,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.graphics.toColorInt
 
 class ArcView @JvmOverloads constructor(
     context: Context,
@@ -14,15 +15,18 @@ class ArcView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private val paint = Paint().apply {
-        color = android.graphics.Color.parseColor("#32357A")
+        color = "#32357A".toColorInt()
         style = Paint.Style.FILL
         isAntiAlias = true
     }
 
+    // Reuse the Path to avoid allocations during onDraw
+    private val path = Path()
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        val path = Path()
+        path.reset()
         val width = width.toFloat()
         val height = height.toFloat()
 
@@ -36,6 +40,7 @@ class ArcView @JvmOverloads constructor(
         path.lineTo(width, 0f)                // canto superior direito
         path.close()
 
+        // Usa o paint local desta view
         canvas.drawPath(path, paint)
     }
 }

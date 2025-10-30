@@ -192,7 +192,8 @@ class ActivityMapasExistentes : BaseActivity() {
     private fun saveQrAsPng(mapId: String): Boolean {
         val bmp = generateQrBitmap(mapId) ?: return false
         return try {
-            val filename = "QR_${mapId}_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.png"
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val filename = "QR_${mapId}_${timestamp}.png"
             val values = ContentValues().apply {
                 put(MediaStore.Images.Media.DISPLAY_NAME, filename)
                 put(MediaStore.Images.Media.MIME_TYPE, "image/png")
@@ -213,7 +214,8 @@ class ActivityMapasExistentes : BaseActivity() {
     private fun saveQrAsPdf(mapId: String): Boolean {
         return try {
             val bmp = generateQrBitmap(mapId, 1024) ?: return false
-            val filename = "QR_${mapId}_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.pdf"
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val filename = "QR_${mapId}_${timestamp}.pdf"
             val values = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, filename)
                 put(MediaStore.Downloads.MIME_TYPE, "application/pdf")

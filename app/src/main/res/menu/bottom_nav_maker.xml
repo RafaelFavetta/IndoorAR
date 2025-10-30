@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_home"
+        android:title="@string/inicio"
+        android:icon="@drawable/ic_home" />
+    <item
+        android:id="@+id/action_criar"
+        android:title="@string/criar"
+        android:icon="@drawable/stylus_note_azul" />
+    <item
+        android:id="@+id/action_estatisticas"
+        android:title="@string/estatisticas"
+        android:icon="@drawable/bar_chart" />
+    <item
+        android:id="@+id/action_config"
+        android:title="@string/configuracoes"
+        android:icon="@drawable/ic_settings_branco" />
+</menu>
+

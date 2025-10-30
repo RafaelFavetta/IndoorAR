@@ -4,7 +4,6 @@ import android.content.ContentValues
 import android.content.Intent
 import android.graphics.*
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.ImageView
@@ -14,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
@@ -30,7 +30,6 @@ import java.util.*
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
-import androidx.core.view.isVisible
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 import android.widget.LinearLayout
@@ -63,17 +62,23 @@ class ActivityHomeComum : BaseActivity() {
             insets
         }
 
-        findViewById<ImageView>(R.id.btnEscanear)?.setOnClickListener {
-            startActivity(Intent(this, ActivityScanQR::class.java))
+        // Bottom navigation
+        findViewById<BottomNavigationView>(R.id.bottomNavComum)?.apply {
+            setOnItemSelectedListener { item ->
+                when (item.itemId) {
+                    R.id.action_home -> { startActivity(Intent(this@ActivityHomeComum, ActivityHomeComum::class.java)); true }
+                    R.id.action_scan -> { startActivity(Intent(this@ActivityHomeComum, ActivityScanQR::class.java)); true }
+                    R.id.action_favoritos -> { startActivity(Intent(this@ActivityHomeComum, ActivityFavoritos::class.java)); true }
+                    R.id.action_config -> { startActivity(Intent(this@ActivityHomeComum, ActivityPerfil::class.java)); true }
+                    else -> false
+                }
+            }
+            selectedItemId = R.id.action_home
         }
+
+        // Ações de header
         findViewById<ImageView>(R.id.btnPerfil)?.setOnClickListener {
             startActivity(Intent(this, ActivityPerfil::class.java))
-        }
-        findViewById<ImageView>(R.id.btnMapasExistentes)?.setOnClickListener {
-            startActivity(Intent(this, ActivityMapasExistentes::class.java))
-        }
-        findViewById<androidx.cardview.widget.CardView>(R.id.cardFavoritos)?.setOnClickListener {
-            startActivity(Intent(this, ActivityFavoritos::class.java))
         }
 
         // Lista de recentes (carrossel horizontal paginado)
@@ -315,7 +320,8 @@ class ActivityHomeComum : BaseActivity() {
     private fun saveQrAsPng(mapId: String): Boolean {
         val bmp = generateQrBitmap(mapId) ?: return false
         return try {
-            val filename = "QR_${mapId}_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.png"
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val filename = "QR_${mapId}_${timestamp}.png"
             val values = ContentValues().apply {
                 put(MediaStore.Images.Media.DISPLAY_NAME, filename)
                 put(MediaStore.Images.Media.MIME_TYPE, "image/png")
@@ -336,7 +342,8 @@ class ActivityHomeComum : BaseActivity() {
     private fun saveQrAsPdf(mapId: String): Boolean {
         return try {
             val bmp = generateQrBitmap(mapId, 1024) ?: return false
-            val filename = "QR_${mapId}_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.pdf"
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val filename = "QR_${mapId}_${timestamp}.pdf"
             val values = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, filename)
                 put(MediaStore.Downloads.MIME_TYPE, "application/pdf")

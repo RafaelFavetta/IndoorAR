@@ -12,7 +12,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
-import com.example.indoorar.ui.ActivityEditor
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
@@ -21,6 +20,7 @@ import android.widget.LinearLayout
 import androidx.core.graphics.set
 import androidx.core.graphics.scale
 import androidx.core.graphics.createBitmap
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class ActivityHomeMaker : BaseActivity() {
 
@@ -47,17 +47,25 @@ class ActivityHomeMaker : BaseActivity() {
         }
 
         // Texto de boas-vindas
-        findViewById<TextView>(R.id.txtBemVindo).text = "BEM-VINDO!"
+        findViewById<TextView>(R.id.txtBemVindo).text = getString(R.string.bem_vindo)
 
         // Botões principais
-        findViewById<ImageView>(R.id.btnCriarMapa).setOnClickListener {
-            startActivity(Intent(this, ActivityEditor::class.java))
-        }
-        findViewById<ImageView>(R.id.btnMeusMapas).setOnClickListener {
-            startActivity(Intent(this, ActivityMeusMapas::class.java))
-        }
         findViewById<ImageView>(R.id.btnPerfil).setOnClickListener {
             startActivity(Intent(this, ActivityPerfil::class.java))
+        }
+
+        // Bottom navigation
+        findViewById<BottomNavigationView>(R.id.bottomNavMaker)?.apply {
+            setOnItemSelectedListener { item ->
+                when (item.itemId) {
+                    R.id.action_home -> { startActivity(Intent(this@ActivityHomeMaker, ActivityHomeMaker::class.java)); true }
+                    R.id.action_criar -> { startActivity(Intent(this@ActivityHomeMaker, com.example.indoorar.ui.ActivityEditor::class.java)); true }
+                    R.id.action_estatisticas -> { startActivity(Intent(this@ActivityHomeMaker, ActivityEstatisticas::class.java)); true }
+                    R.id.action_config -> { startActivity(Intent(this@ActivityHomeMaker, ActivityPerfil::class.java)); true }
+                    else -> false
+                }
+            }
+            selectedItemId = R.id.action_home
         }
 
         // Views de recentes (carrossel horizontal paginado)

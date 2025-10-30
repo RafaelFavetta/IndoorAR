@@ -93,6 +93,9 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.IndoorAR" />
+        <activity
+            android:name=".ActivityEstatisticas"
+            android:exported="false" />
 
         <!-- Provider para compartilhar o QR Code -->
         <provider

@@ -11,8 +11,8 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/header"
-        android:layout_width="match_parent"
-        android:layout_height="436dp"
+        android:layout_width="417dp"
+        android:layout_height="222dp"
         android:background="@drawable/bg_header_arco"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -31,8 +31,8 @@
 
         <ImageView
             android:id="@+id/btnPerfil"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="24dp"
+            android:layout_height="28dp"
             android:layout_marginTop="20dp"
             android:layout_marginEnd="20dp"
             android:background="@drawable/ripple_clickable"
@@ -70,198 +70,21 @@
             android:textSize="20sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/txtBemVindo" />
-
-        <View
-            android:id="@+id/backgroundCards"
-            android:layout_width="0dp"
-            android:layout_height="75dp"
-            android:background="#32357A"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@id/layoutCards" />
-
-        <LinearLayout
-            android:id="@+id/layoutCards"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="96dp"
-            android:layout_marginBottom="64dp"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingStart="24dp"
-            android:paddingEnd="24dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/txtSubtitulo"
-            app:layout_constraintVertical_bias="1.0">
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="0dp"
-                android:layout_height="150dp"
-                android:layout_weight="1"
-                android:layout_margin="8dp"
-                android:foreground="?attr/selectableItemBackground"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="16dp"
-                android:background="@drawable/bg_card_3d">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
-
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:layout_width="72dp"
-                        android:layout_height="72dp"
-                        android:layout_gravity="center"
-                        android:layout_margin="16dp"
-                        android:background="@drawable/background_oval_2">
-
-                        <ImageView
-                            android:id="@+id/btnMeusMapas"
-                            android:layout_width="56dp"
-                            android:layout_height="56dp"
-                            android:background="@drawable/ripple_clickable"
-                            android:clickable="true"
-                            android:contentDescription="@string/meus_mapas"
-                            android:focusable="true"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:srcCompat="@drawable/ic_meumapa"
-                            app:tint="#FFFFFF" />
-                    </androidx.constraintlayout.widget.ConstraintLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/inter"
-                        android:text="@string/meus_mapas"
-                        android:textAlignment="center"
-                        android:textColor="@color/colorPrimaryDark"
-                        android:textSize="16sp"
-                        android:textStyle="normal" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="0dp"
-                android:layout_height="150dp"
-                android:layout_weight="1"
-                android:layout_margin="8dp"
-                android:foreground="?attr/selectableItemBackground"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="16dp"
-                android:background="@drawable/bg_card_3d">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
-
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:layout_width="72dp"
-                        android:layout_height="72dp"
-                        android:layout_gravity="center"
-                        android:layout_margin="16dp"
-                        android:background="@drawable/background_oval_2">
-
-                        <ImageView
-                            android:id="@+id/btnCriarMapa"
-                            android:layout_width="56dp"
-                            android:layout_height="56dp"
-                            android:background="@drawable/ripple_clickable"
-                            android:clickable="true"
-                            android:contentDescription="@string/criar_novo_mapa"
-                            android:focusable="true"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:srcCompat="@drawable/stylus_note_azul"
-                            app:tint="#FFFFFF" />
-                    </androidx.constraintlayout.widget.ConstraintLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/inter"
-                        android:text="@string/criar"
-                        android:textAlignment="center"
-                        android:textColor="@color/colorPrimaryDark"
-                        android:textSize="16sp"
-                        android:textStyle="normal" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="0dp"
-                android:layout_height="150dp"
-                android:layout_weight="1"
-                android:layout_margin="8dp"
-                android:foreground="?attr/selectableItemBackground"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="16dp"
-                android:background="@drawable/bg_card_3d">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
-
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:layout_width="72dp"
-                        android:layout_height="72dp"
-                        android:layout_gravity="center"
-                        android:layout_margin="16dp"
-                        android:background="@drawable/background_oval_2">
-
-                        <ImageView
-                            android:id="@+id/btnEstatisticas"
-                            android:layout_width="56dp"
-                            android:layout_height="56dp"
-                            android:background="@drawable/ripple_clickable"
-                            android:clickable="true"
-                            android:contentDescription="@string/estatisticas"
-                            android:focusable="true"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:srcCompat="@drawable/bar_chart"
-                            app:tint="#FFFFFF" />
-                    </androidx.constraintlayout.widget.ConstraintLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/inter"
-                        android:text="@string/estatisticas"
-                        android:textAlignment="center"
-                        android:textColor="@color/colorPrimaryDark"
-                        android:textSize="16sp"
-                        android:textStyle="normal" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-        </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
-
 
     <TextView
         android:id="@+id/txtMapasFavoritos"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
+        android:layout_marginTop="12dp"
         android:fontFamily="@font/inter"
         android:text="@string/adicionados_recentemente"
         android:textAllCaps="false"
         android:textAlignment="center"
         android:textColor="#32357A"
         android:textSize="18sp"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/header" />
 
     <ProgressBar
@@ -278,13 +101,14 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerRecentes"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_height="0dp"
         android:layout_marginStart="24dp"
+        android:layout_marginTop="12dp"
         android:layout_marginEnd="16dp"
-        android:clipToPadding="false"
         android:clipChildren="false"
-        android:paddingBottom="24dp"
+        android:clipToPadding="false"
+        android:paddingBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@id/indicatorsRecentes"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/txtMapasFavoritos"
@@ -298,7 +122,22 @@
         android:gravity="center"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavMaker"
         app:layout_constraintTop_toBottomOf="@id/recyclerRecentes"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavMaker"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        app:itemIconTint="@color/colorPrimaryDark"
+        app:itemTextColor="@color/colorPrimaryDark"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav_maker"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

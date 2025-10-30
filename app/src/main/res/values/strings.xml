@@ -38,4 +38,12 @@
     <string name="erro_nao_foi_possivel_carregar_mapas">Não foi possível carregar os mapas.</string>
     <string name="rotation_degrees">%1$d°</string>
     <string name="default_web_client_id">910636237768-vk3k9jnbckivtmv353sq8h0fb37h0dv9.apps.googleusercontent.com</string>
+    <string name="favoritos">Favoritos</string>
+    <string name="scan">Escanear</string>
+    <string name="scan_qr">Escanear QR Code</string>
+    <string name="mapas">Mapas</string>
+    <string name="config">Configurações</string>
+    <string name="o_que_vamos_explorar">O que vamos explorar?</string>
+    <string name="inicio">Início</string>
+    <string name="perfil">Perfil</string>
 </resources>

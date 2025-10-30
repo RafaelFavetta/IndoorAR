@@ -1,14 +1,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_home"
-        android:title="Home"
-        android:icon="@android:drawable/ic_menu_camera" />
+        android:title="@string/inicio"
+        android:icon="@drawable/ic_home" />
     <item
         android:id="@+id/nav_qr"
-        android:title="QR"
+        android:title="@string/scan_qr"
         android:icon="@android:drawable/ic_menu_search" />
     <item
         android:id="@+id/nav_profile"
-        android:title="Perfil"
+        android:title="@string/perfil"
         android:icon="@android:drawable/ic_menu_myplaces" />
 </menu>

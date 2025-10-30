@@ -3,4 +3,5 @@
     <color name="colorPrimary">#FDFDFD</color> <!-- Cor principal -->
     <color name="colorPrimaryDark">#2C458B</color> <!-- Cor secundária para a parte mais escura -->
     <color name="colorOnPrimary">#FDFDFD</color> <!-- Branco principal -->
+    <color name="white">#FFFFFF</color>
 </resources>

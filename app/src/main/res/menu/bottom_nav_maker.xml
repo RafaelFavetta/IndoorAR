@@ -15,6 +15,6 @@
     <item
         android:id="@+id/action_config"
         android:title="@string/configuracoes"
-        android:icon="@drawable/ic_settings_branco" />
+        android:icon="@drawable/ic_settings_azul" />
 </menu>
 

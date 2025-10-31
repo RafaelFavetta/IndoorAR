@@ -11,10 +11,10 @@
     <item
         android:id="@+id/action_favoritos"
         android:title="@string/favoritos"
-        android:icon="@drawable/hearthome" />
+        android:icon="@drawable/ic_favoritos" />
     <item
         android:id="@+id/action_config"
         android:title="@string/configuracoes"
-        android:icon="@drawable/ic_settings_branco" />
+        android:icon="@drawable/ic_settings_azul" />
 </menu>
 

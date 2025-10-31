@@ -62,9 +62,13 @@ class ActivityHomeComum : BaseActivity() {
             insets
         }
 
-        // Bottom navigation
+        // Navbar
         findViewById<BottomNavigationView>(R.id.bottomNavComum)?.apply {
+            selectedItemId = R.id.action_home
+
             setOnItemSelectedListener { item ->
+                if (this.selectedItemId == item.itemId) return@setOnItemSelectedListener true
+
                 when (item.itemId) {
                     R.id.action_home -> { startActivity(Intent(this@ActivityHomeComum, ActivityHomeComum::class.java)); true }
                     R.id.action_scan -> { startActivity(Intent(this@ActivityHomeComum, ActivityScanQR::class.java)); true }
@@ -73,7 +77,6 @@ class ActivityHomeComum : BaseActivity() {
                     else -> false
                 }
             }
-            selectedItemId = R.id.action_home
         }
 
         // Ações de header

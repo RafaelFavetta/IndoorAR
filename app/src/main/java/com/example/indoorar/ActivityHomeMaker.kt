@@ -54,9 +54,13 @@ class ActivityHomeMaker : BaseActivity() {
             startActivity(Intent(this, ActivityPerfil::class.java))
         }
 
-        // Bottom navigation
+        // Navbar
         findViewById<BottomNavigationView>(R.id.bottomNavMaker)?.apply {
+            selectedItemId = R.id.action_home
+
             setOnItemSelectedListener { item ->
+                if (this.selectedItemId == item.itemId) return@setOnItemSelectedListener true
+
                 when (item.itemId) {
                     R.id.action_home -> { startActivity(Intent(this@ActivityHomeMaker, ActivityHomeMaker::class.java)); true }
                     R.id.action_criar -> { startActivity(Intent(this@ActivityHomeMaker, com.example.indoorar.ui.ActivityEditor::class.java)); true }
@@ -65,7 +69,6 @@ class ActivityHomeMaker : BaseActivity() {
                     else -> false
                 }
             }
-            selectedItemId = R.id.action_home
         }
 
         // Views de recentes (carrossel horizontal paginado)

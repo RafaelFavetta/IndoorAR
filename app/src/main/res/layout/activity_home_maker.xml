@@ -22,25 +22,12 @@
             android:id="@+id/logo"
             android:layout_width="36dp"
             android:layout_height="46dp"
-            android:layout_marginStart="20dp"
-            android:layout_marginTop="20dp"
+            android:layout_marginStart="352dp"
+            android:layout_marginTop="16dp"
             android:contentDescription="@string/logo"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/logo_branca" />
-
-        <ImageView
-            android:id="@+id/btnPerfil"
-            android:layout_width="24dp"
-            android:layout_height="28dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginEnd="20dp"
-            android:background="@drawable/ripple_clickable"
-            android:contentDescription="@string/configuracoes"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_settings_branco"
-            app:tint="@color/colorPrimary" />
 
         <TextView
             android:id="@+id/txtBemVindo"

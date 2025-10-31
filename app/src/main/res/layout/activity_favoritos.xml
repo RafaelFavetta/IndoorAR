@@ -17,20 +17,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <ImageButton
-                android:id="@+id/btnVoltar"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="20dp"
-                android:background="@android:color/transparent"
-                android:contentDescription="Voltar"
-                android:scaleType="centerInside"
-                android:src="@drawable/ic_voltar_azul"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_scrollFlags="scroll|enterAlways" />
-
             <ImageView
                 android:id="@+id/logoTopo"
                 android:layout_width="40dp"
@@ -61,7 +47,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/btnVoltar" />
+                app:layout_constraintTop_toBottomOf="@id/logoTopo" />
 
             <TextView
                 android:id="@+id/txtSubFavoritos"
@@ -89,13 +75,24 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="8dp"
+        android:layout_marginBottom="72dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
         android:clipToPadding="false"
         android:clipChildren="false"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingBottom="24dp"
-        android:scrollbars="vertical"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+        android:scrollbars="vertical" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavComum"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@android:color/white"
+        app:itemIconTint="@color/colorPrimaryDark"
+        app:itemTextColor="@color/colorPrimaryDark"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav_comum" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
-

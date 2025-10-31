@@ -8,19 +8,6 @@
     android:layout_height="match_parent"
     android:background="@color/colorPrimary">
 
-    <ImageButton
-        android:id="@+id/btnVoltar"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="20dp"
-        android:background="@android:color/transparent"
-        android:contentDescription="Voltar"
-        android:scaleType="centerInside"
-        android:src="@drawable/ic_voltar_azul"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <ImageView
         android:id="@+id/logoTopo"
         android:layout_width="40dp"
@@ -50,7 +37,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnVoltar" />
+        app:layout_constraintTop_toBottomOf="@id/logoTopo" />
 
     <TextView
         android:id="@+id/txtSubScanQR"
@@ -91,7 +78,7 @@
         android:layout_width="189dp"
         android:layout_height="61dp"
         android:layout_marginStart="24dp"
-        android:layout_marginTop="52dp"
+        android:layout_marginTop="25dp"
         android:layout_marginEnd="24dp"
         android:background="@drawable/btn_arredondado"
         android:backgroundTint="#32357A"
@@ -100,9 +87,23 @@
         android:textAllCaps="true"
         android:textColor="@android:color/white"
         android:textSize="24sp"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavComum"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cardCamera" />
+        app:layout_constraintTop_toBottomOf="@id/cardCamera"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavComum"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        app:itemIconTint="@color/colorPrimaryDark"
+        app:itemTextColor="@color/colorPrimaryDark"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav_comum"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

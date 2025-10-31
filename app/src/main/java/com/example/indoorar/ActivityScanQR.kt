@@ -15,8 +15,8 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.zxing.*
 import com.google.zxing.common.HybridBinarizer
 import android.content.res.ColorStateList
-import android.graphics.Color
 import androidx.core.graphics.toColorInt
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 
 class ActivityScanQR : BaseActivity() {
@@ -48,12 +48,19 @@ class ActivityScanQR : BaseActivity() {
         previewView = findViewById(R.id.previewView)
         btnEscanear = findViewById(R.id.btnEscanear)
 
-        val btnVoltar = findViewById<android.widget.ImageButton>(R.id.btnVoltar)
-        btnVoltar.setOnClickListener {
-            val intent = Intent(this, ActivityHomeComum::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            startActivity(intent)
-            finish()
+        // Wire bottom navigation (conta comum) — layout now contains `bottomNavComum`
+        findViewById<BottomNavigationView>(R.id.bottomNavComum)?.apply {
+            selectedItemId = R.id.action_scan
+            setOnItemSelectedListener { item ->
+                if (this.selectedItemId == item.itemId) return@setOnItemSelectedListener true
+                when (item.itemId) {
+                    R.id.action_home -> { startActivity(Intent(this@ActivityScanQR, ActivityHomeComum::class.java)); true }
+                    R.id.action_scan -> { true }
+                    R.id.action_favoritos -> { startActivity(Intent(this@ActivityScanQR, ActivityFavoritos::class.java)); true }
+                    R.id.action_config -> { startActivity(Intent(this@ActivityScanQR, ActivityPerfil::class.java)); true }
+                    else -> false
+                }
+            }
         }
 
         // Estado inicial: desabilitado e cinza

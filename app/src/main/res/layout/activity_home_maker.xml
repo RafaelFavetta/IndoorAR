@@ -76,7 +76,7 @@
         android:id="@+id/txtMapasFavoritos"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="8dp"
         android:fontFamily="@font/inter"
         android:text="@string/adicionados_recentemente"
         android:textAllCaps="false"

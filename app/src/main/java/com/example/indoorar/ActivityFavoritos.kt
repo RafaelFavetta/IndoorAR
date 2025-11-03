@@ -19,7 +19,7 @@ class ActivityFavoritos : BaseActivity() {
                     R.id.action_home -> { startActivity(Intent(this@ActivityFavoritos, ActivityHomeComum::class.java)); true }
                     R.id.action_scan -> { startActivity(Intent(this@ActivityFavoritos, ActivityScanQR::class.java)); true }
                     R.id.action_favoritos -> { true }
-                    R.id.action_config -> { startActivity(Intent(this@ActivityFavoritos, ActivityPerfil::class.java)); true }
+                    R.id.action_config -> { startActivity(Intent(this@ActivityFavoritos, ActivityPerfilComum::class.java)); true }
                     else -> false
                 }
             }

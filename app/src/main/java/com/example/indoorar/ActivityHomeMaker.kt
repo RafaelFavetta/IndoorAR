@@ -2,6 +2,7 @@ package com.example.indoorar
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.ProgressBar
@@ -49,26 +50,33 @@ class ActivityHomeMaker : BaseActivity() {
         // Texto de boas-vindas
         findViewById<TextView>(R.id.txtBemVindo).text = getString(R.string.bem_vindo)
 
-        // Botões principais
-        findViewById<ImageView>(R.id.btnPerfil).setOnClickListener {
-            startActivity(Intent(this, ActivityPerfil::class.java))
-        }
 
         // Navbar
-        findViewById<BottomNavigationView>(R.id.bottomNavMaker)?.apply {
-            selectedItemId = R.id.action_home
+        try {
+            findViewById<BottomNavigationView>(R.id.bottomNavMaker)?.apply {
+                try {
+                    selectedItemId = R.id.action_home
+                } catch (_: Exception) {}
 
-            setOnItemSelectedListener { item ->
-                if (this.selectedItemId == item.itemId) return@setOnItemSelectedListener true
+                setOnItemSelectedListener { item ->
+                    try {
+                        if (this.selectedItemId == item.itemId) return@setOnItemSelectedListener true
 
-                when (item.itemId) {
-                    R.id.action_home -> { startActivity(Intent(this@ActivityHomeMaker, ActivityHomeMaker::class.java)); true }
-                    R.id.action_criar -> { startActivity(Intent(this@ActivityHomeMaker, com.example.indoorar.ui.ActivityEditor::class.java)); true }
-                    R.id.action_estatisticas -> { startActivity(Intent(this@ActivityHomeMaker, ActivityEstatisticas::class.java)); true }
-                    R.id.action_config -> { startActivity(Intent(this@ActivityHomeMaker, ActivityPerfil::class.java)); true }
-                    else -> false
+                        when (item.itemId) {
+                            R.id.action_home -> { startActivity(Intent(this@ActivityHomeMaker, ActivityHomeMaker::class.java)); true }
+                            R.id.action_criar -> { startActivity(Intent(this@ActivityHomeMaker, com.example.indoorar.ui.ActivityEditor::class.java)); true }
+                            R.id.action_estatisticas -> { startActivity(Intent(this@ActivityHomeMaker, ActivityEstatisticas::class.java)); true }
+                            R.id.action_config -> { startActivity(Intent(this@ActivityHomeMaker, ActivityPerfilMaker::class.java)); true }
+                            else -> false
+                        }
+                    } catch (e: Exception) {
+                        Log.e("HomeMaker", "Erro no bottomNavMaker listener", e)
+                        false
+                    }
                 }
             }
+        } catch (e: Exception) {
+            Log.e("HomeMaker", "Falha ao configurar bottomNavMaker", e)
         }
 
         // Views de recentes (carrossel horizontal paginado)

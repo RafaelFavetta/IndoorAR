@@ -57,7 +57,7 @@ class ActivityScanQR : BaseActivity() {
                     R.id.action_home -> { startActivity(Intent(this@ActivityScanQR, ActivityHomeComum::class.java)); true }
                     R.id.action_scan -> { true }
                     R.id.action_favoritos -> { startActivity(Intent(this@ActivityScanQR, ActivityFavoritos::class.java)); true }
-                    R.id.action_config -> { startActivity(Intent(this@ActivityScanQR, ActivityPerfil::class.java)); true }
+                    R.id.action_config -> { startActivity(Intent(this@ActivityScanQR, ActivityPerfilComum::class.java)); true }
                     else -> false
                 }
             }

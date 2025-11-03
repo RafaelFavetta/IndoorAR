@@ -63,26 +63,31 @@ class ActivityHomeComum : BaseActivity() {
         }
 
         // Navbar
-        findViewById<BottomNavigationView>(R.id.bottomNavComum)?.apply {
-            selectedItemId = R.id.action_home
+        try {
+            findViewById<BottomNavigationView>(R.id.bottomNavComum)?.apply {
+                try { selectedItemId = R.id.action_home } catch (_: Exception) {}
 
-            setOnItemSelectedListener { item ->
-                if (this.selectedItemId == item.itemId) return@setOnItemSelectedListener true
+                setOnItemSelectedListener { item ->
+                    try {
+                        if (this.selectedItemId == item.itemId) return@setOnItemSelectedListener true
 
-                when (item.itemId) {
-                    R.id.action_home -> { startActivity(Intent(this@ActivityHomeComum, ActivityHomeComum::class.java)); true }
-                    R.id.action_scan -> { startActivity(Intent(this@ActivityHomeComum, ActivityScanQR::class.java)); true }
-                    R.id.action_favoritos -> { startActivity(Intent(this@ActivityHomeComum, ActivityFavoritos::class.java)); true }
-                    R.id.action_config -> { startActivity(Intent(this@ActivityHomeComum, ActivityPerfil::class.java)); true }
-                    else -> false
+                        when (item.itemId) {
+                            R.id.action_home -> { startActivity(Intent(this@ActivityHomeComum, ActivityHomeComum::class.java)); true }
+                            R.id.action_scan -> { startActivity(Intent(this@ActivityHomeComum, ActivityScanQR::class.java)); true }
+                            R.id.action_favoritos -> { startActivity(Intent(this@ActivityHomeComum, ActivityFavoritos::class.java)); true }
+                            R.id.action_config -> { startActivity(Intent(this@ActivityHomeComum, ActivityPerfilComum::class.java)); true }
+                            else -> false
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("HomeComum", "Erro no bottomNavComum listener", e)
+                        false
+                    }
                 }
             }
+        } catch (e: Exception) {
+            android.util.Log.e("HomeComum", "Falha ao configurar bottomNavComum", e)
         }
 
-        // Ações de header
-        findViewById<ImageView>(R.id.btnPerfil)?.setOnClickListener {
-            startActivity(Intent(this, ActivityPerfil::class.java))
-        }
 
         // Lista de recentes (carrossel horizontal paginado)
         recyclerRecentes = findViewById(R.id.recyclerRecentes)

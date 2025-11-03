@@ -225,38 +225,57 @@ class ActivityPerfil : BaseActivity() {
             finish()
         }
 
+        // Make other profile items clickable (placeholders)
+        val itemConfiguracoes = findViewById<LinearLayout>(R.id.itemConfiguracoes)
+        itemConfiguracoes?.setOnClickListener {
+            // Abrir a tela de configurar conta
+            startActivity(Intent(this, ActivityConfigConta::class.java))
+        }
+        val itemHistorico = findViewById<LinearLayout>(R.id.itemHistorico)
+        itemHistorico?.setOnClickListener {
+            android.widget.Toast.makeText(this, "Histórico - em desenvolvimento", android.widget.Toast.LENGTH_SHORT).show()
+        }
+        val itemCalendario = findViewById<LinearLayout>(R.id.itemCalendario)
+        itemCalendario?.setOnClickListener {
+            android.widget.Toast.makeText(this, "Estatísticas - em desenvolvimento", android.widget.Toast.LENGTH_SHORT).show()
+        }
+        val itemAjuda = findViewById<LinearLayout>(R.id.itemAjuda)
+        itemAjuda?.setOnClickListener {
+            android.widget.Toast.makeText(this, "Ajuda e Suporte - em desenvolvimento", android.widget.Toast.LENGTH_SHORT).show()
+        }
+
         // Navbar: choose menu based on account type (maker/comum)
         val bottomNav = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavPerfil)
         if (bottomNav != null) {
-            // default to comum until we know otherwise
             bottomNav.menu.clear()
             bottomNav.inflateMenu(R.menu.bottom_nav_comum)
+            bottomNav.selectedItemId = R.id.action_config
             bottomNav.setOnItemSelectedListener { item ->
                 when (item.itemId) {
                     R.id.action_home -> { startActivity(Intent(this, ActivityHomeComum::class.java)); true }
                     R.id.action_scan -> { startActivity(Intent(this, ActivityScanQR::class.java)); true }
                     R.id.action_favoritos -> { startActivity(Intent(this, ActivityFavoritos::class.java)); true }
-                    R.id.action_config -> { /* already here */ true }
+                    R.id.action_config -> { true }
                     else -> false
                 }
             }
         }
 
-        // If logged in, read account type and switch to maker menu when appropriate
         if (user != null) {
             val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
             db.collection("usuarios").document(user.uid).get().addOnSuccessListener { doc ->
                 val tipo = (doc.getString("tipoConta") ?: "comum").lowercase()
                 if (tipo == "maker") {
-                    // replace menu with maker variant
+                    // replace navbar with maker's
                     bottomNav?.menu?.clear()
                     bottomNav?.inflateMenu(R.menu.bottom_nav_maker)
+                    bottomNav?.selectedItemId = R.id.action_config
                 } else {
                     bottomNav?.menu?.clear()
                     bottomNav?.inflateMenu(R.menu.bottom_nav_comum)
+                    bottomNav?.selectedItemId = R.id.action_config
                 }
             }.addOnFailureListener {
-                // ignore, keep comum
             }
         }
     }

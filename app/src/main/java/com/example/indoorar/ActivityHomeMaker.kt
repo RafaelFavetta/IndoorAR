@@ -41,9 +41,10 @@ class ActivityHomeMaker : BaseActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_home_maker)
 
+        // Aplicar insets apenas no topo e laterais do root
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
         }
 
@@ -54,6 +55,12 @@ class ActivityHomeMaker : BaseActivity() {
         // Navbar
         try {
             findViewById<BottomNavigationView>(R.id.bottomNavMaker)?.apply {
+                // Evitar aplicar padding inferior de insets na navbar
+                ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                    v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, 0)
+                    insets
+                }
+
                 try {
                     selectedItemId = R.id.action_home
                 } catch (_: Exception) {}
@@ -168,7 +175,7 @@ class ActivityHomeMaker : BaseActivity() {
             id = doc.id,
             nome = doc.getString("nome") ?: "Mapa sem nome",
             descricao = doc.getString("descricao") ?: "",
-            autorUid = doc.getString("criadorUid") ?: uid,
+            autorUid = uid,
             autorNome = doc.getString("nomeAutor") ?: uid,
             dataCriacao = doc.getTimestamp("dataCriacao"),
             imagemUrl = doc.getString("imagemUrl"),

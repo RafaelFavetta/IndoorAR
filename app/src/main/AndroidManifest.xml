@@ -35,9 +35,6 @@
             android:name=".ActivityLogin"
             android:exported="false" />
         <activity
-            android:name=".ActivityPerfil"
-            android:exported="false" />
-        <activity
             android:name=".ui.ActivityEditor"
             android:exported="true"
             android:screenOrientation="landscape"
@@ -95,6 +92,12 @@
             android:theme="@style/Theme.IndoorAR" />
         <activity
             android:name=".ActivityEstatisticas"
+            android:exported="false" />
+        <activity
+            android:name=".ActivityPerfilComum"
+            android:exported="false" />
+        <activity
+            android:name=".ActivityPerfilMaker"
             android:exported="false" />
 
         <!-- Provider para compartilhar o QR Code -->

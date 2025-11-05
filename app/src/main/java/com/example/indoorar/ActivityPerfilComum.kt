@@ -31,7 +31,6 @@ class ActivityPerfilComum : BaseActivity() {
     private lateinit var userImage: ImageView
 
     // Helper to (re)configure the BottomNavigationView listener consistently
-    // Helper to (re)configure the BottomNavigationView listener consistently
     private fun setupBottomNav(bottomNav: com.google.android.material.bottomnavigation.BottomNavigationView) {
         bottomNav.setOnItemSelectedListener { item ->
             try {
@@ -153,12 +152,10 @@ class ActivityPerfilComum : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Use the existing perfil_comum layout (it contains the expected IDs) and then swap the menu to maker
-        setContentView(R.layout.activity_perfil_comum)
         setContentView(R.layout.activity_perfil_comum)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
         }
 
@@ -260,6 +257,11 @@ class ActivityPerfilComum : BaseActivity() {
         if (bottomNav != null) {
             bottomNav.menu.clear()
             bottomNav.inflateMenu(R.menu.bottom_nav_comum)
+            // Ignore bottom system inset on the BottomNavigationView itself
+            ViewCompat.setOnApplyWindowInsetsListener(bottomNav) { v, insets ->
+                v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, 0)
+                insets
+            }
             setupBottomNav(bottomNav)
         }
     }

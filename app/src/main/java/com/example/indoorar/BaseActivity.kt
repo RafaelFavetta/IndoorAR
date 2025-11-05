@@ -1,5 +1,7 @@
 package com.example.indoorar
 
+import android.content.ComponentCallbacks
+import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
@@ -14,6 +16,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import android.util.Log
+import kotlin.math.min
 
 open class BaseActivity : AppCompatActivity() {
 
@@ -21,7 +24,33 @@ open class BaseActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private val hideDelay: Long = 2000 // 2 segundos
 
+    // --- Uniform density support (Toutiao-like adaptation) ---
+    companion object {
+        // Keep original scaledDensity so we can respect user font scale moderately
+        private var nonCompatScaledDensity: Float = 0f
+        private var densityApplied = false
+    }
+
+    // Allow child activities to customize their design width if necessary
+    protected open fun designWidthDp(): Float = 360f
+
+    override fun attachBaseContext(newBase: android.content.Context) {
+        // Clamp extreme font scales to avoid layout breakage while still respecting accessibility
+        val cfg = newBase.resources.configuration
+        val clamped = cfg.fontScale.coerceIn(0.85f, 1.15f)
+        if (clamped != cfg.fontScale) {
+            val newCfg = Configuration(cfg)
+            newCfg.fontScale = clamped
+            val wrapped = newBase.createConfigurationContext(newCfg)
+            super.attachBaseContext(wrapped)
+        } else {
+            super.attachBaseContext(newBase)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Apply uniform density before view inflation/theme adjustments that depend on metrics
+        applyUniformDensity(designWidthDp = designWidthDp())
         super.onCreate(savedInstanceState)
         setupUltimateFullScreen()
     }
@@ -57,6 +86,46 @@ open class BaseActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
+    }
+
+    // Apply a process/activity density based on a reference design width to normalize UI across devices
+    private fun applyUniformDensity(designWidthDp: Float) {
+        val app = application ?: return
+        val appDm = app.resources.displayMetrics
+
+        if (nonCompatScaledDensity == 0f) {
+            nonCompatScaledDensity = appDm.scaledDensity
+            // Keep scaledDensity updated if user changes font size at runtime
+            app.registerComponentCallbacks(object : ComponentCallbacks {
+                override fun onConfigurationChanged(newConfig: Configuration) {
+                    if (newConfig.fontScale > 0) {
+                        nonCompatScaledDensity = app.resources.displayMetrics.scaledDensity
+                    }
+                }
+                override fun onLowMemory() { /* no-op */ }
+            })
+        }
+
+        val shortestSidePx = min(appDm.widthPixels, appDm.heightPixels)
+        if (shortestSidePx == 0) return
+
+        val targetDensity = shortestSidePx / designWidthDp
+        val targetScaledDensity = targetDensity * (nonCompatScaledDensity / appDm.density)
+        val targetDensityDpi = (160 * targetDensity).toInt()
+
+        // Apply to app metrics (affects most inflations, including third-party libs)
+        if (!densityApplied || appDm.density != targetDensity) {
+            appDm.density = targetDensity
+            appDm.scaledDensity = targetScaledDensity
+            appDm.densityDpi = targetDensityDpi
+            densityApplied = true
+        }
+
+        // Apply to this activity's metrics as well
+        val actDm = this.resources.displayMetrics
+        actDm.density = targetDensity
+        actDm.scaledDensity = targetScaledDensity
+        actDm.densityDpi = targetDensityDpi
     }
 
     fun hideKeyboard() {

@@ -49,7 +49,7 @@ class ActivityHomeComum : BaseActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_home_comum)
 
-        // System insets
+        // System insets: aplicar somente topo/laterais no root, sem padding inferior
         val mainView = findViewById<View>(R.id.main)
         if (mainView == null) {
             Toast.makeText(this, "Erro: View 'main' não encontrada no layout.", Toast.LENGTH_LONG).show()
@@ -58,13 +58,19 @@ class ActivityHomeComum : BaseActivity() {
         }
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(mainView) { v, insets ->
             val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
         }
 
         // Navbar
         try {
             findViewById<BottomNavigationView>(R.id.bottomNavComum)?.apply {
+                // Evita que a própria BottomNavigationView receba padding inferior de insets
+                androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                    v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, 0)
+                    insets
+                }
+
                 try { selectedItemId = R.id.action_home } catch (_: Exception) {}
 
                 setOnItemSelectedListener { item ->

@@ -6,7 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorPrimary"
-    android:fitsSystemWindows="true"
     tools:context=".ActivityHomeComum">
 
     <ProgressBar
@@ -22,7 +21,7 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/header"
-        android:layout_width="417dp"
+        android:layout_width="0dp"
         android:layout_height="222dp"
         android:background="@drawable/bg_header_arco"
         app:layout_constraintEnd_toEndOf="parent"
@@ -33,16 +32,16 @@
             android:id="@+id/logo"
             android:layout_width="36dp"
             android:layout_height="46dp"
-            android:layout_marginStart="356dp"
+            android:layout_marginEnd="20dp"
             android:layout_marginTop="16dp"
             android:contentDescription="@string/logo"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/logo_branca" />
 
         <TextView
             android:id="@+id/txtBemVindo"
-            android:layout_width="200dp"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
             android:layout_marginTop="80dp"
@@ -50,8 +49,13 @@
             android:fontFamily="@font/staatliches"
             android:text="@string/bem_vindo"
             android:textColor="@color/colorPrimary"
-            android:textSize="40sp"
             android:textStyle="normal|bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:autoSizeTextType="uniform"
+            app:autoSizeMinTextSize="20sp"
+            app:autoSizeMaxTextSize="40sp"
+            app:autoSizeStepGranularity="2sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
@@ -75,7 +79,7 @@
         android:id="@+id/txtMapasFavoritos"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="24dp"
         android:fontFamily="@font/inter"
         android:text="@string/adicionados_recentemente"
         android:textAllCaps="false"
@@ -112,7 +116,7 @@
         android:orientation="horizontal"
         android:gravity="center"
         android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="16dp"
         app:layout_constraintTop_toBottomOf="@id/recyclerRecentes"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

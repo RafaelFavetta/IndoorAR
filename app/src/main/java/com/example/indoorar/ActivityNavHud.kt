@@ -22,6 +22,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.IntentFilter
 import com.google.android.material.button.MaterialButton
+import androidx.appcompat.widget.AppCompatImageButton
 import kotlin.math.hypot
 import androidx.appcompat.app.AlertDialog
 import com.google.firebase.firestore.FirebaseFirestore
@@ -34,6 +35,9 @@ import android.location.LocationManager
 import android.provider.Settings
 import com.example.indoorar.graph.Node
 import androidx.core.view.isVisible
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.OvershootInterpolator
+import android.view.animation.DecelerateInterpolator
 
 /**
  * Navegação em RA com HUD 2D sobre a câmera, sem ARCore/Sceneform.
@@ -51,6 +55,9 @@ class ActivityNavHud : BaseActivity() {
     private lateinit var btnEscolherDestino: MaterialButton
     private lateinit var btnLimparRota: MaterialButton
     private lateinit var tvDistancia: TextView
+    private lateinit var btnToggleManual: AppCompatImageButton
+    private lateinit var manualControls: View
+    private var manualControlsVisible: Boolean = false
 
     private var cameraProvider: ProcessCameraProvider? = null
 
@@ -125,6 +132,8 @@ class ActivityNavHud : BaseActivity() {
         btnEscolherDestino = findViewById(R.id.btnEscolherDestino)
         btnLimparRota = findViewById(R.id.btnLimparRota)
         tvDistancia = findViewById(R.id.tvDistancia)
+        btnToggleManual = findViewById(R.id.btnToggleManual)
+        manualControls = findViewById(R.id.manualControls)
 
         // Capture mapId if provided via Intent extras
         mapId = intent.getStringExtra("MAP_ID")
@@ -272,8 +281,56 @@ class ActivityNavHud : BaseActivity() {
         findViewById<android.widget.Button>(R.id.btnMoveRight).setOnClickListener {
             moveUserManually(0.5f, 0f) // Move para direita (X positivo)
         }
+
+        // Inicializa estado dos controles manuais (iniciam escondidos)
+        manualControlsVisible = false
+        manualControls.alpha = 0f
+        manualControls.translationY = dpToPx(8f)
+        manualControls.visibility = View.GONE
+
+        btnToggleManual.setOnClickListener {
+            toggleManualControls()
+        }
     }
-    
+
+    /** Mostra ou esconde os controles manuais com animação (slide + fade) e animação do botão */
+    private fun toggleManualControls() {
+        val show = !manualControlsVisible
+        manualControlsVisible = show
+
+        if (show) {
+            manualControls.visibility = View.VISIBLE
+            manualControls.translationY = dpToPx(8f)
+            manualControls.alpha = 0f
+            manualControls.animate()
+                .translationY(0f)
+                .alpha(1f)
+                .setDuration(300)
+                .setInterpolator(DecelerateInterpolator())
+                .withLayer()
+                .start()
+            btnToggleManual.animate()
+                .rotation(90f)
+                .setDuration(300)
+                .setInterpolator(OvershootInterpolator())
+                .start()
+        } else {
+            manualControls.animate()
+                .translationY(dpToPx(8f))
+                .alpha(0f)
+                .setDuration(250)
+                .setInterpolator(AccelerateDecelerateInterpolator())
+                .withEndAction { manualControls.visibility = View.GONE }
+                .withLayer()
+                .start()
+            btnToggleManual.animate()
+                .rotation(0f)
+                .setDuration(250)
+                .setInterpolator(AccelerateDecelerateInterpolator())
+                .start()
+        }
+    }
+
     /**
      * Move o usuário manualmente (para debug quando sensores não funcionam)
      */
@@ -756,6 +813,7 @@ class ActivityNavHud : BaseActivity() {
     // Controla se já marcamos o estado de chegada (para não reexibir setas)
     private var hasArrived: Boolean = false
 
+    @Suppress("unused")
     private fun showDiagDialog(title: String, message: String) {
         try {
             AlertDialog.Builder(this)
@@ -910,6 +968,7 @@ class ActivityNavHud : BaseActivity() {
     }
 
     // -------- Resolução de nós para POIs --------
+    @Suppress("unused")
     private fun resolveOriginNodeId(nodes: Map<String, Node>): String? {
         // Prefer the nearest node to the last known user pose
         val ux = lastUserX; val uz = lastUserZ

@@ -150,5 +150,21 @@
             android:layout_gravity="center_horizontal" />
     </LinearLayout>
 
+    <!-- Botão pequeno para mostrar/ocultar os controles manuais -->
+    <androidx.appcompat.widget.AppCompatImageButton
+        android:id="@+id/btnToggleManual"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        app:srcCompat="@drawable/ic_four_arrows"
+        android:contentDescription="@string/mostrar_controles_manuais"
+        android:background="@drawable/btn_arredondado_branco"
+        android:tint="#32357A"
+        android:scaleType="centerInside"
+        android:adjustViewBounds="true"
+        android:padding="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/manualControls"
+        android:layout_marginStart="16dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

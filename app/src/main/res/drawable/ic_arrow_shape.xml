@@ -4,10 +4,12 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+
+    <!-- Seta estilizada: preenchimento branco + stroke fino para contorno -->
     <path
         android:fillColor="#FDFDFD"
         android:strokeColor="#32357A"
         android:strokeWidth="0.2"
         android:strokeLineJoin="round"
-        android:pathData="M12,2 L7,9 H10 V21 H14 V9 H17 Z"/>
+        android:pathData="M12,2 L6,10 L9,10 L9,20 L15,20 L15,10 L18,10 z" />
 </vector>

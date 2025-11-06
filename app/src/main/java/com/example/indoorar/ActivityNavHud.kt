@@ -39,13 +39,6 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.view.animation.DecelerateInterpolator
 
-/**
- * Navegação em RA com HUD 2D sobre a câmera, sem ARCore/Sceneform.
- * - PreviewView (CameraX) como fundo.
- * - Seta (ImageView) sobreposta com animações de rotação e movimento.
- * - TextView opcional para instruções.
- * - Minimap no canto inferior direito (conectado via helpers públicos).
- */
 class ActivityNavHud : BaseActivity() {
 
     private lateinit var previewView: PreviewView
@@ -269,16 +262,16 @@ class ActivityNavHud : BaseActivity() {
         }
         
         // Controles manuais de movimento (para debug/teste quando sensores não funcionam)
-        findViewById<android.widget.Button>(R.id.btnMoveUp).setOnClickListener {
+        findViewById<AppCompatImageButton>(R.id.btnMoveUp).setOnClickListener {
             moveUserManually(0f, -0.5f) // Move para cima (Z negativo)
         }
-        findViewById<android.widget.Button>(R.id.btnMoveDown).setOnClickListener {
+        findViewById<AppCompatImageButton>(R.id.btnMoveDown).setOnClickListener {
             moveUserManually(0f, 0.5f) // Move para baixo (Z positivo)
         }
-        findViewById<android.widget.Button>(R.id.btnMoveLeft).setOnClickListener {
+        findViewById<AppCompatImageButton>(R.id.btnMoveLeft).setOnClickListener {
             moveUserManually(-0.5f, 0f) // Move para esquerda (X negativo)
         }
-        findViewById<android.widget.Button>(R.id.btnMoveRight).setOnClickListener {
+        findViewById<AppCompatImageButton>(R.id.btnMoveRight).setOnClickListener {
             moveUserManually(0.5f, 0f) // Move para direita (X positivo)
         }
 

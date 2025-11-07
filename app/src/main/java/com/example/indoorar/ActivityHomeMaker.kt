@@ -11,7 +11,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
@@ -28,12 +27,26 @@ class ActivityHomeMaker : BaseActivity() {
     private lateinit var recyclerRecentes: RecyclerView
     private lateinit var progressRecentes: ProgressBar
     private lateinit var indicatorsRecentes: LinearLayout
-    private lateinit var snapHelper: PagerSnapHelper
     private var recentesListener: ListenerRegistration? = null
 
-    private val recentAdapter = RecentPagesAdapter { mapa ->
-        // Abrir bottom sheet de preview (mesmo comportamento da HomeComum)
-        onMapaClicked(mapa)
+    // Substitui pages por itens individuais
+    private val recentAdapter = RecentesAdapter { mapa -> onMapaClicked(mapa) }
+
+    // Auto-scroll config (slower like Home Comum)
+    private val SCROLL_STEP_PX = 1
+    private val FRAME_DELAY_MS = 30L
+    private val INITIAL_DELAY_MS = 2500L
+
+    private val autoScrollHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var autoScrollRunning = false
+    private val autoScrollRunnable = object : Runnable {
+        override fun run() {
+            if (!autoScrollRunning) return
+            recyclerRecentes.scrollBy(SCROLL_STEP_PX, 0)
+            recycleLoopIfNeeded()
+            updateIndicatorFromLayout()
+            autoScrollHandler.postDelayed(this, FRAME_DELAY_MS)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -94,36 +107,60 @@ class ActivityHomeMaker : BaseActivity() {
         recyclerRecentes.layoutManager = LinearLayoutManager(this, RecyclerView.HORIZONTAL, false)
         recyclerRecentes.adapter = recentAdapter
 
-        snapHelper = PagerSnapHelper()
-        snapHelper.attachToRecyclerView(recyclerRecentes)
-
         recyclerRecentes.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    val lm = recyclerView.layoutManager ?: return
-                    val snapView = snapHelper.findSnapView(lm) ?: return
-                    val pos = recyclerView.getChildAdapterPosition(snapView)
-                    if (pos != RecyclerView.NO_POSITION) setCurrentIndicator(pos)
-                }
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                updateIndicatorFromLayout()
             }
         })
+        recyclerRecentes.setOnTouchListener { _, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> stopAutoScroll()
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> autoScrollHandler.postDelayed({ startAutoScroll() }, 2000)
+            }
+            false
+        }
 
         carregarMapasRecentesEmTempoReal()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        recentesListener?.remove()
+    override fun onResume() { super.onResume(); startAutoScroll() }
+    override fun onPause() { stopAutoScroll(); super.onPause() }
+    override fun onDestroy() { super.onDestroy(); recentesListener?.remove(); stopAutoScroll() }
+
+    private fun startAutoScroll() {
+        if (recentAdapter.itemCount <= 1) return
+        if (autoScrollRunning) return
+        autoScrollRunning = true
+        autoScrollHandler.postDelayed(autoScrollRunnable, INITIAL_DELAY_MS)
+    }
+    private fun stopAutoScroll() { autoScrollRunning = false; autoScrollHandler.removeCallbacks(autoScrollRunnable) }
+
+    private fun recycleLoopIfNeeded() {
+        val lm = recyclerRecentes.layoutManager as? LinearLayoutManager ?: return
+        val last = lm.findLastVisibleItemPosition()
+        val total = recentAdapter.itemCount
+        if (total > 0 && last >= total - 2) {
+            val firstVisible = lm.findFirstVisibleItemPosition()
+            val offset = firstVisible % total
+            lm.scrollToPosition(offset)
+        }
+    }
+
+    private fun updateIndicatorFromLayout() {
+        val lm = recyclerRecentes.layoutManager as? LinearLayoutManager ?: return
+        val first = lm.findFirstVisibleItemPosition()
+        val last = lm.findLastVisibleItemPosition()
+        if (first == RecyclerView.NO_POSITION || last == RecyclerView.NO_POSITION) return
+        val center = (first + last) / 2
+        setCurrentIndicator(center % recentAdapter.itemCount)
     }
 
     private fun imageKeyFor(m: MapaResumo): String {
         val url = m.imagemUrl
         if (!url.isNullOrBlank()) return "url:$url"
-        val t = m.imagemBlobThumb?.toBytes()
-        if (t != null && t.isNotEmpty()) return "thumb:${t.contentHashCode()}:${t.size}"
-        val b = m.imagemBlob?.toBytes()
-        if (b != null && b.isNotEmpty()) return "blob:${b.contentHashCode()}:${b.size}"
+        val t = m.imagemBlobThumb?.toBytes(); if (t != null && t.isNotEmpty()) return "thumb:${t.contentHashCode()}:${t.size}"
+        val b = m.imagemBlob?.toBytes(); if (b != null && b.isNotEmpty()) return "blob:${b.contentHashCode()}:${b.size}"
         return "id:${m.id}"
     }
 
@@ -153,20 +190,13 @@ class ActivityHomeMaker : BaseActivity() {
                 val lista = snap?.documents?.map { docParaMapaResumoMaker(it, uid) } ?: emptyList()
                 val ordenada = lista.sortedByDescending { it.dataCriacao?.seconds ?: 0 }
                 val unicos = ordenada.distinctBy { imageKeyFor(it) }
-                val limited = unicos.take(10) // 5 páginas x 2 itens por página
+                val limited = unicos.take(5)
                 recentAdapter.submit(limited)
                 progressRecentes.visibility = View.GONE
-                if (recentAdapter.itemCount == 0) {
-                    recyclerRecentes.visibility = View.GONE
-                } else {
-                    recyclerRecentes.visibility = View.VISIBLE
-                }
+                recyclerRecentes.visibility = if (recentAdapter.itemCount == 0) View.GONE else View.VISIBLE
                 buildIndicators(recentAdapter.itemCount)
-
-                val lm = recyclerRecentes.layoutManager
-                val snapView = if (lm != null) snapHelper.findSnapView(lm) else null
-                val pos = if (snapView != null) recyclerRecentes.getChildAdapterPosition(snapView) else 0
-                if (pos >= 0) setCurrentIndicator(pos)
+                updateIndicatorFromLayout()
+                startAutoScroll()
             }
     }
 
@@ -207,6 +237,7 @@ class ActivityHomeMaker : BaseActivity() {
 
     private fun setCurrentIndicator(index: Int) {
         val n = indicatorsRecentes.childCount
+        if (index < 0 || index >= n) return
         for (i in 0 until n) {
             val iv = indicatorsRecentes.getChildAt(i) as? ImageView ?: continue
             iv.setImageResource(if (i == index) R.drawable.dot_selected else R.drawable.dot_unselected)

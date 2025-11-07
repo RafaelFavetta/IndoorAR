@@ -178,7 +178,7 @@
                     android:layout_height="35dp"
                     android:layout_marginEnd="12dp"
                     android:contentDescription="usuário maker"
-                    android:src="@drawable/ic_maker"
+                    android:src="@drawable/ic_create_nofill"
                     app:tint="@color/colorOnPrimary" />
 
                 <TextView

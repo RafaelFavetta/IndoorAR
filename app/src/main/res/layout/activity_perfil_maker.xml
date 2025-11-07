@@ -119,7 +119,7 @@
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:contentDescription="Ícone de Configurações"
-                        android:src="@drawable/account_circle" />
+                        android:src="@drawable/ic_perfil_nofill" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -164,7 +164,7 @@
                     <ImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:src="@drawable/ic_historico_azul"
+                        android:src="@drawable/ic_history_nofill"
                         android:contentDescription="Ícone de Histórico" />
 
                     <TextView
@@ -211,7 +211,7 @@
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:contentDescription="Ícone de Estatísticas"
-                        android:src="@drawable/bar_chart" />
+                        android:src="@drawable/ic_statistics_nofill" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -257,7 +257,7 @@
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:contentDescription="Ícone de Ajuda"
-                        android:src="@drawable/message" />
+                        android:src="@drawable/ic_suporte_nofill" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -303,7 +303,7 @@
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:contentDescription="Ícone de Sair"
-                        android:src="@drawable/ic_logout_azul" />
+                        android:src="@drawable/ic_logout_nofill" />
 
                     <TextView
                         android:layout_width="0dp"

@@ -3,18 +3,18 @@
     <item
         android:id="@+id/action_home"
         android:title="@string/inicio"
-        android:icon="@drawable/ic_home" />
+        android:icon="@drawable/ic_home_nofill" />
     <item
         android:id="@+id/action_criar"
         android:title="@string/criar"
-        android:icon="@drawable/stylus_note_azul" />
+        android:icon="@drawable/ic_create_nofill" />
     <item
         android:id="@+id/action_estatisticas"
         android:title="@string/estatisticas"
-        android:icon="@drawable/bar_chart" />
+        android:icon="@drawable/ic_statistics_nofill" />
     <item
         android:id="@+id/action_config"
         android:title="@string/configuracoes"
-        android:icon="@drawable/ic_settings_azul" />
+        android:icon="@drawable/ic_perfil_nofill" />
 </menu>
 

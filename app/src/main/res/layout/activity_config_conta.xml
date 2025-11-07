@@ -94,7 +94,7 @@
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:contentDescription="@string/editar_nome"
-                android:src="@drawable/stylus_note_azul" />
+                android:src="@drawable/ic_edit_nofill" />
 
             <TextView
                 android:layout_width="0dp"
@@ -139,7 +139,7 @@
             <ImageView
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:src="@drawable/ic_email"
+                android:src="@drawable/ic_email_nofill"
                 android:contentDescription="@string/alterar_email" />
 
             <TextView
@@ -185,7 +185,7 @@
             <ImageView
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:src="@drawable/ic_password"
+                android:src="@drawable/ic_senha_nofill"
                 android:contentDescription="@string/alterar_senha" />
 
             <TextView

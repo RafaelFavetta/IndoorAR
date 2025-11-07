@@ -42,6 +42,11 @@ class ActivityHomeMaker : BaseActivity() {
     // Substitui pages por itens individuais
     private val recentAdapter = RecentesAdapter { mapa -> onMapaClicked(mapa) }
 
+    // Contagem original (sem duplicação) usada para indicadores e wrapping
+    private var baseRecentCount: Int = 0
+    // Protege contra reposicionamentos repetidos
+    private var isWrappingRepositioning: Boolean = false
+
     // Auto-scroll config
     private val SCROLL_STEP_PX = 2
     private val FRAME_DELAY_MS = 16L          // ~60fps
@@ -173,10 +178,41 @@ class ActivityHomeMaker : BaseActivity() {
         // Só faz loop enquanto auto-scroll ativo para não atrapalhar scroll manual
         if (!autoScrollRunning) return
         val lm = recyclerRecentes.layoutManager as? LinearLayoutManager ?: return
-        val lastFull = lm.findLastCompletelyVisibleItemPosition()
         val total = recentAdapter.itemCount
-        if (total > 0 && lastFull == total - 1) {
-            lm.scrollToPosition(0)
+        if (baseRecentCount > 1 && total >= baseRecentCount * 3) {
+            val firstVisible = lm.findFirstVisibleItemPosition()
+            if (firstVisible == RecyclerView.NO_POSITION) return
+            // Se estivermos na cópia final, reposiciona para a cópia do meio preservando offset
+            if (firstVisible >= baseRecentCount * 2) {
+                if (!isWrappingRepositioning) {
+                    isWrappingRepositioning = true
+                    val offsetView = recyclerRecentes.getChildAt(0)
+                    val offset = offsetView?.left ?: 0
+                    val newPos = (firstVisible % baseRecentCount) + baseRecentCount
+                    recyclerRecentes.post {
+                        lm.scrollToPositionWithOffset(newPos, offset)
+                        recyclerRecentes.post { isWrappingRepositioning = false }
+                    }
+                }
+            }
+            // Se estivermos na cópia inicial (rolagem para trás extrema), também reposiciona para o meio
+            else if (firstVisible < baseRecentCount) {
+                if (!isWrappingRepositioning) {
+                    isWrappingRepositioning = true
+                    val offsetView = recyclerRecentes.getChildAt(0)
+                    val offset = offsetView?.left ?: 0
+                    val newPos = (firstVisible % baseRecentCount) + baseRecentCount
+                    recyclerRecentes.post {
+                        lm.scrollToPositionWithOffset(newPos, offset)
+                        recyclerRecentes.post { isWrappingRepositioning = false }
+                    }
+                }
+            }
+        } else {
+            val lastFull = lm.findLastCompletelyVisibleItemPosition()
+            if (total > 0 && lastFull == total - 1) {
+                lm.scrollToPosition(0)
+            }
         }
     }
 
@@ -195,7 +231,10 @@ class ActivityHomeMaker : BaseActivity() {
                 bestIndex = recyclerRecentes.getChildAdapterPosition(child)
             }
         }
-        if (bestIndex >= 0) setCurrentIndicator(bestIndex)
+        if (bestIndex >= 0) {
+            val idx = if (baseRecentCount > 0) bestIndex % baseRecentCount else bestIndex
+            setCurrentIndicator(idx)
+        }
     }
 
     private fun imageKeyFor(m: MapaResumo): String {
@@ -233,10 +272,24 @@ class ActivityHomeMaker : BaseActivity() {
                 val ordenada = lista.sortedByDescending { it.dataCriacao?.seconds ?: 0 }
                 val unicos = ordenada.distinctBy { imageKeyFor(it) }
                 val limited = unicos.take(5)
-                recentAdapter.submit(limited)
+
+                // prepara wrapping triplo para loop suave quando houver 2+ itens
+                baseRecentCount = limited.size
+                if (baseRecentCount > 1) {
+                    val wrapped = ArrayList<MapaResumo>(baseRecentCount * 3)
+                    wrapped.addAll(limited)
+                    wrapped.addAll(limited)
+                    wrapped.addAll(limited)
+                    recentAdapter.submit(wrapped)
+                    // posiciona na cópia do meio (mantém continuidade) após layout
+                    recyclerRecentes.post { recyclerRecentes.scrollToPosition(baseRecentCount) }
+                } else {
+                    recentAdapter.submit(limited)
+                }
+
                 progressRecentes.visibility = View.GONE
                 recyclerRecentes.visibility = if (recentAdapter.itemCount == 0) View.GONE else View.VISIBLE
-                buildIndicators(recentAdapter.itemCount)
+                buildIndicators(baseRecentCount)
                 updateIndicatorFromLayout()
                 startAutoScroll()
             }

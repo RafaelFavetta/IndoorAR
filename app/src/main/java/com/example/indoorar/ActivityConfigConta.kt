@@ -26,6 +26,10 @@ class ActivityConfigConta : BaseActivity() {
         cardAlterarEmail?.setOnClickListener {
             startActivity(Intent(this, ActivityAlterarEmail::class.java))
         }
+        val cardEditarTelefone = findViewById<CardView>(R.id.cardEditarTelefone)
+        cardEditarTelefone?.setOnClickListener {
+            startActivity(Intent(this, ActivityEditarTelefone::class.java))
+        }
         val cardAlterarSenha = findViewById<CardView>(R.id.cardAlterarSenha)
         cardAlterarSenha?.setOnClickListener {
             startActivity(Intent(this, ActivityAlterarSenha::class.java))

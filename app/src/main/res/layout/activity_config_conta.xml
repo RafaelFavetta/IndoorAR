@@ -94,17 +94,17 @@
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:contentDescription="@string/editar_nome"
-                android:src="@drawable/ic_edit_nofill" />
+                android:src="@drawable/ic_perfil_nofill" />
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_weight="1"
-                android:text="Editar nome"
+                android:text="@string/editar_nome"
                 android:textColor="#32357A"
                 android:textSize="18sp"
-                android:textStyle="bold" />
+                android:textStyle="normal" />
 
             <ImageView
                 android:layout_width="24dp"
@@ -147,10 +147,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_weight="1"
-                android:text="Alterar email"
+                android:text="@string/alterar_email"
                 android:textColor="#32357A"
                 android:textSize="18sp"
-                android:textStyle="bold" />
+                android:textStyle="normal" />
 
             <ImageView
                 android:layout_width="24dp"
@@ -162,6 +162,52 @@
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardAlterarSenha"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="16dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        android:foreground="?attr/selectableItemBackground"
+        android:clickable="true"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cardEditarTelefone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="16dp">
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_senha_nofill"
+                android:contentDescription="@string/alterar_senha" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_weight="1"
+                android:text="@string/alterar_senha"
+                android:textColor="#32357A"
+                android:textSize="18sp"
+                android:textStyle="normal" />
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_avancar_azul"
+                android:contentDescription="@string/seta" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardEditarTelefone"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
@@ -185,18 +231,18 @@
             <ImageView
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:src="@drawable/ic_senha_nofill"
-                android:contentDescription="@string/alterar_senha" />
+                android:src="@drawable/ic_phone"
+                android:contentDescription="@string/editar_telefone" />
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_weight="1"
-                android:text="Alterar senha"
+                android:text="@string/editar_telefone"
                 android:textColor="#32357A"
                 android:textSize="18sp"
-                android:textStyle="bold" />
+                android:textStyle="normal" />
 
             <ImageView
                 android:layout_width="24dp"

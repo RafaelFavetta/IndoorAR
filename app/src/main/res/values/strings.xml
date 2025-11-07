@@ -49,4 +49,8 @@
     <string name="mostrar_controles_manuais">Mostrar controles manuais</string>
     <string name="qr_scan_prompt">Me escaneie para ter o seu guia!</string>
     <string name="ver_todos">Ver todos</string>
+    <string name="editar_telefone">Editar telefone</string>
+    <string name="editar_telefone_label">Editar telefone</string>
+    <string name="novo_telefone_hint">Digite o novo telefone</string>
+    <string name="salvar">Salvar</string>
 </resources>

@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "IndoorAR"
+rootProject.name = "Wander"
 include(":app")

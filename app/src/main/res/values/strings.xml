@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">IndoorAR</string>
+    <string name="app_name">Wander</string>
     <string name="shape_rectangle">Retângulo</string>
     <string name="shape_square">Quadrado</string>
     <string name="shape_circle">Círculo</string>

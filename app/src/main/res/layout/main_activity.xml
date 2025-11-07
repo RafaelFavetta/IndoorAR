@@ -10,27 +10,27 @@
     >
 
 
+    <!-- Header azul com logo centralizada -->
+
     <com.example.indoorar.ArcView
         android:id="@+id/arcView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
+        android:layout_width="412dp"
+        android:layout_height="277dp"
         app:layout_constraintBottom_toTopOf="@+id/btnCadastro"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/header"
         app:layout_constraintVertical_bias="1.0" />
 
-    <!-- Header azul com logo centralizada -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/header"
-        android:layout_width="match_parent"
-        android:layout_height="220dp"
+        android:layout_width="417dp"
+        android:layout_height="244dp"
         android:background="#32357A"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnCadastro"
@@ -38,10 +38,10 @@
         android:layout_width="320dp"
         android:layout_height="72dp"
         android:backgroundTint="#32357A"
-        android:letterSpacing="0.03"
         android:contentDescription="btn para se cadastrar"
         android:elevation="8dp"
         android:fontFamily="@font/staatliches"
+        android:letterSpacing="0.03"
         android:paddingStart="0dp"
         android:paddingLeft="0dp"
         android:paddingTop="0dp"
@@ -57,9 +57,9 @@
         app:cornerRadius="36dp"
         app:layout_constraintBottom_toTopOf="@+id/btnLogin"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
+        app:layout_constraintHorizontal_bias="0.494"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/arcView"
         app:layout_constraintVertical_bias="1.0"
         app:strokeColor="#32357A"
         app:strokeWidth="0dp" />
@@ -93,7 +93,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.491"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnCadastro"
         app:layout_constraintVertical_bias="0.917" />
 
     <TextView

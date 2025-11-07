@@ -122,11 +122,22 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/bottomNavComum" />
 
+    <!-- Top divider above bottom navigation for clearer separation -->
+    <View
+        android:id="@+id/separatorBottomNavComum"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="#DADADA"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavComum" />
+
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavComum"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:color/white"
+        android:elevation="6dp"
         app:itemIconTint="@color/colorPrimaryDark"
         app:itemTextColor="@color/colorPrimaryDark"
         app:labelVisibilityMode="labeled"

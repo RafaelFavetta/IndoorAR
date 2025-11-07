@@ -34,6 +34,8 @@ import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 import android.widget.LinearLayout
 import androidx.core.graphics.scale
+import kotlin.math.abs
+import androidx.core.graphics.toColorInt
 
 class ActivityHomeComum : BaseActivity() {
 
@@ -45,10 +47,10 @@ class ActivityHomeComum : BaseActivity() {
     // Removido snapHelper
     private var recentesListener: ListenerRegistration? = null
 
-    // Auto-scroll config (tuned to be slower & smoother)
-    private val SCROLL_STEP_PX = 1            // antes 2
-    private val FRAME_DELAY_MS = 30L          // antes 16 (~60fps); agora ~33fps
-    private val INITIAL_DELAY_MS = 2500L      // antes 1500ms
+    // Auto-scroll config
+    private val SCROLL_STEP_PX = 2
+    private val FRAME_DELAY_MS = 16L          // ~60fps
+    private val INITIAL_DELAY_MS = 1500L      // 1,5s
 
     // Auto-scroll
     private val autoScrollHandler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -144,10 +146,13 @@ class ActivityHomeComum : BaseActivity() {
             }
         })
 
-        recyclerRecentes.setOnTouchListener { _, event ->
+        recyclerRecentes.setOnTouchListener { v, event ->
             when (event.action) {
                 android.view.MotionEvent.ACTION_DOWN -> stopAutoScroll()
-                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> autoScrollHandler.postDelayed({ startAutoScroll() }, 2000)
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    v.performClick()
+                    autoScrollHandler.postDelayed({ startAutoScroll() }, 2000)
+                }
             }
             false
         }
@@ -189,24 +194,33 @@ class ActivityHomeComum : BaseActivity() {
     }
 
     private fun recycleLoopIfNeeded() {
+        // Evita interferir no scroll manual: só faz looping enquanto auto-scroll ativo
+        if (!autoScrollRunning) return
         val lm = recyclerRecentes.layoutManager as? LinearLayoutManager ?: return
-        val last = lm.findLastVisibleItemPosition()
+        val lastFull = lm.findLastCompletelyVisibleItemPosition()
         val total = recentAdapter.itemCount
-        if (total > 0 && last >= total - 2) {
-            // Reposiciona sem animação para começo para simular loop
-            val firstVisible = lm.findFirstVisibleItemPosition()
-            val offset = firstVisible % total
-            lm.scrollToPosition(offset)
+        if (total > 0 && lastFull == total - 1) {
+            // Reinicia no início sem animação para continuar efeito de rolagem contínua
+            lm.scrollToPosition(0)
         }
     }
 
     private fun updateIndicatorFromLayout() {
-        val lm = recyclerRecentes.layoutManager as? LinearLayoutManager ?: return
-        val first = lm.findFirstVisibleItemPosition()
-        val last = lm.findLastVisibleItemPosition()
-        if (first == RecyclerView.NO_POSITION || last == RecyclerView.NO_POSITION) return
-        val center = (first + last) / 2
-        setCurrentIndicator(center % recentAdapter.itemCount)
+        val childCount = recyclerRecentes.childCount
+        if (childCount == 0) return
+        val centerX = recyclerRecentes.width / 2
+        var bestIndex = -1
+        var bestDist = Int.MAX_VALUE
+        for (i in 0 until childCount) {
+            val child = recyclerRecentes.getChildAt(i) ?: continue
+            val childCenter = (child.left + child.right) / 2
+            val dist = abs(childCenter - centerX)
+            if (dist < bestDist) {
+                bestDist = dist
+                bestIndex = recyclerRecentes.getChildAdapterPosition(child)
+            }
+        }
+        if (bestIndex >= 0) setCurrentIndicator(bestIndex)
     }
 
     private fun buildIndicators(count: Int) {
@@ -406,7 +420,7 @@ class ActivityHomeComum : BaseActivity() {
         val padding = (width * 0.06f).toInt()
         val spacing = (width * 0.04f).toInt()
         val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#1976D2")
+            color = "#1976D2".toColorInt()
             textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textSize = width * 0.08f
@@ -435,7 +449,7 @@ class ActivityHomeComum : BaseActivity() {
         val nameH = (nameFM.bottom - nameFM.top).toInt()
         val promptH = (promptFM.bottom - promptFM.top).toInt()
         val finalHeight = qr.height + padding + nameH + spacing / 2 + promptH + padding
-        val out = Bitmap.createBitmap(width, finalHeight, Bitmap.Config.ARGB_8888)
+        val out = createBitmap(width, finalHeight)
         val canvas = Canvas(out)
         canvas.drawColor(Color.WHITE)
         canvas.drawBitmap(qr, 0f, 0f, null)

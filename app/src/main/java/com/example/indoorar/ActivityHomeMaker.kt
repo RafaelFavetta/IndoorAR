@@ -29,6 +29,8 @@ import android.net.Uri
 import java.text.SimpleDateFormat
 import java.util.*
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import kotlin.math.abs
+import androidx.core.graphics.toColorInt
 
 class ActivityHomeMaker : BaseActivity() {
 
@@ -40,10 +42,10 @@ class ActivityHomeMaker : BaseActivity() {
     // Substitui pages por itens individuais
     private val recentAdapter = RecentesAdapter { mapa -> onMapaClicked(mapa) }
 
-    // Auto-scroll config (slower like Home Comum)
-    private val SCROLL_STEP_PX = 1
-    private val FRAME_DELAY_MS = 30L
-    private val INITIAL_DELAY_MS = 2500L
+    // Auto-scroll config
+    private val SCROLL_STEP_PX = 2
+    private val FRAME_DELAY_MS = 16L          // ~60fps
+    private val INITIAL_DELAY_MS = 1500L      // 1,5s
 
     private val autoScrollHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private var autoScrollRunning = false
@@ -136,10 +138,13 @@ class ActivityHomeMaker : BaseActivity() {
                 updateIndicatorFromLayout()
             }
         })
-        recyclerRecentes.setOnTouchListener { _, event ->
+        recyclerRecentes.setOnTouchListener { v, event ->
             when (event.action) {
                 android.view.MotionEvent.ACTION_DOWN -> stopAutoScroll()
-                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> autoScrollHandler.postDelayed({ startAutoScroll() }, 2000)
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    v.performClick()
+                    autoScrollHandler.postDelayed({ startAutoScroll() }, 2000)
+                }
             }
             false
         }
@@ -165,23 +170,32 @@ class ActivityHomeMaker : BaseActivity() {
     private fun stopAutoScroll() { autoScrollRunning = false; autoScrollHandler.removeCallbacks(autoScrollRunnable) }
 
     private fun recycleLoopIfNeeded() {
+        // Só faz loop enquanto auto-scroll ativo para não atrapalhar scroll manual
+        if (!autoScrollRunning) return
         val lm = recyclerRecentes.layoutManager as? LinearLayoutManager ?: return
-        val last = lm.findLastVisibleItemPosition()
+        val lastFull = lm.findLastCompletelyVisibleItemPosition()
         val total = recentAdapter.itemCount
-        if (total > 0 && last >= total - 2) {
-            val firstVisible = lm.findFirstVisibleItemPosition()
-            val offset = firstVisible % total
-            lm.scrollToPosition(offset)
+        if (total > 0 && lastFull == total - 1) {
+            lm.scrollToPosition(0)
         }
     }
 
     private fun updateIndicatorFromLayout() {
-        val lm = recyclerRecentes.layoutManager as? LinearLayoutManager ?: return
-        val first = lm.findFirstVisibleItemPosition()
-        val last = lm.findLastVisibleItemPosition()
-        if (first == RecyclerView.NO_POSITION || last == RecyclerView.NO_POSITION) return
-        val center = (first + last) / 2
-        setCurrentIndicator(center % recentAdapter.itemCount)
+        val childCount = recyclerRecentes.childCount
+        if (childCount == 0) return
+        val centerX = recyclerRecentes.width / 2
+        var bestIndex = -1
+        var bestDist = Int.MAX_VALUE
+        for (i in 0 until childCount) {
+            val child = recyclerRecentes.getChildAt(i) ?: continue
+            val childCenter = (child.left + child.right) / 2
+            val dist = abs(childCenter - centerX)
+            if (dist < bestDist) {
+                bestDist = dist
+                bestIndex = recyclerRecentes.getChildAdapterPosition(child)
+            }
+        }
+        if (bestIndex >= 0) setCurrentIndicator(bestIndex)
     }
 
     private fun imageKeyFor(m: MapaResumo): String {
@@ -324,7 +338,7 @@ class ActivityHomeMaker : BaseActivity() {
                                         .into(ivPreview)
                                 }
                                 .addOnFailureListener {
-                                    ivPreview?.setImageResource(R.drawable.ic_minimap_placeholder)
+                                    ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
                                 }
                         } else {
                             com.bumptech.glide.Glide.with(this@ActivityHomeMaker)
@@ -335,7 +349,7 @@ class ActivityHomeMaker : BaseActivity() {
                                 .into(ivPreview)
                         }
                     } else {
-                        ivPreview?.setImageResource(R.drawable.ic_minimap_placeholder)
+                        ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
                     }
                 }
             }
@@ -351,7 +365,7 @@ class ActivityHomeMaker : BaseActivity() {
         btnBaixar?.setOnClickListener {
             // Substituir os botões principais pelos botões de download
             btnIniciar?.visibility = View.GONE
-            btnBaixar?.visibility = View.GONE
+            btnBaixar.visibility = View.GONE
             cardDownload?.visibility = View.VISIBLE
         }
 
@@ -367,7 +381,7 @@ class ActivityHomeMaker : BaseActivity() {
         dialog.show()
     }
 
-    private fun generateQrBitmap(content: String, size: Int = 1024): android.graphics.Bitmap? {
+    private fun generateQrBitmap(content: String, size: Int = 1024): Bitmap? {
         return try {
             val hints = mapOf(
                 com.google.zxing.EncodeHintType.ERROR_CORRECTION to com.google.zxing.qrcode.decoder.ErrorCorrectionLevel.M,
@@ -380,32 +394,32 @@ class ActivityHomeMaker : BaseActivity() {
             val bmp = createBitmap(width, height)
             for (x in 0 until width) {
                 for (y in 0 until height) {
-                    bmp[x, y] = if (bitMatrix.get(x, y)) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+                    bmp[x, y] = if (bitMatrix.get(x, y)) Color.BLACK else Color.WHITE
                 }
             }
             bmp
         } catch (_: Exception) { null }
     }
 
-    private fun composeQrWithText(qr: android.graphics.Bitmap, mapName: String): android.graphics.Bitmap {
+    private fun composeQrWithText(qr: Bitmap, mapName: String): Bitmap {
         val prompt = getString(R.string.qr_scan_prompt)
         val width = qr.width
         val padding = (width * 0.06f).toInt()
         val spacing = (width * 0.04f).toInt()
 
-        val namePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            color = android.graphics.Color.parseColor("#1976D2")
-            textAlign = android.graphics.Paint.Align.CENTER
-            typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+        val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = "#1976D2".toColorInt()
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textSize = width * 0.08f
         }
-        val promptPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            color = android.graphics.Color.DKGRAY
-            textAlign = android.graphics.Paint.Align.CENTER
+        val promptPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.DKGRAY
+            textAlign = Paint.Align.CENTER
             textSize = width * 0.06f
         }
         val maxTextWidth = width * 0.9f
-        fun fitText(p: android.graphics.Paint, text: String, desired: Float, min: Float = width * 0.04f): Float {
+        fun fitText(p: Paint, text: String, desired: Float, min: Float = width * 0.04f): Float {
             var size = desired
             p.textSize = size
             var w = p.measureText(text)
@@ -425,9 +439,9 @@ class ActivityHomeMaker : BaseActivity() {
         val promptH = (promptFM.bottom - promptFM.top).toInt()
 
         val finalHeight = qr.height + padding + nameH + spacing / 2 + promptH + padding
-        val out = android.graphics.Bitmap.createBitmap(width, finalHeight, android.graphics.Bitmap.Config.ARGB_8888)
-        val canvas = android.graphics.Canvas(out)
-        canvas.drawColor(android.graphics.Color.WHITE)
+        val out = createBitmap(width, finalHeight)
+        val canvas = Canvas(out)
+        canvas.drawColor(Color.WHITE)
         canvas.drawBitmap(qr, 0f, 0f, null)
 
         val cx = width / 2f
@@ -487,7 +501,7 @@ class ActivityHomeMaker : BaseActivity() {
         } catch (_: Exception) { false }
     }
 
-    private fun writeSimplePdfWithBitmap(bmp: android.graphics.Bitmap, out: java.io.OutputStream) {
+    private fun writeSimplePdfWithBitmap(bmp: Bitmap, out: java.io.OutputStream) {
         val pageWidth = 595 // A4 width at 72dpi (~8.27in * 72)
         val pageHeight = 842 // A4 height at 72dpi (~11.69in * 72)
         val scale =
@@ -499,7 +513,7 @@ class ActivityHomeMaker : BaseActivity() {
         val canvas = page.canvas
         val left = (pageWidth - scaled.width) / 2f
         val top = (pageHeight - scaled.height) / 2f
-        canvas.drawColor(android.graphics.Color.WHITE)
+        canvas.drawColor(Color.WHITE)
         canvas.drawBitmap(scaled, left, top, null)
         document.finishPage(page)
         document.writeTo(out)

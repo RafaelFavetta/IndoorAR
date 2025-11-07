@@ -144,6 +144,11 @@ class ActivityHomeMaker : BaseActivity() {
             false
         }
 
+        // "Ver todos" abre MeusMapas
+        findViewById<TextView>(R.id.btnVerTodosMaker)?.setOnClickListener {
+            startActivity(Intent(this, ActivityMeusMapas::class.java))
+        }
+
         carregarMapasRecentesEmTempoReal()
     }
 

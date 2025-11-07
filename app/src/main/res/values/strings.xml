@@ -48,4 +48,5 @@
     <string name="perfil">Perfil</string>
     <string name="mostrar_controles_manuais">Mostrar controles manuais</string>
     <string name="qr_scan_prompt">Me escaneie para ter o seu guia!</string>
+    <string name="ver_todos">Ver todos</string>
 </resources>

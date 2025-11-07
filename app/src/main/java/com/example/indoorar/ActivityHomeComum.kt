@@ -152,6 +152,11 @@ class ActivityHomeComum : BaseActivity() {
             false
         }
 
+        // "Ver todos" abre MapasExistentes
+        findViewById<TextView>(R.id.btnVerTodosComum)?.setOnClickListener {
+            startActivity(Intent(this, ActivityMapasExistentes::class.java))
+        }
+
         carregarMapasRecentesEmTempoReal()
     }
 

@@ -63,20 +63,41 @@
             app:layout_constraintTop_toBottomOf="@id/txtBemVindo" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <!-- Left-aligned section title -->
     <TextView
         android:id="@+id/txtMapasFavoritos"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
         android:layout_marginTop="24dp"
         android:fontFamily="@font/inter"
         android:text="@string/adicionados_recentemente"
         android:textAllCaps="false"
-        android:textAlignment="center"
+        android:textStyle="bold"
         android:textColor="#32357A"
         android:textSize="18sp"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/header" />
+
+    <!-- Right action: Ver todos -->
+    <TextView
+        android:id="@+id/btnVerTodosMaker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="24dp"
+        android:fontFamily="@font/inter"
+        android:text="@string/ver_todos"
+        android:textColor="#32357A"
+        android:textSize="14sp"
+        android:textStyle="normal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:background="@android:color/transparent"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBaseline_toBaselineOf="@id/txtMapasFavoritos" />
 
     <ProgressBar
         android:id="@+id/progressRecentes"
@@ -101,6 +122,7 @@
         android:paddingBottom="0dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/txtMapasFavoritos"
         app:layout_constraintBottom_toTopOf="@id/indicatorsRecentes"
         tools:listitem="@layout/item_mapa_page" />
 

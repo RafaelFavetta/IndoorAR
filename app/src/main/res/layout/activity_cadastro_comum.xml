@@ -172,7 +172,7 @@
         android:layout_marginEnd="24dp"
         android:autofillHints="phone"
         android:background="@drawable/btn_arredondado3"
-        android:drawableStart="@drawable/ic_phone"
+        android:drawableStart="@drawable/ic_phone_nofill"
         android:drawablePadding="10dp"
         android:hint="Telefone"
         android:inputType="phone"

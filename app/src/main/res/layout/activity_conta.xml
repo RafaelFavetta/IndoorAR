@@ -77,7 +77,7 @@
                     android:layout_height="40dp"
                     android:layout_marginEnd="12dp"
                     android:contentDescription="usuário comum"
-                    android:src="@drawable/ic_user_comum"
+                    android:src="@drawable/ic_explore_nofill"
                     app:tint="@color/colorOnPrimary" />
 
                 <TextView

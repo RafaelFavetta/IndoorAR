@@ -156,9 +156,9 @@
         app:itemIconTint="@color/colorPrimaryDark"
         app:itemTextColor="@color/colorPrimaryDark"
         app:labelVisibilityMode="labeled"
-        app:menu="@menu/bottom_nav_comum"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:menu="@menu/bottom_nav_comum" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

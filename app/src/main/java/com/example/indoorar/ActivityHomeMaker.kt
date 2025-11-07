@@ -21,6 +21,7 @@ import androidx.core.graphics.set
 import androidx.core.graphics.scale
 import androidx.core.graphics.createBitmap
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import android.view.ViewTreeObserver
 
 class ActivityHomeMaker : BaseActivity() {
 
@@ -106,6 +107,21 @@ class ActivityHomeMaker : BaseActivity() {
 
         recyclerRecentes.layoutManager = LinearLayoutManager(this, RecyclerView.HORIZONTAL, false)
         recyclerRecentes.adapter = recentAdapter
+
+        // Aplicar largura para mostrar ~1,5 cards
+        recyclerRecentes.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                val w = recyclerRecentes.width
+                if (w > 0) {
+                    val density = resources.displayMetrics.density
+                    val cardWidth = (w * 2f / 3f).toInt()
+                    val sideMargin = (8 * density).toInt()
+                    recentAdapter.setItemSizing(cardWidth, sideMargin)
+                    recyclerRecentes.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                    recentAdapter.notifyDataSetChanged()
+                }
+            }
+        })
 
         recyclerRecentes.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {

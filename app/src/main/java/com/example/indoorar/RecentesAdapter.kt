@@ -21,6 +21,15 @@ class RecentesAdapter(
     private val itensFiltrados = mutableListOf<MapaResumo>()
     private var currentQuery: String = ""
 
+    // Novo: controle de tamanho do card
+    private var cardWidthPx: Int? = null
+    private var sideMarginPx: Int = 0
+
+    fun setItemSizing(widthPx: Int, sideMarginPx: Int) {
+        this.cardWidthPx = widthPx
+        this.sideMarginPx = sideMarginPx
+    }
+
     fun submit(novos: List<MapaResumo>) {
         itens.clear()
         itens.addAll(novos)
@@ -53,7 +62,7 @@ class RecentesAdapter(
     override fun getItemCount(): Int = itensFiltrados.size
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        holder.bind(itensFiltrados[position], onClick)
+        holder.bind(itensFiltrados[position], onClick, cardWidthPx, sideMarginPx)
     }
 
     class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -62,11 +71,12 @@ class RecentesAdapter(
         private val btnFav = itemView.findViewById<ImageButton>(R.id.btnFavorito)
         private val card = itemView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardMapa)
 
-        fun bind(m: MapaResumo, onClick: (MapaResumo) -> Unit) {
-            // Ajusta largura compacta (similar ao antigo page layout) para manter visual do carrossel
+        fun bind(m: MapaResumo, onClick: (MapaResumo) -> Unit, cardWidthPx: Int?, sideMarginPx: Int) {
+            // Largura do item: usar configurada (para 1,5 cards) ou fallback 280dp
             val density = itemView.resources.displayMetrics.density
-            val desiredWidth = (280 * density).toInt() // 280dp
-            val sideMargin = (10 * density).toInt()
+            val fallbackWidth = (280 * density).toInt()
+            val desiredWidth = cardWidthPx ?: fallbackWidth
+            val sideMargin = if (sideMarginPx > 0) sideMarginPx else (10 * density).toInt()
             val lp = itemView.layoutParams as? ViewGroup.MarginLayoutParams
                 ?: ViewGroup.MarginLayoutParams(desiredWidth, ViewGroup.MarginLayoutParams.WRAP_CONTENT)
             lp.width = desiredWidth
@@ -75,7 +85,7 @@ class RecentesAdapter(
 
             txtNome.text = m.nome
 
-            // Thumb loading logic (same precedence as antes)
+            // Thumb loading logic
             val thumbBytes = m.imagemBlobThumb?.toBytes()
             val mediumBytes = m.imagemBlob?.toBytes()
             when {
@@ -126,7 +136,7 @@ class RecentesAdapter(
                 }
             }
 
-            // Favoritos (igual lógica do adapter por página anterior)
+            // Favoritos
             val user = FirebaseAuth.getInstance().currentUser
             if (user == null) {
                 btnFav.visibility = View.GONE

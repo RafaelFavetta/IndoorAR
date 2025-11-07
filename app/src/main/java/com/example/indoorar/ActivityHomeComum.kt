@@ -6,6 +6,7 @@ import android.graphics.*
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.ViewTreeObserver
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -120,6 +121,21 @@ class ActivityHomeComum : BaseActivity() {
 
         recyclerRecentes.layoutManager = LinearLayoutManager(this, RecyclerView.HORIZONTAL, false)
         recyclerRecentes.adapter = recentAdapter
+
+        // Aplicar largura para mostrar ~1,5 cards
+        recyclerRecentes.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                val w = recyclerRecentes.width
+                if (w > 0) {
+                    val density = resources.displayMetrics.density
+                    val cardWidth = (w * 2f / 3f).toInt() // ~66% da largura do recycler
+                    val sideMargin = (8 * density).toInt()
+                    recentAdapter.setItemSizing(cardWidth, sideMargin)
+                    recyclerRecentes.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                    recentAdapter.notifyDataSetChanged()
+                }
+            }
+        })
 
         recyclerRecentes.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {

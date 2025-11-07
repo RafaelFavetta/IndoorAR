@@ -57,8 +57,9 @@ open class BaseActivity : AppCompatActivity() {
 
     private fun setupUltimateFullScreen() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        insetsController = WindowInsetsControllerCompat(window, window.decorView)
-        insetsController.systemBarsBehavior =
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        insetsController = controller
+        controller.systemBarsBehavior =
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 
         hideSystemBars()
@@ -130,9 +131,10 @@ open class BaseActivity : AppCompatActivity() {
 
     fun hideKeyboard() {
         val view = currentFocus
-        if (view != null) {
+        val token = view?.windowToken
+        if (token != null) {
             val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.hideSoftInputFromWindow(view.windowToken, 0)
+            imm.hideSoftInputFromWindow(token, 0)
         }
     }
 

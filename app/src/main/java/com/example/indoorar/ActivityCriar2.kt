@@ -245,6 +245,9 @@ class ActivityCriar2 : BaseActivity() {
 
     private fun closeKeyboard() {
         val imm = getSystemService<InputMethodManager>()
-        imm?.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
+        val token = currentFocus?.windowToken
+        if (imm != null && token != null) {
+            imm.hideSoftInputFromWindow(token, 0)
+        }
     }
 }

@@ -2,6 +2,8 @@ package com.example.indoorar
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class ActivityFavoritos : BaseActivity() {
@@ -9,8 +11,21 @@ class ActivityFavoritos : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_favoritos)
 
-        // Wire bottom navigation (conta comum)
+        // Aplicar insets no root: somente topo/laterais
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+            insets
+        }
+
+        // Bottom navigation (conta comum)
         findViewById<BottomNavigationView>(R.id.bottomNavComum)?.apply {
+            // Evita padding inferior por insets para manter colada no fundo
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, 0)
+                insets
+            }
+
             // mark favoritos as selected
             selectedItemId = R.id.action_favoritos
             setOnItemSelectedListener { item ->

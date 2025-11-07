@@ -17,6 +17,8 @@ import com.google.zxing.common.HybridBinarizer
 import android.content.res.ColorStateList
 import androidx.core.graphics.toColorInt
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 
 class ActivityScanQR : BaseActivity() {
@@ -45,11 +47,23 @@ class ActivityScanQR : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_scanqr)
 
+        // Aplicar insets: topo/laterais no root; não adicionar padding inferior
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+            insets
+        }
+
         previewView = findViewById(R.id.previewView)
         btnEscanear = findViewById(R.id.btnEscanear)
 
         // Wire bottom navigation (conta comum) — layout now contains `bottomNavComum`
         findViewById<BottomNavigationView>(R.id.bottomNavComum)?.apply {
+            // Evita padding inferior de insets na navbar para se manter colada no fundo
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, 0)
+                insets
+            }
             selectedItemId = R.id.action_scan
             setOnItemSelectedListener { item ->
                 if (this.selectedItemId == item.itemId) return@setOnItemSelectedListener true
@@ -131,29 +145,31 @@ class ActivityScanQR : BaseActivity() {
             }
 
             analysis.setAnalyzer(ContextCompat.getMainExecutor(this)) { imageProxy ->
-                val mediaImage = imageProxy.image
-                if (mediaImage != null) {
+                try {
+                    val mediaImage = imageProxy.image ?: return@setAnalyzer
                     val crop = imageProxy.cropRect
-                    val source = ImageUtils.getLuminanceSourceFromImage(mediaImage, crop)
-                    val bitmap = BinaryBitmap(HybridBinarizer(source))
-                    try {
-                        val result = reader.decode(bitmap)
-                        if (result.text != lastScanned) {
-                            lastScanned = result.text
-                            // Update UI: enable and turn blue with ESCANEAR
-                            btnEscanear.isEnabled = true
-                            btnEscanear.text = "ESCANEAR"
-                            btnEscanear.backgroundTintList = ColorStateList.valueOf("#32357A".toColorInt())
-                        }
-                    } catch (_: NotFoundException) {
-                        // nada encontrado no frame
+                    val source = try {
+                        ImageUtils.getLuminanceSourceFromImage(mediaImage, crop)
                     } catch (_: Exception) {
-                        // qualquer outra exceção do ZXing
-                    } finally {
-                        reader.reset() // evita estado sujo entre frames
-                        imageProxy.close()
+                        // Fallback: usa frame inteiro se recorte falhar
+                        android.graphics.Rect(0, 0, mediaImage.width, mediaImage.height).let { full ->
+                            ImageUtils.getLuminanceSourceFromImage(mediaImage, full)
+                        }
                     }
-                } else {
+                    val bitmap = BinaryBitmap(HybridBinarizer(source))
+                    val result = reader.decode(bitmap)
+                    if (result.text != lastScanned) {
+                        lastScanned = result.text
+                        btnEscanear.isEnabled = true
+                        btnEscanear.text = "ESCANEAR"
+                        btnEscanear.backgroundTintList = ColorStateList.valueOf("#32357A".toColorInt())
+                    }
+                } catch (_: NotFoundException) {
+                    // Nada encontrado no frame
+                } catch (_: Exception) {
+                    // Ignora qualquer erro do pipeline de leitura para evitar crash
+                } finally {
+                    try { reader.reset() } catch (_: Exception) {}
                     imageProxy.close()
                 }
             }

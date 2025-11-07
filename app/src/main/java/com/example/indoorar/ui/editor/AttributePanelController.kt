@@ -273,7 +273,10 @@ class AttributePanelController(
             if (imeDone && !isProgrammatic) {
                 action()
                 val imm = v.context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-                imm.hideSoftInputFromWindow(v.windowToken, 0)
+                val token = v.windowToken
+                if (token != null) {
+                    imm.hideSoftInputFromWindow(token, 0)
+                }
                 v.clearFocus()
                 true
             } else false

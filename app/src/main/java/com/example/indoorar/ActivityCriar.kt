@@ -186,7 +186,8 @@ class ActivityCriar : BaseActivity() {
     private fun setLoading(loading: Boolean) {
         progressBar.visibility = if (loading) View.VISIBLE else View.GONE
         btnCadastrar.isEnabled = !loading
-        findViewById<View>(R.id.btnGoogle)?.isEnabled = !loading
+        // Desabilita o botão correto do Google (btnGoogle3)
+        btnGoogle.isEnabled = !loading
     }
 
     private fun validarCampos(nome: String, email: String, telefone: String, senha: String): Boolean {
@@ -244,6 +245,9 @@ class ActivityCriar : BaseActivity() {
 
     private fun closeKeyboard() {
         val imm = getSystemService<InputMethodManager>()
-        imm?.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
+        val token = currentFocus?.windowToken
+        if (imm != null && token != null) {
+            imm.hideSoftInputFromWindow(token, 0)
+        }
     }
 }

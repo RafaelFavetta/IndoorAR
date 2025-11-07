@@ -164,6 +164,15 @@
             </PendingDiffInfo>
           </value>
         </entry>
+        <entry key="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" />
+              <option name="originalContent" value="distributionBase=GRADLE_USER_HOME&#10;distributionPath=wrapper/dists&#10;distributionUrl=https\://services.gradle.org/distributions/gradle-8.14.3-bin.zip&#10;networkTimeout=10000&#10;validateDistributionUrl=true&#10;zipStoreBase=GRADLE_USER_HOME&#10;zipStorePath=wrapper/dists&#10;&#10;" />
+              <option name="updatedContent" value="distributionBase=GRADLE_USER_HOME&#10;distributionPath=wrapper/dists&#10;distributionUrl=https\://services.gradle.org/distributions/gradle-8.14.3-bin.zip&#10;networkTimeout=10000&#10;validateDistributionUrl=true&#10;zipStoreBase=GRADLE_USER_HOME&#10;zipStorePath=wrapper/dists" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
       </map>
     </option>
   </component>

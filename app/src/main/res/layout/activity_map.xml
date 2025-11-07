@@ -39,7 +39,6 @@
         android:layout_height="72dp"
         android:src="@drawable/ic_nav_arrow"
         android:contentDescription="@string/app_name"
-        app:tint="#FFFFFFFF"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -103,52 +102,85 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#99000000"
+        android:background="@android:color/transparent"
         android:padding="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_margin="16dp">
 
         <!-- Botão: Frente -->
-        <Button
+        <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/btnMoveUp"
             android:layout_width="60dp"
             android:layout_height="48dp"
-            android:text="↑"
-            android:textSize="20sp"
+            app:srcCompat="@drawable/ic_arrow_shape"
+            android:contentDescription="Mover para frente"
+            android:background="@android:color/transparent"
+            android:padding="8dp"
+            android:scaleType="centerInside"
             android:layout_gravity="center_horizontal" />
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:gravity="center"
+            >
 
             <!-- Botão: Esquerda -->
-            <Button
+            <androidx.appcompat.widget.AppCompatImageButton
                 android:id="@+id/btnMoveLeft"
                 android:layout_width="60dp"
                 android:layout_height="48dp"
-                android:text="←"
-                android:textSize="20sp" />
+                app:srcCompat="@drawable/ic_arrow_shape"
+                android:contentDescription="Mover para esquerda"
+                android:rotation="-90"
+                android:background="@android:color/transparent"
+                android:padding="8dp"
+                android:scaleType="centerInside" />
 
             <!-- Botão: Direita -->
-            <Button
+            <androidx.appcompat.widget.AppCompatImageButton
                 android:id="@+id/btnMoveRight"
                 android:layout_width="60dp"
                 android:layout_height="48dp"
-                android:text="→"
-                android:textSize="20sp" />
-        </LinearLayout>
+                app:srcCompat="@drawable/ic_arrow_shape"
+                android:contentDescription="Mover para direita"
+                android:rotation="90"
+                android:background="@android:color/transparent"
+                android:padding="8dp"
+                android:scaleType="centerInside" />
+         </LinearLayout>
 
-        <!-- Botão: Trás -->
-        <Button
+         <!-- Botão: Trás -->
+         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/btnMoveDown"
             android:layout_width="60dp"
             android:layout_height="48dp"
-            android:text="↓"
-            android:textSize="20sp"
+            app:srcCompat="@drawable/ic_arrow_shape"
+            android:contentDescription="Mover para trás"
+            android:rotation="180"
+            android:background="@android:color/transparent"
+            android:padding="8dp"
+            android:scaleType="centerInside"
             android:layout_gravity="center_horizontal" />
     </LinearLayout>
 
+    <!-- Botão pequeno para mostrar/ocultar os controles manuais -->
+    <androidx.appcompat.widget.AppCompatImageButton
+        android:id="@+id/btnToggleManual"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        app:srcCompat="@drawable/ic_four_arrows"
+        android:contentDescription="@string/mostrar_controles_manuais"
+        android:background="@drawable/btn_arredondado_branco"
+        android:tint="#32357A"
+        android:scaleType="centerInside"
+        android:adjustViewBounds="true"
+        android:padding="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/manualControls"
+        android:layout_marginStart="16dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

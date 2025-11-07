@@ -22,6 +22,13 @@ import androidx.core.graphics.scale
 import androidx.core.graphics.createBitmap
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import android.view.ViewTreeObserver
+import android.graphics.*
+import android.provider.MediaStore
+import android.content.ContentValues
+import android.net.Uri
+import java.text.SimpleDateFormat
+import java.util.*
+import com.google.android.material.bottomsheet.BottomSheetDialog
 
 class ActivityHomeMaker : BaseActivity() {
 
@@ -261,7 +268,7 @@ class ActivityHomeMaker : BaseActivity() {
     }
 
     private fun onMapaClicked(m: MapaResumo) {
-        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val dialog = BottomSheetDialog(this)
         dialog.setContentView(R.layout.bottomsheet_mapa_preview)
 
         val txtTitulo = dialog.findViewById<TextView>(R.id.txtTituloMapa)
@@ -282,7 +289,7 @@ class ActivityHomeMaker : BaseActivity() {
             val thumb = m.imagemBlobThumb?.toBytes()
             when {
                 medium != null && medium.isNotEmpty() -> {
-                    com.bumptech.glide.Glide.with(ivPreview.context)
+                    com.bumptech.glide.Glide.with(this@ActivityHomeMaker)
                         .load(medium)
                         .centerCrop()
                         .placeholder(R.drawable.ic_minimap_placeholder)
@@ -290,7 +297,7 @@ class ActivityHomeMaker : BaseActivity() {
                         .into(ivPreview)
                 }
                 thumb != null && thumb.isNotEmpty() -> {
-                    com.bumptech.glide.Glide.with(ivPreview.context)
+                    com.bumptech.glide.Glide.with(this@ActivityHomeMaker)
                         .load(thumb)
                         .centerCrop()
                         .placeholder(R.drawable.ic_minimap_placeholder)
@@ -304,7 +311,7 @@ class ActivityHomeMaker : BaseActivity() {
                             val ref = com.google.firebase.storage.FirebaseStorage.getInstance().getReferenceFromUrl(url)
                             ref.downloadUrl
                                 .addOnSuccessListener { httpsUri ->
-                                    com.bumptech.glide.Glide.with(ivPreview.context)
+                                    com.bumptech.glide.Glide.with(this@ActivityHomeMaker)
                                         .load(httpsUri)
                                         .centerCrop()
                                         .placeholder(R.drawable.ic_minimap_placeholder)
@@ -312,10 +319,10 @@ class ActivityHomeMaker : BaseActivity() {
                                         .into(ivPreview)
                                 }
                                 .addOnFailureListener {
-                                    ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
+                                    ivPreview?.setImageResource(R.drawable.ic_minimap_placeholder)
                                 }
                         } else {
-                            com.bumptech.glide.Glide.with(ivPreview.context)
+                            com.bumptech.glide.Glide.with(this@ActivityHomeMaker)
                                 .load(url)
                                 .centerCrop()
                                 .placeholder(R.drawable.ic_minimap_placeholder)
@@ -323,7 +330,7 @@ class ActivityHomeMaker : BaseActivity() {
                                 .into(ivPreview)
                         }
                     } else {
-                        ivPreview.setImageResource(R.drawable.ic_minimap_placeholder)
+                        ivPreview?.setImageResource(R.drawable.ic_minimap_placeholder)
                     }
                 }
             }
@@ -339,16 +346,16 @@ class ActivityHomeMaker : BaseActivity() {
         btnBaixar?.setOnClickListener {
             // Substituir os botões principais pelos botões de download
             btnIniciar?.visibility = View.GONE
-            btnBaixar.visibility = View.GONE
+            btnBaixar?.visibility = View.GONE
             cardDownload?.visibility = View.VISIBLE
         }
 
         btnPNG?.setOnClickListener {
-            val ok = saveQrAsPng(m.id)
-            android.widget.Toast.makeText(this, if (ok) "QR salvo em Imagens/IndoorAR" else "Falha ao salvar QR", android.widget.Toast.LENGTH_SHORT).show()
+            val ok = saveQrAsPng(m.id, m.nome)
+            android.widget.Toast.makeText(this, if (ok) "QR salvo em Imagens/Wander" else "Falha ao salvar QR", android.widget.Toast.LENGTH_SHORT).show()
         }
         btnPDF?.setOnClickListener {
-            val ok = saveQrAsPdf(m.id)
+            val ok = saveQrAsPdf(m.id, m.nome)
             android.widget.Toast.makeText(this, if (ok) "PDF salvo em Downloads" else "Falha ao salvar PDF", android.widget.Toast.LENGTH_SHORT).show()
         }
 
@@ -375,43 +382,101 @@ class ActivityHomeMaker : BaseActivity() {
         } catch (_: Exception) { null }
     }
 
-    private fun saveQrAsPng(mapId: String): Boolean {
-        val bmp = generateQrBitmap(mapId) ?: return false
+    private fun composeQrWithText(qr: android.graphics.Bitmap, mapName: String): android.graphics.Bitmap {
+        val prompt = getString(R.string.qr_scan_prompt)
+        val width = qr.width
+        val padding = (width * 0.06f).toInt()
+        val spacing = (width * 0.04f).toInt()
+
+        val namePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.parseColor("#1976D2")
+            textAlign = android.graphics.Paint.Align.CENTER
+            typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+            textSize = width * 0.08f
+        }
+        val promptPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.DKGRAY
+            textAlign = android.graphics.Paint.Align.CENTER
+            textSize = width * 0.06f
+        }
+        val maxTextWidth = width * 0.9f
+        fun fitText(p: android.graphics.Paint, text: String, desired: Float, min: Float = width * 0.04f): Float {
+            var size = desired
+            p.textSize = size
+            var w = p.measureText(text)
+            while (w > maxTextWidth && size > min) {
+                size *= 0.9f
+                p.textSize = size
+                w = p.measureText(text)
+            }
+            return size
+        }
+        namePaint.textSize = fitText(namePaint, mapName, namePaint.textSize)
+        promptPaint.textSize = fitText(promptPaint, prompt, promptPaint.textSize)
+
+        val nameFM = namePaint.fontMetrics
+        val promptFM = promptPaint.fontMetrics
+        val nameH = (nameFM.bottom - nameFM.top).toInt()
+        val promptH = (promptFM.bottom - promptFM.top).toInt()
+
+        val finalHeight = qr.height + padding + nameH + spacing / 2 + promptH + padding
+        val out = android.graphics.Bitmap.createBitmap(width, finalHeight, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(out)
+        canvas.drawColor(android.graphics.Color.WHITE)
+        canvas.drawBitmap(qr, 0f, 0f, null)
+
+        val cx = width / 2f
+        var y = qr.height + padding.toFloat()
+        y += -nameFM.top
+        canvas.drawText(mapName, cx, y, namePaint)
+        y += spacing / 2f
+        y += -promptFM.top
+        canvas.drawText(prompt, cx, y, promptPaint)
+        return out
+    }
+
+    private fun saveQrAsPng(mapId: String, mapName: String): Boolean {
+        val qr = generateQrBitmap(mapId) ?: return false
+        val bmp = composeQrWithText(qr, mapName)
+        if (!qr.isRecycled) qr.recycle()
         return try {
-            val filename = "QR_${mapId}_${java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())}.png"
-            val values = android.content.ContentValues().apply {
-                put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, filename)
-                put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/png")
-                put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, "Pictures/IndoorAR")
-                put(android.provider.MediaStore.Images.Media.IS_PENDING, 1)
+            val filename = "QR_${mapId}_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.png"
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, filename)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Wander")
+                put(MediaStore.Images.Media.IS_PENDING, 1)
             }
             val resolver = contentResolver
-            val uri = resolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return false
+            val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return false
             resolver.openOutputStream(uri)?.use { out ->
-                bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+                bmp.compress(Bitmap.CompressFormat.PNG, 100, out)
             } ?: return false
-            values.clear(); values.put(android.provider.MediaStore.Images.Media.IS_PENDING, 0)
+            values.clear(); values.put(MediaStore.Images.Media.IS_PENDING, 0)
             resolver.update(uri, values, null, null)
             true
         } catch (_: Exception) { false }
+        finally { if (!bmp.isRecycled) bmp.recycle() }
     }
 
-    private fun saveQrAsPdf(mapId: String): Boolean {
+    private fun saveQrAsPdf(mapId: String, mapName: String): Boolean {
         return try {
-            val bmp = generateQrBitmap(mapId, 1024) ?: return false
-            val filename = "QR_${mapId}_${java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())}.pdf"
-            val values = android.content.ContentValues().apply {
-                put(android.provider.MediaStore.Downloads.DISPLAY_NAME, filename)
-                put(android.provider.MediaStore.Downloads.MIME_TYPE, "application/pdf")
-                put(android.provider.MediaStore.Downloads.IS_PENDING, 1)
+            val qr = generateQrBitmap(mapId, 1024) ?: return false
+            val bmp = composeQrWithText(qr, mapName)
+            if (!qr.isRecycled) qr.recycle()
+            val filename = "QR_${mapId}_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.pdf"
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, filename)
+                put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
+                put(MediaStore.Downloads.IS_PENDING, 1)
             }
             val resolver = contentResolver
-            val collection = android.provider.MediaStore.Downloads.getContentUri(android.provider.MediaStore.VOLUME_EXTERNAL_PRIMARY)
-            val uri: android.net.Uri = resolver.insert(collection, values) ?: return false
+            val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            val uri: Uri = resolver.insert(collection, values) ?: return false
             resolver.openOutputStream(uri)?.use { out ->
                 writeSimplePdfWithBitmap(bmp, out)
             } ?: return false
-            values.clear(); values.put(android.provider.MediaStore.Downloads.IS_PENDING, 0)
+            values.clear(); values.put(MediaStore.Downloads.IS_PENDING, 0)
             resolver.update(uri, values, null, null)
             true
         } catch (_: Exception) { false }

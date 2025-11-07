@@ -18,6 +18,7 @@ import android.view.View
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 import androidx.core.graphics.scale
+import androidx.core.graphics.toColorInt
 
 class ActivityMeusMapas : BaseActivity() {
 
@@ -155,11 +156,11 @@ class ActivityMeusMapas : BaseActivity() {
         }
 
         btnPNG?.setOnClickListener {
-            val ok = saveQrAsPng(m.id)
-            Toast.makeText(this, if (ok) "QR salvo em Imagens/IndoorAR" else "Falha ao salvar QR", Toast.LENGTH_SHORT).show()
+            val ok = saveQrAsPng(m.id, m.nome)
+            Toast.makeText(this, if (ok) "QR salvo em Imagens/Wander" else "Falha ao salvar QR", Toast.LENGTH_SHORT).show()
         }
         btnPDF?.setOnClickListener {
-            val ok = saveQrAsPdf(m.id)
+            val ok = saveQrAsPdf(m.id, m.nome)
             Toast.makeText(this, if (ok) "PDF salvo em Downloads" else "Falha ao salvar PDF", Toast.LENGTH_SHORT).show()
         }
 
@@ -179,26 +180,77 @@ class ActivityMeusMapas : BaseActivity() {
             val bmp = createBitmap(width, height)
             for (x in 0 until width) {
                 for (y in 0 until height) {
-                    bmp[x, y] = if (bitMatrix.get(
-                            x,
-                            y
-                        )
-                    ) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+                    bmp[x, y] = if (bitMatrix.get(x, y)) android.graphics.Color.BLACK else android.graphics.Color.WHITE
                 }
             }
             bmp
         } catch (_: Exception) { null }
     }
 
-    private fun saveQrAsPng(mapId: String): Boolean {
-        val bmp = generateQrBitmap(mapId) ?: return false
+    private fun composeQrWithText(qr: android.graphics.Bitmap, mapName: String): android.graphics.Bitmap {
+        val prompt = getString(R.string.qr_scan_prompt)
+        val width = qr.width
+        val padding = (width * 0.06f).toInt()
+        val spacing = (width * 0.04f).toInt()
+
+        val namePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = "#32357A".toColorInt() // azul
+            textAlign = android.graphics.Paint.Align.CENTER
+            typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+            textSize = width * 0.08f
+        }
+        val promptPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.DKGRAY
+            textAlign = android.graphics.Paint.Align.CENTER
+            textSize = width * 0.06f
+        }
+        val maxTextWidth = width * 0.9f
+        fun fitText(p: android.graphics.Paint, text: String, desired: Float, min: Float = width * 0.04f): Float {
+            var size = desired
+            p.textSize = size
+            var w = p.measureText(text)
+            while (w > maxTextWidth && size > min) {
+                size *= 0.9f
+                p.textSize = size
+                w = p.measureText(text)
+            }
+            return size
+        }
+        namePaint.textSize = fitText(namePaint, mapName, namePaint.textSize)
+        promptPaint.textSize = fitText(promptPaint, prompt, promptPaint.textSize)
+
+        val nameFM = namePaint.fontMetrics
+        val promptFM = promptPaint.fontMetrics
+        val nameH = (nameFM.bottom - nameFM.top).toInt()
+        val promptH = (promptFM.bottom - promptFM.top).toInt()
+
+        val finalHeight = qr.height + padding + nameH + spacing / 2 + promptH + padding
+        val out = createBitmap(width, finalHeight)
+        val canvas = android.graphics.Canvas(out)
+        canvas.drawColor(android.graphics.Color.WHITE)
+        canvas.drawBitmap(qr, 0f, 0f, null)
+
+        val cx = width / 2f
+        var y = qr.height + padding.toFloat()
+        y += -nameFM.top
+        canvas.drawText(mapName, cx, y, namePaint)
+        y += spacing / 2f
+        y += -promptFM.top
+        canvas.drawText(prompt, cx, y, promptPaint)
+        return out
+    }
+
+    private fun saveQrAsPng(mapId: String, mapName: String): Boolean {
+        val qr = generateQrBitmap(mapId) ?: return false
+        val bmp = composeQrWithText(qr, mapName)
+        if (!qr.isRecycled) qr.recycle()
         return try {
             val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
             val filename = "QR_${mapId}_${timestamp}.png"
             val values = android.content.ContentValues().apply {
                 put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, filename)
                 put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/png")
-                put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, "Pictures/IndoorAR")
+                put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Wander")
                 put(android.provider.MediaStore.Images.Media.IS_PENDING, 1)
             }
             val resolver = contentResolver
@@ -210,11 +262,14 @@ class ActivityMeusMapas : BaseActivity() {
             resolver.update(uri, values, null, null)
             true
         } catch (_: Exception) { false }
+        finally { if (!bmp.isRecycled) bmp.recycle() }
     }
 
-    private fun saveQrAsPdf(mapId: String): Boolean {
+    private fun saveQrAsPdf(mapId: String, mapName: String): Boolean {
         return try {
-            val bmp = generateQrBitmap(mapId, 1024) ?: return false
+            val qr = generateQrBitmap(mapId, 1024) ?: return false
+            val bmp = composeQrWithText(qr, mapName)
+            if (!qr.isRecycled) qr.recycle()
             val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
             val filename = "QR_${mapId}_${timestamp}.pdf"
             val values = android.content.ContentValues().apply {
@@ -235,8 +290,8 @@ class ActivityMeusMapas : BaseActivity() {
     }
 
     private fun writeSimplePdfWithBitmap(bmp: android.graphics.Bitmap, out: java.io.OutputStream) {
-        val pageWidth = 595 // A4 width at 72dpi (~8.27in * 72)
-        val pageHeight = 842 // A4 height at 72dpi (~11.69in * 72)
+        val pageWidth = 595
+        val pageHeight = 842
         val scale = kotlin.math.min(pageWidth.toFloat() / bmp.width, pageHeight.toFloat() / bmp.height)
         val scaled = bmp.scale((bmp.width * scale).toInt(), (bmp.height * scale).toInt())
         val document = android.graphics.pdf.PdfDocument()
@@ -251,5 +306,6 @@ class ActivityMeusMapas : BaseActivity() {
         document.writeTo(out)
         document.close()
         if (!scaled.isRecycled) scaled.recycle()
+        if (!bmp.isRecycled) bmp.recycle()
     }
 }

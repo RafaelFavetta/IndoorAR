@@ -29,6 +29,8 @@ import java.util.*
 import androidx.core.view.isVisible
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
+import androidx.core.graphics.toColorInt
+import androidx.core.graphics.scale
 
 class ActivityMapasExistentes : BaseActivity() {
     private lateinit var recycler: RecyclerView
@@ -158,11 +160,11 @@ class ActivityMapasExistentes : BaseActivity() {
         }
 
         btnPNG?.setOnClickListener {
-            val ok = saveQrAsPng(m.id)
-            Toast.makeText(this, if (ok) "QR salvo em Imagens/IndoorAR" else "Falha ao salvar QR", Toast.LENGTH_SHORT).show()
+            val ok = saveQrAsPng(m.id, m.nome)
+            Toast.makeText(this, if (ok) "QR salvo em Imagens/Wander" else "Falha ao salvar QR", Toast.LENGTH_SHORT).show()
         }
         btnPDF?.setOnClickListener {
-            val ok = saveQrAsPdf(m.id)
+            val ok = saveQrAsPdf(m.id, m.nome)
             Toast.makeText(this, if (ok) "PDF salvo em Downloads" else "Falha ao salvar PDF", Toast.LENGTH_SHORT).show()
         }
 
@@ -189,15 +191,70 @@ class ActivityMapasExistentes : BaseActivity() {
         } catch (_: Exception) { null }
     }
 
-    private fun saveQrAsPng(mapId: String): Boolean {
-        val bmp = generateQrBitmap(mapId) ?: return false
+    private fun composeQrWithText(qr: Bitmap, mapName: String): Bitmap {
+        val prompt = getString(R.string.qr_scan_prompt)
+        val width = qr.width
+        val padding = (width * 0.06f).toInt()
+        val spacing = (width * 0.04f).toInt()
+
+        val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = "#32357A".toColorInt() // azul
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textSize = width * 0.08f
+        }
+        val promptPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.DKGRAY
+            textAlign = Paint.Align.CENTER
+            textSize = width * 0.06f
+        }
+        val maxTextWidth = width * 0.9f
+        fun fitText(p: Paint, text: String, desired: Float, min: Float = width * 0.04f): Float {
+            var size = desired
+            p.textSize = size
+            var w = p.measureText(text)
+            while (w > maxTextWidth && size > min) {
+                size *= 0.9f
+                p.textSize = size
+                w = p.measureText(text)
+            }
+            return size
+        }
+        namePaint.textSize = fitText(namePaint, mapName, namePaint.textSize)
+        promptPaint.textSize = fitText(promptPaint, prompt, promptPaint.textSize)
+
+        val nameFM = namePaint.fontMetrics
+        val promptFM = promptPaint.fontMetrics
+        val nameH = (nameFM.bottom - nameFM.top).toInt()
+        val promptH = (promptFM.bottom - promptFM.top).toInt()
+
+        val finalHeight = qr.height + padding + nameH + spacing / 2 + promptH + padding
+        val out = createBitmap(width, finalHeight)
+        val canvas = Canvas(out)
+        canvas.drawColor(Color.WHITE)
+        canvas.drawBitmap(qr, 0f, 0f, null)
+
+        val cx = width / 2f
+        var y = qr.height + padding.toFloat()
+        y += -nameFM.top
+        canvas.drawText(mapName, cx, y, namePaint)
+        y += spacing / 2f
+        y += -promptFM.top
+        canvas.drawText(prompt, cx, y, promptPaint)
+        return out
+    }
+
+    private fun saveQrAsPng(mapId: String, mapName: String): Boolean {
+        val qr = generateQrBitmap(mapId) ?: return false
+        val bmp = composeQrWithText(qr, mapName)
+        if (!qr.isRecycled) qr.recycle()
         return try {
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val filename = "QR_${mapId}_${timestamp}.png"
             val values = ContentValues().apply {
                 put(MediaStore.Images.Media.DISPLAY_NAME, filename)
                 put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/IndoorAR")
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Imagens/Wander")
                 put(MediaStore.Images.Media.IS_PENDING, 1)
             }
             val resolver = contentResolver
@@ -209,16 +266,19 @@ class ActivityMapasExistentes : BaseActivity() {
             resolver.update(uri, values, null, null)
             true
         } catch (_: Exception) { false }
+        finally { if (!bmp.isRecycled) bmp.recycle() }
     }
 
-    private fun saveQrAsPdf(mapId: String): Boolean {
+    private fun saveQrAsPdf(mapId: String, mapName: String): Boolean {
         return try {
-            val bmp = generateQrBitmap(mapId, 1024) ?: return false
+            val qr = generateQrBitmap(mapId, 1024) ?: return false
+            val bmp = composeQrWithText(qr, mapName)
+            if (!qr.isRecycled) qr.recycle()
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val filename = "QR_${mapId}_${timestamp}.pdf"
             val values = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, filename)
-                put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
+                put(MediaStore.Downloads.MIME_TYPE, "Downloads/pdf")
                 put(MediaStore.Downloads.IS_PENDING, 1)
             }
             val resolver = contentResolver
@@ -237,7 +297,7 @@ class ActivityMapasExistentes : BaseActivity() {
         val pageWidth = 595 // A4 width at 72dpi (~8.27in * 72)
         val pageHeight = 842 // A4 height at 72dpi (~11.69in * 72)
         val scale = minOf(pageWidth.toFloat() / bmp.width, pageHeight.toFloat() / bmp.height)
-        val pdfBmp = Bitmap.createScaledBitmap(bmp, (bmp.width * scale).toInt(), (bmp.height * scale).toInt(), true)
+        val pdfBmp = bmp.scale((bmp.width * scale).toInt(), (bmp.height * scale).toInt())
         val document = android.graphics.pdf.PdfDocument()
         val pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
         val page = document.startPage(pageInfo)

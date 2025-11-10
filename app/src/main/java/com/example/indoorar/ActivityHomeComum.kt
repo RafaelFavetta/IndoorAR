@@ -51,11 +51,13 @@ class ActivityHomeComum : BaseActivity() {
     private var baseRecentCount: Int = 0
     // Protege contra reposicionamentos repetidos
     private var isWrappingRepositioning: Boolean = false
+    // Cooldown em ticks (frames) para não reposicionar várias vezes seguidas
+    private var wrapCooldownTicks: Int = 0
 
     // Auto-scroll config
     private val SCROLL_STEP_PX = 2
     private val FRAME_DELAY_MS = 16L          // ~60fps
-    private val INITIAL_DELAY_MS = 1500L      // 1,5s
+    private val INITIAL_DELAY_MS = 1000L      // 1s
 
     // Auto-scroll
     private val autoScrollHandler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -64,6 +66,7 @@ class ActivityHomeComum : BaseActivity() {
         override fun run() {
             if (!autoScrollRunning) return
             recyclerRecentes.scrollBy(SCROLL_STEP_PX, 0)
+            if (wrapCooldownTicks > 0) wrapCooldownTicks--
             recycleLoopIfNeeded()
             updateIndicatorFromLayout()
             autoScrollHandler.postDelayed(this, FRAME_DELAY_MS)
@@ -206,38 +209,36 @@ class ActivityHomeComum : BaseActivity() {
         if (baseRecentCount > 1 && total >= baseRecentCount * 3) {
             val firstVisible = lm.findFirstVisibleItemPosition()
             if (firstVisible == RecyclerView.NO_POSITION) return
-            // Se estivermos na cópia final, reposiciona para a cópia do meio preservando offset
-            if (firstVisible >= baseRecentCount * 2) {
+            val lastVisible = lm.findLastVisibleItemPosition()
+            // Evita reposicionamentos consecutivos
+            if (wrapCooldownTicks > 0) return
+            // Reposiciona quando estiver muito perto do fim da terceira cópia
+            val endThreshold = baseRecentCount * 3 - 2 // antepenúltimo/penúltimo item
+            val startThreshold = 1 // perto do começo da primeira cópia
+            if (lastVisible >= endThreshold) {
                 if (!isWrappingRepositioning) {
                     isWrappingRepositioning = true
-                    val offsetView = recyclerRecentes.getChildAt(0)
-                    val offset = offsetView?.left ?: 0
-                    val newPos = (firstVisible % baseRecentCount) + baseRecentCount
+                    val firstView = lm.findViewByPosition(firstVisible)
+                    val offset = firstView?.left ?: 0
+                    val target = (firstVisible % baseRecentCount) + baseRecentCount
                     recyclerRecentes.post {
-                        lm.scrollToPositionWithOffset(newPos, offset)
-                        // limpar flag no próximo ciclo de mensagem
+                        lm.scrollToPositionWithOffset(target, offset)
+                        wrapCooldownTicks = 10 // ~160ms de descanso
                         recyclerRecentes.post { isWrappingRepositioning = false }
                     }
                 }
-            }
-            // Se estivermos na cópia inicial (rolagem para trás extrema), também reposiciona para o meio
-            else if (firstVisible < baseRecentCount) {
+            } else if (firstVisible <= startThreshold) {
                 if (!isWrappingRepositioning) {
                     isWrappingRepositioning = true
-                    val offsetView = recyclerRecentes.getChildAt(0)
-                    val offset = offsetView?.left ?: 0
-                    val newPos = (firstVisible % baseRecentCount) + baseRecentCount
+                    val firstView = lm.findViewByPosition(firstVisible)
+                    val offset = firstView?.left ?: 0
+                    val target = (firstVisible % baseRecentCount) + baseRecentCount
                     recyclerRecentes.post {
-                        lm.scrollToPositionWithOffset(newPos, offset)
+                        lm.scrollToPositionWithOffset(target, offset)
+                        wrapCooldownTicks = 10
                         recyclerRecentes.post { isWrappingRepositioning = false }
                     }
                 }
-            }
-        } else {
-            val lastFull = lm.findLastCompletelyVisibleItemPosition()
-            if (total > 0 && lastFull == total - 1) {
-                // fallback simples
-                lm.scrollToPosition(0)
             }
         }
     }
@@ -324,17 +325,39 @@ class ActivityHomeComum : BaseActivity() {
                     wrapped.addAll(limited)
                     wrapped.addAll(limited)
                     recentAdapter.submit(wrapped)
-                    // posiciona na cópia do meio (mantém continuidade)
-                    recyclerRecentes.post { recyclerRecentes.scrollToPosition(baseRecentCount) }
+                    // posiciona na cópia do meio centralizando o card
+                    recyclerRecentes.post {
+                        val lm = recyclerRecentes.layoutManager as? LinearLayoutManager
+                        recyclerRecentes.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+                            override fun onGlobalLayout() {
+                                if (recyclerRecentes.childCount > 0) {
+                                    val firstChild = recyclerRecentes.getChildAt(0)
+                                    val childW = firstChild?.width ?: 0
+                                    val offset = (recyclerRecentes.width - childW) / 2
+                                    if (lm != null) {
+                                        lm.scrollToPositionWithOffset(baseRecentCount, offset)
+                                    } else {
+                                        recyclerRecentes.scrollToPosition(baseRecentCount)
+                                    }
+                                    recyclerRecentes.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                                    updateIndicatorFromLayout()
+                                    startAutoScroll()
+                                }
+                            }
+                        })
+                    }
                 } else {
                     recentAdapter.submit(limited)
+                    recyclerRecentes.post {
+                        updateIndicatorFromLayout()
+                        startAutoScroll()
+                    }
                 }
 
                 progressRecentes.visibility = View.GONE
                 recyclerRecentes.visibility = if (recentAdapter.itemCount == 0) View.GONE else View.VISIBLE
                 buildIndicators(baseRecentCount)
-                updateIndicatorFromLayout()
-                startAutoScroll()
+                // auto-scroll iniciado somente após layout acima
             }
     }
 

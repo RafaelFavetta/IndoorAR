@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.*
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.view.ViewTreeObserver
 import android.widget.ImageView
@@ -53,6 +54,10 @@ class ActivityHomeComum : BaseActivity() {
     private var isWrappingRepositioning: Boolean = false
     // Cooldown em ticks (frames) para não reposicionar várias vezes seguidas
     private var wrapCooldownTicks: Int = 0
+    // Indica se o usuário está interagindo (arrastando ou ainda ocorrendo settle de inertial fling)
+    private var userScrolling: Boolean = false
+    private var lastUserIdleAt: Long = 0L
+    private val WRAP_IDLE_GRACE_MS = 300L
 
     // Auto-scroll config
     private val SCROLL_STEP_PX = 2
@@ -152,6 +157,17 @@ class ActivityHomeComum : BaseActivity() {
                 super.onScrolled(recyclerView, dx, dy)
                 updateIndicatorFromLayout()
             }
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                userScrolling = when (newState) {
+                    RecyclerView.SCROLL_STATE_DRAGGING, RecyclerView.SCROLL_STATE_SETTLING -> true
+                    RecyclerView.SCROLL_STATE_IDLE -> {
+                        lastUserIdleAt = SystemClock.uptimeMillis()
+                        false
+                    }
+                    else -> userScrolling
+                }
+            }
         })
 
         recyclerRecentes.setOnTouchListener { v, event ->
@@ -206,6 +222,9 @@ class ActivityHomeComum : BaseActivity() {
         if (!autoScrollRunning) return
         val lm = recyclerRecentes.layoutManager as? LinearLayoutManager ?: return
         val total = recentAdapter.itemCount
+        if (userScrolling) return // evita wrap durante interação manual (remove piscada)
+        // Evita wrap imediatamente após soltar (grace period)
+        if (SystemClock.uptimeMillis() - lastUserIdleAt < WRAP_IDLE_GRACE_MS) return
         if (baseRecentCount > 1 && total >= baseRecentCount * 3) {
             val firstVisible = lm.findFirstVisibleItemPosition()
             if (firstVisible == RecyclerView.NO_POSITION) return

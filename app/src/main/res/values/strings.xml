@@ -53,4 +53,5 @@
     <string name="editar_telefone_label">Editar telefone</string>
     <string name="novo_telefone_hint">Digite o novo telefone</string>
     <string name="salvar">Salvar</string>
+    <string name="ver_os_meus">Ver os meus</string>
 </resources>

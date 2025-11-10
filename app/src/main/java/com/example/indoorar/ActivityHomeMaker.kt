@@ -12,7 +12,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -31,6 +30,7 @@ import java.util.*
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.math.abs
 import androidx.core.graphics.toColorInt
+import android.os.SystemClock
 
 class ActivityHomeMaker : BaseActivity() {
 
@@ -46,11 +46,17 @@ class ActivityHomeMaker : BaseActivity() {
     private var baseRecentCount: Int = 0
     // Protege contra reposicionamentos repetidos
     private var isWrappingRepositioning: Boolean = false
+    // Cooldown em ticks (frames) para não reposicionar várias vezes seguidas
+    private var wrapCooldownTicks: Int = 0
+    // Indica se o usuário está interagindo (arrastando ou ainda ocorrendo settle de inertial fling)
+    private var userScrolling: Boolean = false
+    private var lastUserIdleAt: Long = 0L
+    private val WRAP_IDLE_GRACE_MS = 300L
 
-    // Auto-scroll config
+    // Auto-scroll config (igual ao Comum)
     private val SCROLL_STEP_PX = 2
     private val FRAME_DELAY_MS = 16L          // ~60fps
-    private val INITIAL_DELAY_MS = 1500L      // 1,5s
+    private val INITIAL_DELAY_MS = 1000L      // 1s
 
     private val autoScrollHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private var autoScrollRunning = false
@@ -58,6 +64,7 @@ class ActivityHomeMaker : BaseActivity() {
         override fun run() {
             if (!autoScrollRunning) return
             recyclerRecentes.scrollBy(SCROLL_STEP_PX, 0)
+            if (wrapCooldownTicks > 0) wrapCooldownTicks--
             recycleLoopIfNeeded()
             updateIndicatorFromLayout()
             autoScrollHandler.postDelayed(this, FRAME_DELAY_MS)
@@ -142,6 +149,17 @@ class ActivityHomeMaker : BaseActivity() {
                 super.onScrolled(recyclerView, dx, dy)
                 updateIndicatorFromLayout()
             }
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                userScrolling = when (newState) {
+                    RecyclerView.SCROLL_STATE_DRAGGING, RecyclerView.SCROLL_STATE_SETTLING -> true
+                    RecyclerView.SCROLL_STATE_IDLE -> {
+                        lastUserIdleAt = SystemClock.uptimeMillis()
+                        false
+                    }
+                    else -> userScrolling
+                }
+            }
         })
         recyclerRecentes.setOnTouchListener { v, event ->
             when (event.action) {
@@ -179,39 +197,42 @@ class ActivityHomeMaker : BaseActivity() {
         if (!autoScrollRunning) return
         val lm = recyclerRecentes.layoutManager as? LinearLayoutManager ?: return
         val total = recentAdapter.itemCount
+        if (userScrolling) return // evita wrap durante interação manual (remove piscada)
+        // Evita wrap imediatamente após soltar (grace period)
+        if (SystemClock.uptimeMillis() - lastUserIdleAt < WRAP_IDLE_GRACE_MS) return
         if (baseRecentCount > 1 && total >= baseRecentCount * 3) {
             val firstVisible = lm.findFirstVisibleItemPosition()
             if (firstVisible == RecyclerView.NO_POSITION) return
-            // Se estivermos na cópia final, reposiciona para a cópia do meio preservando offset
-            if (firstVisible >= baseRecentCount * 2) {
+            val lastVisible = lm.findLastVisibleItemPosition()
+            // Evita reposicionamentos consecutivos
+            if (wrapCooldownTicks > 0) return
+            // Reposiciona quando estiver muito perto do fim da terceira cópia
+            val endThreshold = baseRecentCount * 3 - 2 // antepenúltimo/penúltimo item
+            val startThreshold = 1 // perto do começo da primeira cópia
+            if (lastVisible >= endThreshold) {
                 if (!isWrappingRepositioning) {
                     isWrappingRepositioning = true
-                    val offsetView = recyclerRecentes.getChildAt(0)
-                    val offset = offsetView?.left ?: 0
-                    val newPos = (firstVisible % baseRecentCount) + baseRecentCount
+                    val firstView = lm.findViewByPosition(firstVisible)
+                    val offset = firstView?.left ?: 0
+                    val target = (firstVisible % baseRecentCount) + baseRecentCount
                     recyclerRecentes.post {
-                        lm.scrollToPositionWithOffset(newPos, offset)
+                        lm.scrollToPositionWithOffset(target, offset)
+                        wrapCooldownTicks = 10 // ~160ms de descanso
                         recyclerRecentes.post { isWrappingRepositioning = false }
                     }
                 }
-            }
-            // Se estivermos na cópia inicial (rolagem para trás extrema), também reposiciona para o meio
-            else if (firstVisible < baseRecentCount) {
+            } else if (firstVisible <= startThreshold) {
                 if (!isWrappingRepositioning) {
                     isWrappingRepositioning = true
-                    val offsetView = recyclerRecentes.getChildAt(0)
-                    val offset = offsetView?.left ?: 0
-                    val newPos = (firstVisible % baseRecentCount) + baseRecentCount
+                    val firstView = lm.findViewByPosition(firstVisible)
+                    val offset = firstView?.left ?: 0
+                    val target = (firstVisible % baseRecentCount) + baseRecentCount
                     recyclerRecentes.post {
-                        lm.scrollToPositionWithOffset(newPos, offset)
+                        lm.scrollToPositionWithOffset(target, offset)
+                        wrapCooldownTicks = 10
                         recyclerRecentes.post { isWrappingRepositioning = false }
                     }
                 }
-            }
-        } else {
-            val lastFull = lm.findLastCompletelyVisibleItemPosition()
-            if (total > 0 && lastFull == total - 1) {
-                lm.scrollToPosition(0)
             }
         }
     }
@@ -225,7 +246,7 @@ class ActivityHomeMaker : BaseActivity() {
         for (i in 0 until childCount) {
             val child = recyclerRecentes.getChildAt(i) ?: continue
             val childCenter = (child.left + child.right) / 2
-            val dist = abs(childCenter - centerX)
+            val dist = kotlin.math.abs(childCenter - centerX)
             if (dist < bestDist) {
                 bestDist = dist
                 bestIndex = recyclerRecentes.getChildAdapterPosition(child)
@@ -246,21 +267,13 @@ class ActivityHomeMaker : BaseActivity() {
     }
 
     private fun carregarMapasRecentesEmTempoReal() {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid
-        if (uid == null) {
-            // vazio/sem usuário: esconder lista e indicadores
-            progressRecentes.visibility = View.GONE
-            recyclerRecentes.visibility = View.GONE
-            buildIndicators(0)
-            return
-        }
         progressRecentes.visibility = View.VISIBLE
         recyclerRecentes.visibility = View.GONE
 
         recentesListener?.remove()
         recentesListener = FirebaseFirestore.getInstance().collection("mapas")
-            .whereEqualTo("criadorUid", uid)
-            .limit(200)
+            .orderBy("dataCriacao", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .limit(30)
             .addSnapshotListener { snap, err ->
                 if (err != null) {
                     progressRecentes.visibility = View.GONE
@@ -268,9 +281,8 @@ class ActivityHomeMaker : BaseActivity() {
                     buildIndicators(0)
                     return@addSnapshotListener
                 }
-                val lista = snap?.documents?.map { docParaMapaResumoMaker(it, uid) } ?: emptyList()
-                val ordenada = lista.sortedByDescending { it.dataCriacao?.seconds ?: 0 }
-                val unicos = ordenada.distinctBy { imageKeyFor(it) }
+                val lista = snap?.documents?.map { docParaMapaResumoSeguro(it) } ?: emptyList()
+                val unicos = lista.distinctBy { imageKeyFor(it) }
                 val limited = unicos.take(5)
 
                 // prepara wrapping triplo para loop suave quando houver 2+ itens
@@ -281,27 +293,49 @@ class ActivityHomeMaker : BaseActivity() {
                     wrapped.addAll(limited)
                     wrapped.addAll(limited)
                     recentAdapter.submit(wrapped)
-                    // posiciona na cópia do meio (mantém continuidade) após layout
-                    recyclerRecentes.post { recyclerRecentes.scrollToPosition(baseRecentCount) }
+                    // posiciona na cópia do meio centralizando o card
+                    recyclerRecentes.post {
+                        val lm = recyclerRecentes.layoutManager as? LinearLayoutManager
+                        recyclerRecentes.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+                            override fun onGlobalLayout() {
+                                if (recyclerRecentes.childCount > 0) {
+                                    val firstChild = recyclerRecentes.getChildAt(0)
+                                    val childW = firstChild?.width ?: 0
+                                    val offset = (recyclerRecentes.width - childW) / 2
+                                    if (lm != null) {
+                                        lm.scrollToPositionWithOffset(baseRecentCount, offset)
+                                    } else {
+                                        recyclerRecentes.scrollToPosition(baseRecentCount)
+                                    }
+                                    recyclerRecentes.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                                    updateIndicatorFromLayout()
+                                    startAutoScroll()
+                                }
+                            }
+                        })
+                    }
                 } else {
                     recentAdapter.submit(limited)
+                    recyclerRecentes.post {
+                        updateIndicatorFromLayout()
+                        startAutoScroll()
+                    }
                 }
 
                 progressRecentes.visibility = View.GONE
                 recyclerRecentes.visibility = if (recentAdapter.itemCount == 0) View.GONE else View.VISIBLE
                 buildIndicators(baseRecentCount)
-                updateIndicatorFromLayout()
-                startAutoScroll()
+                // auto-scroll iniciado somente após layout acima
             }
     }
 
-    private fun docParaMapaResumoMaker(doc: DocumentSnapshot, uid: String): MapaResumo {
+    private fun docParaMapaResumoSeguro(doc: DocumentSnapshot): MapaResumo {
         return MapaResumo(
             id = doc.id,
             nome = doc.getString("nome") ?: "Mapa sem nome",
             descricao = doc.getString("descricao") ?: "",
-            autorUid = uid,
-            autorNome = doc.getString("nomeAutor") ?: uid,
+            autorUid = doc.getString("criadorUid") ?: "",
+            autorNome = doc.getString("nomeAutor") ?: (doc.getString("criadorUid") ?: ""),
             dataCriacao = doc.getTimestamp("dataCriacao"),
             imagemUrl = doc.getString("imagemUrl"),
             imagemBlob = doc.getBlob("imagemBlob"),

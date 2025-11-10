@@ -11,8 +11,6 @@ import android.view.View
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
-import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.sin
 import androidx.core.graphics.createBitmap
 
@@ -253,12 +251,13 @@ class MinimapView @JvmOverloads constructor(
             val half = 6f
             val cosH = cos(userHeadingRad)
             val sinH = sin(userHeadingRad)
-            val tipX = ux + cosH * len
-            val tipY = uz + sinH * len
-            val leftX = ux + (-sinH * half)
-            val leftY = uz + (cosH * half)
-            val rightX = ux + (sinH * half)
-            val rightY = uz + (-cosH * half)
+            // 0 rad = para cima na tela: tipY deve ser uz - len
+            val tipX = ux + sinH * len
+            val tipY = uz - cosH * len
+            val leftX = ux + (-cosH * half)
+            val leftY = uz - (sinH * half)
+            val rightX = ux + (cosH * half)
+            val rightY = uz + (sinH * half)
             val path = Path()
             path.moveTo(tipX, tipY)
             path.lineTo(leftX, leftY)

@@ -455,6 +455,27 @@ class ActivityNavHud : BaseActivity() {
             .start()
     }
 
+    /**
+     * Atualiza a seta continuamente para o ângulo delta (em radianos) relativo ao heading do usuário.
+     * 0 rad = para frente (para cima na tela). Translada radialmente para destacar.
+     */
+    private fun updateArrowContinuous(deltaRad: Float) {
+        val deg = Math.toDegrees(deltaRad.toDouble()).toFloat().coerceIn(-180f, 180f)
+        val r = dpToPx(ARROW_OFFSET_DP)
+        val sin = kotlin.math.sin(deltaRad)
+        val cos = kotlin.math.cos(deltaRad)
+        // Mapeamento de tela: para cima é -cos, e direita é +sin
+        val tx = r * sin
+        val ty = -r * cos
+        arrowView.animate()
+            .rotation(deg)
+            .translationX(tx)
+            .translationY(ty)
+            .setDuration(160)
+            .withLayer()
+            .start()
+    }
+
     /** Mostra/atualiza o texto de instrução acima da câmera. */
     @Keep
     @Suppress("unused")
@@ -716,18 +737,22 @@ class ActivityNavHud : BaseActivity() {
         val dz = tz - z
         val angleToTarget = kotlin.math.atan2(dx.toDouble(), dz.toDouble()).toFloat()
         val delta = normalizeAngle(angleToTarget - headingRad)
+
+        // Atualiza a seta continuamente para acompanhar a rotação do aparelho
+        updateArrowContinuous(delta)
+
+        // Atualiza o rótulo/instrução discretamente para evitar flicker
         val absDeg = kotlin.math.abs(Math.toDegrees(delta.toDouble()))
-        val label = when {
-            absDeg <= 30 -> "frente"
+        val newLabel = when {
+            absDeg <= 25 -> "frente"
             absDeg >= 150 -> "para trás"
             delta > 0 -> "direita"
             else -> "esquerda"
         }
-        if (label != lastDirectionLabel) {
-            lastDirectionLabel = label
-            updateArrow(label)
+        if (newLabel != lastDirectionLabel) {
+            lastDirectionLabel = newLabel
             setInstruction(
-                when (label) {
+                when (newLabel) {
                     "frente" -> "Siga em frente"
                     "direita" -> "Vire à direita"
                     "esquerda" -> "Vire à esquerda"
@@ -796,6 +821,8 @@ class ActivityNavHud : BaseActivity() {
 
     private fun dpToPx(dp: Float): Float =
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, resources.displayMetrics)
+
+    private val ARROW_OFFSET_DP = 56f
 
     private var sensorTracker: SensorFusionTracker? = null
     private var trackerStarted: Boolean = false

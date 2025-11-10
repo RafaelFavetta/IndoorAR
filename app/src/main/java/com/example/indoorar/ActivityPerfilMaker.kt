@@ -35,10 +35,11 @@ class ActivityPerfilMaker : BaseActivity() {
         bottomNav.setOnItemSelectedListener { item ->
             try {
                 when (item.itemId) {
-                    R.id.action_home -> { startActivity(Intent(this, ActivityHomeComum::class.java)); true }
+                    // Ajustado: home agora volta para ActivityHomeMaker (antes ia para ActivityHomeComum)
+                    R.id.action_home -> { startActivity(Intent(this, ActivityHomeMaker::class.java)); true }
                     R.id.action_scan -> { startActivity(Intent(this, ActivityScanQR::class.java)); true }
                     R.id.action_favoritos -> { startActivity(Intent(this, ActivityFavoritos::class.java)); true }
-                    R.id.action_config -> { /* already here */ true }
+                    R.id.action_config -> { /* já está aqui */ true }
                     R.id.action_criar -> { startActivity(Intent(this, com.example.indoorar.ui.ActivityEditor::class.java)); true }
                     R.id.action_estatisticas -> { startActivity(Intent(this, ActivityEstatisticas::class.java)); true }
                     else -> false
@@ -48,7 +49,7 @@ class ActivityPerfilMaker : BaseActivity() {
                 false
             }
         }
-        // Select profile item after listener is set
+        // Seleciona item de config após listener
         bottomNav.post { try { bottomNav.selectedItemId = R.id.action_config } catch (_: Exception) {} }
     }
 

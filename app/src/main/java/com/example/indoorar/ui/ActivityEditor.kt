@@ -3,7 +3,6 @@ package com.example.indoorar.ui
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
-import android.widget.ImageButton
 import android.widget.ImageView
 import com.google.firebase.firestore.FirebaseFirestore
 import android.widget.LinearLayout
@@ -13,6 +12,7 @@ import com.example.indoorar.BaseActivity
 import com.example.indoorar.R
 import com.example.indoorar.ui.editor.AttributePanelController
 import com.example.indoorar.ui.editor.MapEditorView
+import com.example.indoorar.ui.editor.TutorialOverlay
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import kotlin.math.abs
@@ -21,7 +21,6 @@ import kotlin.math.min
 import com.google.firebase.auth.FirebaseAuth
 import android.text.InputType
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.core.graphics.toColorInt
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,6 +28,8 @@ import android.content.Intent
 import com.google.firebase.firestore.SetOptions
 import com.google.android.material.switchmaterial.SwitchMaterial
 import androidx.core.view.isVisible
+import android.content.Context
+import androidx.core.content.edit
 
 class ActivityEditor : BaseActivity() {
 
@@ -40,6 +41,7 @@ class ActivityEditor : BaseActivity() {
     private lateinit var cursorCard: MaterialCardView
     private lateinit var btnMergeShapes: MaterialButton
     private lateinit var btnPreviewMode: MaterialButton
+    private lateinit var btnHelpTutorial: MaterialButton
 
     private var mapIdFromIntent: String? = null
 
@@ -138,6 +140,14 @@ class ActivityEditor : BaseActivity() {
                 // Mantém painel de atributos oculto até o usuário selecionar algo novamente
                 Toast.makeText(this, "Preview desligado", Toast.LENGTH_SHORT).show()
             }
+        }
+
+        // Tutorial: auto-show na primeira vez e botão de replay
+        btnHelpTutorial.setOnClickListener {
+            startEditorTour(force = true)
+        }
+        if (shouldShowEditorTour()) {
+            startEditorTour(force = false)
         }
     }
 
@@ -325,6 +335,7 @@ class ActivityEditor : BaseActivity() {
         cursorCard = findViewById(R.id.cardCursor)
         btnMergeShapes = findViewById(R.id.btnMergeShapes)
         btnPreviewMode = findViewById(R.id.btnPreviewMode)
+        btnHelpTutorial = findViewById(R.id.btnHelpTutorial)
     }
 
 
@@ -543,5 +554,34 @@ class ActivityEditor : BaseActivity() {
         brushCard.visibility = View.GONE
         cursorCard.visibility = View.GONE
     }
-}
 
+    // --------------------- Tutorial Overlay  ---------------------
+    private fun shouldShowEditorTour(): Boolean {
+        val prefs = getSharedPreferences("editor_prefs", MODE_PRIVATE)
+        return !prefs.getBoolean("tour_shown", false)
+    }
+
+    private fun markTourShown() {
+        getSharedPreferences("editor_prefs", MODE_PRIVATE)
+            .edit {
+                putBoolean("tour_shown", true)
+            }
+    }
+
+    private fun startEditorTour(force: Boolean) {
+        if (!force && !shouldShowEditorTour()) return
+        val root = findViewById<ViewGroup>(android.R.id.content)
+        val steps = listOf(
+            Pair(findViewById<View>(R.id.linearcursor), "Ferramenta de seleção: toque para selecionar e editar elementos."),
+            Pair(findViewById<View>(R.id.linearformas), "Formas: toque para escolher e desenhar retângulos, círculos, etc."),
+            Pair(findViewById<View>(R.id.linearpoi), "POIs: adicione portas, escadas, elevador e outros pontos importantes."),
+            Pair(findViewById<View>(R.id.linearbrush), "Pincel e Texto: desenhe marcações livres ou insira textos no mapa."),
+            Pair(findViewById<View>(R.id.btnPreviewMode), "Preview: alterna para modo de visualização, limpa seleções e esconde painéis."),
+            Pair(findViewById<View>(R.id.btnSalvarMapa), "Salvar: salve o mapa."),
+        )
+        TutorialOverlay.startSequence(root, steps) {
+            markTourShown()
+            Toast.makeText(this, "Tutorial concluído", Toast.LENGTH_SHORT).show()
+        }
+    }
+}

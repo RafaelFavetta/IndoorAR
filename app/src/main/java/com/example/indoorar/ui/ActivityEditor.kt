@@ -84,6 +84,11 @@ class ActivityEditor : BaseActivity() {
         // modo edição (preview desligado)
         btnPreviewMode.isChecked = false
         btnPreviewMode.contentDescription = "Ativar preview"
+        try {
+            btnPreviewMode.setIconResource(R.drawable.ic_eye_preview_inactive)
+        } catch (e: Exception) {
+            btnPreviewMode.icon = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_eye_preview_inactive)
+        }
 
         // Listener para a View avisar a Activity quando a ferramenta mudar
         mapEditor.onToolChangedListener = { newTool ->
@@ -134,9 +139,21 @@ class ActivityEditor : BaseActivity() {
                 // Oculta painel de atributos
                 findViewById<View>(R.id.painelAtributos)?.visibility = View.GONE
                 btnPreviewMode.contentDescription = "Desativar preview"
+                // set active icon
+                try {
+                    btnPreviewMode.setIconResource(R.drawable.ic_eye_preview_active)
+                } catch (e: Exception) {
+                    btnPreviewMode.icon = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_eye_preview_active)
+                }
                 Toast.makeText(this, "Preview ativo", Toast.LENGTH_SHORT).show()
             } else {
                 btnPreviewMode.contentDescription = "Ativar preview"
+                // revert to inactive icon
+                try {
+                    btnPreviewMode.setIconResource(R.drawable.ic_eye_preview_inactive)
+                } catch (e: Exception) {
+                    btnPreviewMode.icon = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_eye_preview_inactive)
+                }
                 // Voltando para edição
                 // Mantém painel de atributos oculto até o usuário selecionar algo novamente
                 Toast.makeText(this, "Preview desligado", Toast.LENGTH_SHORT).show()

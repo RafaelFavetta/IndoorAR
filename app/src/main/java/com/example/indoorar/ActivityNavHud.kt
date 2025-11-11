@@ -24,6 +24,8 @@ import android.content.IntentFilter
 import com.google.android.material.button.MaterialButton
 import androidx.appcompat.widget.AppCompatImageButton
 import kotlin.math.hypot
+import android.view.ViewGroup
+import android.widget.ListAdapter
 import androidx.appcompat.app.AlertDialog
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.indoorar.graph.FirestoreGraphLoader
@@ -193,9 +195,33 @@ class ActivityNavHud : BaseActivity() {
                          val display = if ((counts[base] ?: 0) > 1) "$base $current" else base
                          if (p.isStart) "$display (início)" else display
                      }.toTypedArray()
-                    AlertDialog.Builder(this)
+
+                    // mostrar icon + label com BaseAdapter
+                    val adapter = object : android.widget.BaseAdapter(), ListAdapter {
+                        override fun getCount(): Int = labels.size
+                        override fun getItem(position: Int): Any = labels[position]
+                        override fun getItemId(position: Int): Long = position.toLong()
+                        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                            val view = convertView ?: layoutInflater.inflate(R.layout.poi_choice_row, parent, false)
+                            val tv = view.findViewById<TextView>(R.id.tvPoiLabel)
+                            val label = labels[position]
+                            tv.text = label
+                            val poi = pois[position]
+                            val iconRes = poi.iconRes ?: mapIconNameToRes(poi.iconName)
+                            if (iconRes != null) {
+                                // set drawable start (relative) with intrinsic bounds
+                                tv.setCompoundDrawablesRelativeWithIntrinsicBounds(iconRes, 0, 0, 0)
+                            } else {
+                                // clear compound drawables
+                                tv.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0)
+                            }
+                            return view
+                        }
+                    }
+
+                    AlertDialog.Builder(this@ActivityNavHud)
                         .setTitle("Escolha o destino")
-                        .setItems(labels) { _, which ->
+                        .setAdapter(adapter as ListAdapter) { _, which ->
                             val dest = pois[which]
                             setInstruction("Calculando rota…", visible = true)
                             FirestoreGraphLoader.load(id) { res ->
@@ -212,8 +238,8 @@ class ActivityNavHud : BaseActivity() {
                                         val userX = lastUserX ?: initialX ?: 0f
                                         val userZ = lastUserZ ?: initialZ ?: 0f
                                         
-
                                         // Cria PoiInfo temporário para representar a posição do usuário
+
                                         val userOrigin = PoiInfo(
                                             id = "user_current_position",
                                             name = null,
@@ -985,20 +1011,19 @@ class ActivityNavHud : BaseActivity() {
     // --------- Location (ligar localização) ---------
     private fun ensureLocationEnabled() {
         try {
-            val lm = getSystemService(LOCATION_SERVICE) as? LocationManager ?: return
-            val enabled =
-                lm.isLocationEnabled
-            if (!enabled) {
-                AlertDialog.Builder(this)
-                    .setTitle("Ativar localização")
-                    .setMessage("Para melhor navegação, ative a localização do dispositivo.")
-                    .setPositiveButton("Abrir configurações") { _, _ ->
-                        try { startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) } catch (_: Exception) {}
-                    }
-                    .setNegativeButton("Agora não", null)
-                    .show()
-            }
-        } catch (_: Exception) { }
+            val lm = getSystemService(LocationManager::class.java) ?: return
+            val enabled = lm.isLocationEnabled
+             if (!enabled) {
+                 AlertDialog.Builder(this)
+                     .setTitle("Ativar localização")
+                     .setMessage("Para melhor navegação, ative a localização do dispositivo.")
+                     .setPositiveButton("Abrir configurações") { _, _ ->
+                         try { startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) } catch (_: Exception) {}
+                     }
+                     .setNegativeButton("Agora não", null)
+                     .show()
+             }
+         } catch (_: Exception) { }
     }
 
     // -------- Resolução de nós para POIs --------
@@ -1130,7 +1155,7 @@ class ActivityNavHud : BaseActivity() {
 
     private fun mapIconNameToDisplay(name: String?): String? = when (name) {
         "stairs" -> "Escada"
-        "fire_extinguisher" -> "Extintor de incêndio"
+        "fire_extinguisher" -> "Extintor"
         "door" -> "Porta"
         "bathroom" -> "Banheiro"
         "elevator" -> "Elevador"

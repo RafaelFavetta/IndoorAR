@@ -69,7 +69,7 @@
     <string name="escada">Escada</string>
     <string name="elevador">Elevador</string>
     <string name="banheiro">Banheiro</string>
-    <string name="extintor">Extintor</string>
+    <string name="extintor">Extintor de incêndio</string>
     <string name="fino">Fino</string>
     <string name="medio">Médio</string>
     <string name="grosso">Grosso</string>
@@ -88,4 +88,5 @@
     <string name="borracha">Borracha</string>
     <string name="trazer_frente">Trazer para frente</string>
     <string name="enviar_tras">Enviar para trás</string>
+    <string name="poi_icon">Ícone do POI</string>
 </resources>

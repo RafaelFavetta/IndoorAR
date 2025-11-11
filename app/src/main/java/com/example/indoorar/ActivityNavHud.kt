@@ -40,6 +40,9 @@ import androidx.core.view.isVisible
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.view.animation.DecelerateInterpolator
+import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.graphics.drawable.DrawableCompat
+import android.graphics.drawable.Drawable
 
 class ActivityNavHud : BaseActivity() {
 
@@ -207,14 +210,25 @@ class ActivityNavHud : BaseActivity() {
                             val label = labels[position]
                             tv.text = label
                             val poi = pois[position]
-                            val iconRes = poi.iconRes ?: mapIconNameToRes(poi.iconName)
-                            if (iconRes != null) {
-                                // set drawable start (relative) with intrinsic bounds
-                                tv.setCompoundDrawablesRelativeWithIntrinsicBounds(iconRes, 0, 0, 0)
-                            } else {
-                                // clear compound drawables
-                                tv.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0)
-                            }
+                            val iconRes = mapIconNameToRes(poi.iconName) ?: poi.iconRes
+                             if (iconRes != null) {
+                                 val d: Drawable? = try {
+                                     AppCompatResources.getDrawable(this@ActivityNavHud, iconRes)?.mutate()
+                                 } catch (_: Exception) { null }
+                                 if (d != null) {
+                                     val wrapped = DrawableCompat.wrap(d)
+                                     // Apply desired tint (hex #32357A)
+                                     try { DrawableCompat.setTint(wrapped, Color.parseColor("#32357A")) } catch (_: Exception) {}
+                                     val sizePx = dpToPx(18f).toInt()
+                                     wrapped.setBounds(0, 0, sizePx, sizePx)
+                                     tv.setCompoundDrawablesRelative(wrapped, null, null, null)
+                                 } else {
+                                     tv.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0)
+                                 }
+                             } else {
+                                 // clear compound drawables
+                                 tv.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0)
+                             }
                             return view
                         }
                     }
@@ -978,9 +992,9 @@ class ActivityNavHud : BaseActivity() {
                     val iconRes = (d.getLong("iconRes")?.toInt())
                     val isStart = d.getBoolean("isStartQR") ?: false
                     poisCache += PoiInfo(pid, null, x, y, iconName, iconRes, isStart)
-                    val res = iconRes ?: mapIconNameToRes(iconName)
-                    val poiColor = Color.rgb(33, 150, 243) // azul consistente com tema
-                    minimap.addPoi(x, y, poiColor, res, isStart)
+                    val res = mapIconNameToRes(iconName) ?: iconRes
+                     val poiColor = Color.rgb(33, 150, 243) // azul consistente com tema
+                     minimap.addPoi(x, y, poiColor, res, isStart)
                     accumulatePoint(x, y)
                 }
                 // Define pose inicial: POI de início, senão primeiro POI, senão centro dos bounds

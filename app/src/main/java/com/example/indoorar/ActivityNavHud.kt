@@ -82,6 +82,7 @@ class ActivityNavHud : BaseActivity() {
     // Cache dos POIs para seleção e resolução de nós
     private data class PoiInfo(
         val id: String,
+        val name: String?,
         val x: Float,
         val y: Float,
         val iconName: String?,
@@ -166,12 +167,13 @@ class ActivityNavHud : BaseActivity() {
                     poisCache.clear()
                     val pois = snap.documents.map { d ->
                         val pid = d.getString("id") ?: d.id
+                        val name = d.getString("nome") ?: d.getString("name")
                         val iconName = d.getString("iconName")
                         val isStart = d.getBoolean("isStartQR") ?: false
                         val x = (d.getDouble("x") ?: 0.0).toFloat()
                         val y = (d.getDouble("y") ?: 0.0).toFloat()
                         val iconRes = (d.getLong("iconRes")?.toInt())
-                        PoiInfo(pid, x, y, iconName, iconRes, isStart)
+                        PoiInfo(pid, name, x, y, iconName, iconRes, isStart)
                     }.sortedBy { it.id }
                     poisCache.addAll(pois)
                     if (pois.size < 2) {
@@ -179,7 +181,18 @@ class ActivityNavHud : BaseActivity() {
                         Toast.makeText(this, "Mapa sem POIs suficientes", Toast.LENGTH_LONG).show()
                         return@addOnSuccessListener
                     }
-                    val labels = pois.map { p -> if (p.isStart) "${p.iconName ?: p.id} (início)" else p.id }.toTypedArray()
+                    val baseNames = pois.map { p ->
+                        mapIconNameToDisplay(p.iconName) ?: p.iconName ?: p.name ?: p.id
+                    }
+                     val counts = baseNames.groupingBy { it }.eachCount()
+                     val seen = mutableMapOf<String, Int>()
+                     val labels = pois.mapIndexed { index, p ->
+                         val base = baseNames[index]
+                         val current = seen.getOrDefault(base, 0) + 1
+                         seen[base] = current
+                         val display = if ((counts[base] ?: 0) > 1) "$base $current" else base
+                         if (p.isStart) "$display (início)" else display
+                     }.toTypedArray()
                     AlertDialog.Builder(this)
                         .setTitle("Escolha o destino")
                         .setItems(labels) { _, which ->
@@ -203,6 +216,7 @@ class ActivityNavHud : BaseActivity() {
                                         // Cria PoiInfo temporário para representar a posição do usuário
                                         val userOrigin = PoiInfo(
                                             id = "user_current_position",
+                                            name = null,
                                             x = userX,
                                             y = userZ,
                                             iconName = null,
@@ -937,7 +951,7 @@ class ActivityNavHud : BaseActivity() {
                     val iconName = d.getString("iconName")
                     val iconRes = (d.getLong("iconRes")?.toInt())
                     val isStart = d.getBoolean("isStartQR") ?: false
-                    poisCache += PoiInfo(pid, x, y, iconName, iconRes, isStart)
+                    poisCache += PoiInfo(pid, null, x, y, iconName, iconRes, isStart)
                     val res = iconRes ?: mapIconNameToRes(iconName)
                     val poiColor = Color.rgb(33, 150, 243) // azul consistente com tema
                     minimap.addPoi(x, y, poiColor, res, isStart)
@@ -1112,6 +1126,16 @@ class ActivityNavHud : BaseActivity() {
         "bathroom" -> R.drawable.ic_banheiro_azul
         "fire_extinguisher" -> R.drawable.ic_extintor_azul
         else -> null
+    }
+
+    private fun mapIconNameToDisplay(name: String?): String? = when (name) {
+        "stairs" -> "Escada"
+        "fire_extinguisher" -> "Extintor de incêndio"
+        "door" -> "Porta"
+        "bathroom" -> "Banheiro"
+        "elevator" -> "Elevador"
+        null -> null
+        else -> name
     }
 
     private fun resetBounds() {

@@ -15,6 +15,7 @@ import com.example.indoorar.ui.editor.MapEditorView
 import com.example.indoorar.ui.editor.TutorialOverlay
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import androidx.appcompat.widget.AppCompatImageButton
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -41,7 +42,7 @@ class ActivityEditor : BaseActivity() {
     private lateinit var cursorCard: MaterialCardView
     private lateinit var btnMergeShapes: MaterialButton
     private lateinit var btnPreviewMode: MaterialButton
-    private lateinit var btnHelpTutorial: MaterialButton
+    private lateinit var btnHelpTutorial: AppCompatImageButton
 
     private var mapIdFromIntent: String? = null
 

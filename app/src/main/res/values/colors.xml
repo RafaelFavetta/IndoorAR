@@ -3,6 +3,5 @@
     <color name="colorPrimary">#FDFDFD</color> <!-- Cor principal -->
     <color name="colorPrimaryDark">#2C458B</color> <!-- Cor secundária para a parte mais escura -->
     <color name="colorOnPrimary">#FDFDFD</color> <!-- Branco principal -->
-    <color name="white">#FFFFFF</color>
-    <color name="eye_toggle_bg_tint">#E3E7F9</color>
+    <color name="white">#FDFDFD</color>
 </resources>

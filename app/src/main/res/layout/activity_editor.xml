@@ -47,7 +47,7 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSalvarMapa"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
+            android:layout_height="38dp"
             android:layout_margin="10dp"
             android:backgroundTint="#32357A"
             android:paddingHorizontal="16dp"
@@ -63,7 +63,7 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPreviewMode"
             android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_height="38dp"
             android:layout_marginEnd="8dp"
             android:layout_marginTop="10dp"
             android:contentDescription="@string/preview_activate"
@@ -84,7 +84,7 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMergeShapes"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
+            android:layout_height="38dp"
             android:layout_marginEnd="8dp"
             android:layout_marginTop="10dp"
             android:backgroundTint="#3B6E22"

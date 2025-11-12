@@ -22,7 +22,7 @@
             android:layout_width="36dp"
             android:layout_height="46dp"
             android:layout_marginEnd="20dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="20dp"
             android:contentDescription="@string/logo"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -59,7 +59,7 @@
             android:fontFamily="@font/inter"
             android:text="@string/o_que_vamos_explorar"
             android:textColor="@color/colorPrimary"
-            android:textSize="20sp"
+            android:textSize="25sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/txtBemVindo" />
     </androidx.constraintlayout.widget.ConstraintLayout>
@@ -70,7 +70,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.48" />
+        app:layout_constraintGuide_percent="0.32" />
 
     <!-- Adjusted: top constrained to guideline instead of header -->
     <TextView

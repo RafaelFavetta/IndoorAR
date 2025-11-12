@@ -26,7 +26,7 @@
             android:contentDescription="@string/logo"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/logo_branca" />
+            app:srcCompat="@drawable/ic_logo_wander_branca" />
 
         <TextView
             android:id="@+id/txtBemVindo"

@@ -23,10 +23,10 @@
 
         <ImageView
             android:id="@+id/imgLogoCenter"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
+            android:layout_width="1300dp"
+            android:layout_height="300dp"
             android:contentDescription="@string/logo"
-            app:srcCompat="@drawable/wander_grande_branca"
+            app:srcCompat="@drawable/ic_logo_wander_maior"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"

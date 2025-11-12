@@ -1643,6 +1643,14 @@ class MapEditorView @JvmOverloads constructor(
     }
 
     fun addAction(action: Action) {
+        if (action is Action.Shape) {
+            try {
+                val defaultFill = "#D9D9D9".toColorInt()
+                if (action.fillColor == defaultFill) {
+                    action.fillColor = if (action.isWalkable) "#1F2023".toColorInt() else "#ECECEC".toColorInt()
+                }
+            } catch (_: Exception) {  }
+        }
         actions.add(action)
         pushOp(AddOp(action))
         invalidate()

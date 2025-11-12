@@ -15,6 +15,9 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import com.example.indoorar.R
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.graphics.Color
 
 /**
  * Fullscreen overlay that dims the background and highlights (spotlight) one target view.
@@ -85,16 +88,15 @@ class TutorialOverlay @JvmOverloads constructor(
             setTextColor(0xFF222222.toInt())
             textSize = 14f
             setPadding(24, 24, 24, 24)
-            text = message
+            text = styledMessage(message)
         }
         tooltipCard!!.addView(tooltipText)
         addView(tooltipCard, LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
     }
 
     private fun placeTooltip() {
-        tooltipText?.text = message
+        tooltipText?.text = styledMessage(message)
         val card = tooltipCard ?: return
-        // Try placing above hole; if not enough space, place below.
         val margin = 16
         val desiredYAbove = (holeRect.top - card.measuredHeight - margin)
         val placeAbove = desiredYAbove > 0
@@ -104,18 +106,28 @@ class TutorialOverlay @JvmOverloads constructor(
         card.y = y
     }
 
+    private fun styledMessage(text: String): CharSequence {
+        val idx = text.indexOf(':')
+        if (idx < 0) return text
+        val ss = SpannableString(text)
+        try {
+            val blue = Color.parseColor("#32357A")
+            ss.setSpan(ForegroundColorSpan(blue), 0, idx + 1, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+            ss.setSpan(ForegroundColorSpan(Color.BLACK), idx + 1, text.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+        } catch (_: Exception) {
+            return text
+        }
+        return ss
+    }
+
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        // Reposition tooltip after measuring
         post { placeTooltip() }
     }
 
     override fun dispatchDraw(canvas: Canvas) {
-        // Use an offscreen layer so CLEAR works
         val save = canvas.saveLayer(null, null)
-        // Dim the whole canvas
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), dimPaint)
-        // Clear hole
         canvas.drawPath(holePath, clearPaint)
         super.dispatchDraw(canvas)
         canvas.restoreToCount(save)
@@ -163,4 +175,3 @@ class TutorialOverlay @JvmOverloads constructor(
         }
     }
 }
-

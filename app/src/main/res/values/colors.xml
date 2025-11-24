@@ -4,4 +4,5 @@
     <color name="colorPrimaryDark">#2C458B</color> <!-- Cor secundária para a parte mais escura -->
     <color name="colorOnPrimary">#FDFDFD</color> <!-- Branco principal -->
     <color name="white">#FDFDFD</color>
+    <color name="ic_launcher_bg">#FDFDFD</color>
 </resources>

@@ -14,6 +14,7 @@ import kotlin.math.hypot
 import kotlin.math.sin
 import androidx.core.graphics.createBitmap
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.graphics.drawable.DrawableCompat
 
 class MinimapView @JvmOverloads constructor(
     context: Context,
@@ -37,6 +38,7 @@ class MinimapView @JvmOverloads constructor(
     private val pois = mutableListOf<Poi>()
     private val miniIconCache = mutableMapOf<Triple<Int, Int, Int>, android.graphics.Bitmap>()
     private val tmpPath = Path()
+    private var debugDraw = false
 
     private var route: MutableList<Pair<Float, Float>> = mutableListOf()
     private var userX: Float = 0f
@@ -116,19 +118,26 @@ class MinimapView @JvmOverloads constructor(
         val key = Triple(iconRes, size, tint)
         miniIconCache[key]?.let { return it }
         return try {
-            val dr = AppCompatResources.getDrawable(context, iconRes) ?: return null
+            val orig = AppCompatResources.getDrawable(context, iconRes) ?: return null
+            val dr = try { orig.mutate() } catch (_: Exception) { orig }
+            // Wrap and clear any theme tint so the drawable's original colors show
+            val wrapped = DrawableCompat.wrap(dr)
+            try { DrawableCompat.setTintList(wrapped, null) } catch (_: Exception) {}
+            // Only apply explicit tint when requested
+            if (tint != 0) {
+                try { DrawableCompat.setTint(wrapped, tint) } catch (_: Exception) {}
+            }
             val bmp = createBitmap(size, size)
             val c = Canvas(bmp)
-            try {
-                dr.mutate()
-                if (tint != 0) dr.setTint(tint)
-            } catch (_: Exception) {}
-            dr.setBounds(0, 0, size, size)
-            dr.draw(c)
+            wrapped.setBounds(0, 0, size, size)
+            wrapped.draw(c)
             miniIconCache[key] = bmp
             bmp
         } catch (_: Exception) { null }
     }
+
+    /** Enable visual debug overlay for shapes/POIs/route. Useful to diagnose rotated shapes vs route generation. */
+    fun setDebugDrawEnabled(enabled: Boolean) { debugDraw = enabled; invalidate() }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -182,7 +191,7 @@ class MinimapView @JvmOverloads constructor(
                 "circulo", "circle" -> {
                     val r = (minOf(wPx, hPx) / 2f).coerceAtLeast(1f)
                     canvas.save()
-                    if (f.rotation != 0f) canvas.rotate(Math.toDegrees(f.rotation.toDouble()).toFloat(), cx, cy)
+                    if (f.rotation != 0f) canvas.rotate(f.rotation, cx, cy)
                     canvas.drawCircle(cx, cy, r, paint)
                     canvas.restore()
                 }
@@ -193,7 +202,7 @@ class MinimapView @JvmOverloads constructor(
                     tmpPath.lineTo(right, bottom)
                     tmpPath.close()
                     canvas.save()
-                    if (f.rotation != 0f) canvas.rotate(Math.toDegrees(f.rotation.toDouble()).toFloat(), cx, cy)
+                    if (f.rotation != 0f) canvas.rotate(f.rotation, cx, cy)
                     canvas.drawPath(tmpPath, paint)
                     canvas.restore()
                 }
@@ -205,13 +214,13 @@ class MinimapView @JvmOverloads constructor(
                     canvas.save()
                     paint.style = Paint.Style.STROKE
                     paint.strokeWidth = 3f
-                    if (f.rotation != 0f) canvas.rotate(Math.toDegrees(f.rotation.toDouble()).toFloat(), cx, cy)
+                    if (f.rotation != 0f) canvas.rotate(f.rotation, cx, cy)
                     canvas.drawLine(x1, y1, x2, y2, paint)
                     canvas.restore()
                 }
                 else -> { // retangulo, quadrado e default
                     canvas.save()
-                    if (f.rotation != 0f) canvas.rotate(Math.toDegrees(f.rotation.toDouble()).toFloat(), cx, cy)
+                    if (f.rotation != 0f) canvas.rotate(f.rotation, cx, cy)
                     canvas.drawRect(left, top, right, bottom, paint)
                     canvas.restore()
                 }
@@ -303,14 +312,24 @@ class MinimapView @JvmOverloads constructor(
                 canvas.drawCircle(cx, cy, r + 2f, paint)
             }
 
-            // icon centered inside, tinted white to contrast the colored background
+            // icon centered inside, rendered like the editor: drawable tinted white over the colored circle
             if (p.iconRes != null) {
-                val iconSize = (r * 1.2f).toInt().coerceAtLeast(8)
-                getMiniIcon(p.iconRes, iconSize, 0)?.let { bmp ->
-                    val left = (cx - bmp.width / 2f)
-                    val top = (cy - bmp.height / 2f)
-                    canvas.drawBitmap(bmp, left, top, null)
-                }
+                try {
+                    // try to load drawable and tint to white, fallback to default poi icon
+                    var dr = try { AppCompatResources.getDrawable(context, p.iconRes) } catch (_: Exception) { null }
+                        ?: AppCompatResources.getDrawable(context, com.example.indoorar.R.drawable.ic_poi_default)
+                    dr = try { dr?.mutate() } catch (_: Exception) { dr }
+                    dr?.let { d ->
+                        try { DrawableCompat.setTint(d, Color.WHITE) } catch (_: Exception) {}
+                        val iconSizeF = (r * 1.2f).coerceAtLeast(8f)
+                        val leftI = (cx - iconSizeF / 2f).toInt()
+                        val topI = (cy - iconSizeF / 2f).toInt()
+                        val rightI = (leftI + iconSizeF).toInt()
+                        val bottomI = (topI + iconSizeF).toInt()
+                        d.setBounds(leftI, topI, rightI, bottomI)
+                        d.draw(canvas)
+                    }
+                } catch (_: Exception) { /* ignore drawing icon */ }
             }
         }
 
@@ -349,6 +368,75 @@ class MinimapView @JvmOverloads constructor(
             path.close()
             arrowPaint.alpha = 220
             canvas.drawPath(path, arrowPaint)
+        }
+
+        // Debug overlay: show shapes polygon outlines and route points
+        if (debugDraw) {
+            val dbgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 2f }
+            // shapes outlines
+            formas.sortedBy { it.zOrder }.forEach { f ->
+                if (f.tipo.lowercase() == "circulo" || f.tipo.lowercase() == "circle") {
+                    dbgPaint.color = if (f.zOrder >= 10) Color.GREEN else Color.RED
+                    val rawLeft = (f.x - minX) * scaleX
+                    val rawTop = (f.z - minZ) * scaleY
+                    val rawRight = rawLeft + f.w * scaleX
+                    val rawBottom = rawTop + f.h * scaleY
+                    val left = minOf(rawLeft, rawRight)
+                    val right = maxOf(rawLeft, rawRight)
+                    val top = minOf(rawTop, rawBottom)
+                    val bottom = maxOf(rawTop, rawBottom)
+                    val cx2 = (left + right) / 2f
+                    val cy2 = (top + bottom) / 2f
+                    val r2 = (minOf(right - left, bottom - top) / 2f)
+                    canvas.drawCircle(cx2, cy2, r2, dbgPaint)
+                } else {
+                    // polygon for rect/triangle/line
+                    val rawLeft = (f.x - minX) * scaleX
+                    val rawTop = (f.z - minZ) * scaleY
+                    val rawRight = rawLeft + f.w * scaleX
+                    val rawBottom = rawTop + f.h * scaleY
+                    val left = minOf(rawLeft, rawRight)
+                    val right = maxOf(rawLeft, rawRight)
+                    val top = minOf(rawTop, rawBottom)
+                    val bottom = maxOf(rawTop, rawBottom)
+                    val cx2 = (left + right) / 2f
+                    val cy2 = (top + bottom) / 2f
+                    val halfW2 = (right - left) / 2f
+                    val halfH2 = (bottom - top) / 2f
+                    val corners = when (f.tipo.lowercase()) {
+                        "triangulo" -> listOf(Pair(cx2, top), Pair(left, bottom), Pair(right, bottom))
+                        "linha" -> listOf(Pair(left, top), Pair(right, bottom))
+                        else -> listOf(Pair(cx2 - halfW2, cy2 - halfH2), Pair(cx2 + halfW2, cy2 - halfH2), Pair(cx2 + halfW2, cy2 + halfH2), Pair(cx2 - halfW2, cy2 + halfH2))
+                    }
+                    // rotate corners around center by rotation deg
+                    val rot = f.rotation
+                    val rotated = if (rot == 0f) corners else corners.map { (px, py) ->
+                        val a = Math.toRadians(rot.toDouble())
+                        val cosA = kotlin.math.cos(a).toFloat(); val sinA = kotlin.math.sin(a).toFloat()
+                        val tx = px - cx2; val ty = py - cy2
+                        val rx = tx * cosA - ty * sinA
+                        val ry = tx * sinA + ty * cosA
+                        Pair(rx + cx2, ry + cy2)
+                    }
+                    dbgPaint.color = if (f.zOrder >= 10) Color.GREEN else Color.RED
+                    tmpPath.rewind()
+                    if (rotated.isNotEmpty()) {
+                        tmpPath.moveTo(rotated[0].first, rotated[0].second)
+                        for (k in 1 until rotated.size) tmpPath.lineTo(rotated[k].first, rotated[k].second)
+                        if (rotated.size > 2) tmpPath.close()
+                        canvas.drawPath(tmpPath, dbgPaint)
+                    }
+                }
+            }
+
+            // route points as small squares
+            val rpPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = Color.MAGENTA }
+            route.forEach { pt ->
+                val rx = (pt.first - minX) * scaleX
+                val ry = (pt.second - minZ) * scaleY
+                val s = 4f
+                canvas.drawRect(rx - s, ry - s, rx + s, ry + s, rpPaint)
+            }
         }
 
         postInvalidateOnAnimation()

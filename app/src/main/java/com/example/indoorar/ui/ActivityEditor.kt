@@ -329,22 +329,132 @@ class ActivityEditor : BaseActivity() {
 
         val edges = mutableListOf<Map<String, Any>>()
 
-        // Função pra checar se tem colisão com uma parede
+        // Robust collision check: segment vs shape (supports rotated rect/square, triangle, circle, line)
         fun linhaColideComShape(x1: Float, y1: Float, x2: Float, y2: Float, shape: Action.Shape): Boolean {
-            if (!shape.isWalkable) {
-                val left = min(shape.start.x, shape.end.x)
-                val right = max(shape.start.x, shape.end.x)
-                val top = min(shape.start.y, shape.end.y)
-                val bottom = max(shape.start.y, shape.end.y)
+            if (shape.isWalkable) return false
 
-                // checa se a linha cruza o retângulo
-                val closestX = max(left, min(x2, right))
-                val closestY = max(top, min(y2, bottom))
-                val dx = x2 - x1
-                val dy = y2 - y1
-                return dx != 0f && dy != 0f && closestX in left..right && closestY in top..bottom
+            fun rotate(px: Float, py: Float, cx: Float, cy: Float, angleDeg: Float): Pair<Float, Float> {
+                val a = Math.toRadians(angleDeg.toDouble())
+                val cosA = kotlin.math.cos(a).toFloat()
+                val sinA = kotlin.math.sin(a).toFloat()
+                val tx = px - cx
+                val ty = py - cy
+                val rx = tx * cosA - ty * sinA
+                val ry = tx * sinA + ty * cosA
+                return Pair(rx + cx, ry + cy)
             }
-            return false
+
+            fun segSegIntersect(x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float, x4: Float, y4: Float): Boolean {
+                fun orient(ax: Float, ay: Float, bx: Float, by: Float, cx: Float, cy: Float): Float {
+                    return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
+                }
+                val o1 = orient(x1, y1, x2, y2, x3, y3)
+                val o2 = orient(x1, y1, x2, y2, x4, y4)
+                val o3 = orient(x3, y3, x4, y4, x1, y1)
+                val o4 = orient(x3, y3, x4, y2, x2, y2)
+                if (o1 == 0f && min(x1, x2) <= x3 && x3 <= max(x1, x2) && min(y1, y2) <= y3 && y3 <= max(y1, y2)) return true
+                if (o2 == 0f && min(x1, x2) <= x4 && x4 <= max(x1, x2) && min(y1, y2) <= y4 && y4 <= max(y1, y2)) return true
+                if (o3 == 0f && min(x3, x4) <= x1 && x1 <= max(x3, x4) && min(y3, y4) <= y1 && y1 <= max(y3, y4)) return true
+                if (o4 == 0f && min(x3, x4) <= x2 && x2 <= max(x3, x4) && min(y3, y4) <= y2 && y2 <= max(y3, y4)) return true
+                return (o1 > 0f) != (o2 > 0f) && (o3 > 0f) != (o4 > 0f)
+            }
+
+            fun pointInPoly(px: Float, py: Float, poly: List<Pair<Float, Float>>): Boolean {
+                var inside = false
+                var j = poly.size - 1
+                for (i in poly.indices) {
+                    val xi = poly[i].first; val yi = poly[i].second
+                    val xj = poly[j].first; val yj = poly[j].second
+                    val yi_gt = yi > py
+                    val yj_gt = yj > py
+                    if (yi_gt != yj_gt) {
+                        val denom = (yj - yi)
+                        val xIntersect = if (denom == 0f) xi else xi + (py - yi) * (xj - xi) / denom
+                        if (px < xIntersect) inside = !inside
+                    }
+                    j = i
+                }
+                return inside
+            }
+
+            fun distPointSegment(px: Float, py: Float, x1: Float, y1: Float, x2: Float, y2: Float): Float {
+                val l2 = (x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1)
+                if (l2 == 0f) return kotlin.math.hypot((px - x1).toDouble(), (py - y1).toDouble()).toFloat()
+                var t = ((px - x1)*(x2 - x1) + (py - y1)*(y2 - y1)) / l2
+                t = t.coerceIn(0f, 1f)
+                val projx = x1 + t*(x2 - x1); val projy = y1 + t*(y2 - y1)
+                return kotlin.math.hypot((px - projx).toDouble(), (py - projy).toDouble()).toFloat()
+            }
+
+            // Build geometry for the shape in editor world coords
+            val left = min(shape.start.x, shape.end.x)
+            val right = max(shape.start.x, shape.end.x)
+            val top = min(shape.start.y, shape.end.y)
+            val bottom = max(shape.start.y, shape.end.y)
+            val cx = (left + right) / 2f
+            val cy = (top + bottom) / 2f
+            val halfW = (right - left) / 2f
+            val halfH = (bottom - top) / 2f
+
+            when (shape.type) {
+                Action.ShapeType.RECTANGLE, Action.ShapeType.SQUARE -> {
+                    // rectangle corners relative to center then rotated
+                    val corners = listOf(
+                        Pair(-halfW, -halfH), Pair(halfW, -halfH), Pair(halfW, halfH), Pair(-halfW, halfH)
+                    ).map { (rx, ry) ->
+                        val (wx, wy) = Pair(cx + rx, cy + ry)
+                        rotate(wx, wy, cx, cy, shape.rotation)
+                    }
+                    // check intersection with polygon edges or containment
+                    if (pointInPoly(x1, y1, corners) || pointInPoly(x2, y2, corners)) return true
+                    for (k in corners.indices) {
+                        val a = corners[k]
+                        val b = corners[(k+1) % corners.size]
+                        if (segSegIntersect(x1,y1,x2,y2,a.first,a.second,b.first,b.second)) return true
+                    }
+                    return false
+                }
+                Action.ShapeType.TRIANGLE -> {
+                    // construct triangle same as editor/minimap: top middle and two bottom corners
+                    val rawLeft = left; val rawRight = right; val rawTop = top; val rawBottom = bottom
+                    val tcx = (rawLeft + rawRight) / 2f
+                    val tri = listOf(
+                        Pair(tcx, rawTop), Pair(rawLeft, rawBottom), Pair(rawRight, rawBottom)
+                    ).map { (px, py) -> rotate(px, py, cx, cy, shape.rotation) }
+                    if (pointInPoly(x1,y1,tri) || pointInPoly(x2,y2,tri)) return true
+                    for (k in tri.indices) {
+                        val a = tri[k]; val b = tri[(k+1)%tri.size]
+                        if (segSegIntersect(x1,y1,x2,y2,a.first,a.second,b.first,b.second)) return true
+                    }
+                    return false
+                }
+                Action.ShapeType.CIRCLE -> {
+                    val radius = kotlin.math.min(halfW, halfH)
+                    // distance from segment to center <= radius
+                    val d = distPointSegment(cx, cy, x1, y1, x2, y2)
+                    return d <= radius
+                }
+                Action.ShapeType.LINE -> {
+                    // treat line as thick segment (approx half-thickness based on visual stroke)
+                    val lx1 = shape.start.x; val ly1 = shape.start.y
+                    val lx2 = shape.end.x; val ly2 = shape.end.y
+                    // apply rotation around center for the segment endpoints
+                    val (rx1, ry1) = rotate(lx1, ly1, cx, cy, shape.rotation)
+                    val (rx2, ry2) = rotate(lx2, ly2, cx, cy, shape.rotation)
+                    // thickness: a small fraction of shape size (fallback to 6px)
+                    val thickness = (kotlin.math.min(halfW, halfH) * 0.12f).coerceAtLeast(6f)
+                    // if the segment intersects the line segment or is closer than thickness/2, treat as collision
+                    if (segSegIntersect(x1,y1,x2,y2, rx1,ry1, rx2,ry2)) return true
+                    val d1 = distPointSegment(rx1, ry1, x1, y1, x2, y2)
+                    val d2 = distPointSegment(rx2, ry2, x1, y1, x2, y2)
+                    if (d1 <= thickness || d2 <= thickness) return true
+                    // also check distance between segments
+                    val midSegDist = (distPointSegment((x1+x2)/2f, (y1+y2)/2f, rx1,ry1, rx2,ry2))
+                    if (midSegDist <= thickness) return true
+                    return false
+                }
+                else -> return false
+            }
         }
 
         for (i in nodes.indices) {

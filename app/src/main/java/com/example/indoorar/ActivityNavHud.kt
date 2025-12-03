@@ -1001,10 +1001,10 @@ class ActivityNavHud : BaseActivity() {
                     val iconRes = (d.getLong("iconRes")?.toInt())
                     val isStart = d.getBoolean("isStartQR") ?: false
                     poisCache += PoiInfo(pid, null, x, y, iconName, iconRes, isStart)
-                    val res = mapIconNameToRes(iconName) ?: iconRes
-                     val poiColor = Color.rgb(33, 150, 243) // azul consistente com tema
-                     minimap.addPoi(x, y, poiColor, res, isStart)
-                    accumulatePoint(x, y)
+                    val res = resolvePoiIcon(iconName, iconRes)
+                    val poiColor = colorForPoiIcon(res)
+                    minimap.addPoi(x, y, poiColor, res, isStart)
+                     accumulatePoint(x, y)
                 }
                 // Define pose inicial: POI de início, senão primeiro POI, senão centro dos bounds
                 val startPoi = poisCache.firstOrNull { it.isStart }
@@ -1025,7 +1025,8 @@ class ActivityNavHud : BaseActivity() {
                     stopTracker()
                     startTracker()
                 }
-                pushBoundsToMinimap()
+                // Enable debug overlay briefly to help diagnose shape rotation / edge generation issues
+                try { minimap.setDebugDrawEnabled(true) } catch (_: Exception) {}
                 minimap.invalidate()
             }
             .addOnFailureListener { /* ignore */ }
@@ -1212,4 +1213,43 @@ class ActivityNavHud : BaseActivity() {
             minimap.setWorldBounds(minX - padX, minZ - padZ, maxX + padX, maxZ + padZ)
         }
     }
+
+    // Resolve POI icon resource more robustly: tries explicit res, known map, and name-based variants
+    private fun resolvePoiIcon(iconName: String?, explicitRes: Int?): Int? {
+        // 1) explicit numeric resource wins
+        if (explicitRes != null && explicitRes != 0) return explicitRes
+        // 2) mapping table
+        val mapped = mapIconNameToRes(iconName)
+        if (mapped != null && mapped != 0) return mapped
+        if (iconName.isNullOrBlank()) return null
+        // 3) try several possible resource name variants
+        val candidates = listOf(
+            iconName,
+            "ic_$iconName",
+            "ic_${iconName}_azul",
+            "ic_${iconName}_blue",
+            "ic_${iconName}_24",
+            "ic_${iconName}_white",
+            iconName.lowercase(),
+            iconName.replace('-', '_').replace(' ', '_')
+        )
+        for (cand in candidates) {
+            try {
+                val rid = resources.getIdentifier(cand, "drawable", packageName)
+                if (rid != 0) return rid
+            } catch (_: Exception) {}
+        }
+        return null
+    }
+
+    // Use same color mapping as the editor so minimap POI backgrounds match
+    private fun colorForPoiIcon(resId: Int?): Int = try {
+        when (resId) {
+            R.drawable.ic_door_azul, R.drawable.ic_banheiro_azul -> "#32357A".toColorInt()
+            R.drawable.ic_stairs_azul -> "#FF9800".toColorInt()
+            R.drawable.ic_extintor_azul -> "#F44336".toColorInt()
+            R.drawable.ic_elevator_azul -> "#4CAF50".toColorInt()
+            else -> "#32357A".toColorInt()
+        }
+    } catch (_: Exception) { "#32357A".toColorInt() }
 }

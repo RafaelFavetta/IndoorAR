@@ -41,7 +41,10 @@
                 android:text="Nome do mapa"
                 android:textColor="#32357A"
                 android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:includeFontPadding="false" />
 
             <TextView
                 android:id="@+id/txtDescricaoMapaRecente"

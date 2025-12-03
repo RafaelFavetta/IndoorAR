@@ -21,7 +21,6 @@
             android:orientation="vertical"
             android:padding="0dp">
 
-            <!-- Altura dobrada de 110dp para 220dp -->
             <ImageView
                 android:id="@+id/ivThumbMapa"
                 android:layout_width="match_parent"
@@ -34,16 +33,16 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="29dp"
+                android:layout_height="wrap_content"
                 android:background="#FDFDFD"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="5dp">
+                android:padding="8dp">
 
                 <TextView
                     android:id="@+id/txtNome"
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
                     android:fontFamily="@font/inter"
@@ -52,7 +51,10 @@
                     android:text="@string/nome_do_mapa"
                     android:textColor="#32357A"
                     android:textSize="15sp"
-                    android:textStyle="normal" />
+                    android:textStyle="normal"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:includeFontPadding="false" />
 
                 <ImageButton
                     android:id="@+id/btnFavorito"

@@ -146,8 +146,13 @@ class AttributePanelController(
                 layoutStartQR?.visibility = View.VISIBLE
                 switchIsStartQR?.isChecked = obj.isStartQR
                 layoutIsWalkable?.visibility = View.GONE
-                // Oculta campo de nome para POI
-                edtNome?.visibility = View.GONE
+                // Exibe campo de nome para POI (permite editar)
+                edtNome?.visibility = View.VISIBLE
+                // Populate with current POI name if meta empty
+                if (meta.nome.isEmpty()) {
+                    meta.nome = obj.nome
+                    edtNome.setText(meta.nome)
+                }
             }
             is Action.Shape -> {
                 layoutIsWalkable?.visibility = View.VISIBLE
@@ -244,13 +249,13 @@ class AttributePanelController(
     private fun saveMeta() {
         if (isProgrammatic) return
         val obj = editor.actions.firstOrNull { (it is Action.Shape && it.selected) || (it is Action.Poi && it.selected) } ?: return
-        val m = metaStore.getOrPut(obj) { Meta() }
-        m.nome = edtNome.text.toString()
+        val meta = metaStore.getOrPut(obj) { Meta() }
+        meta.nome = edtNome.text.toString()
         // Não salva mais hex manual do painel (seletor removido)
         // m.corHex = edtCor.text.toString().ifBlank { "#D9D9D9" }
         when (obj) {
-            is Action.Shape -> { obj.nome = m.nome }
-            is Action.Poi -> { /* POI não possui nome/descrição */ }
+            is Action.Shape -> { obj.nome = meta.nome }
+            is Action.Poi -> { obj.nome = meta.nome }
             else -> {}
         }
     }

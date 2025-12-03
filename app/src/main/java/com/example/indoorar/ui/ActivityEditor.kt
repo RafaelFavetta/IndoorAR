@@ -266,6 +266,7 @@ class ActivityEditor : BaseActivity() {
                                 "id" to poi.id,
                                 "x" to mapEditor.pxToMeters(poi.x),
                                 "y" to mapEditor.pxToMeters(poi.y),
+                                "nome" to poi.nome,
                                 "iconName" to iconResToName(poi.iconRes),
                                 "iconRes" to poi.iconRes,
                                 "isStartQR" to poi.isStartQR
@@ -748,9 +749,10 @@ class ActivityEditor : BaseActivity() {
                                     val x = (pdoc.getDouble("x") ?: 0.0).toFloat()
                                     val y = (pdoc.getDouble("y") ?: 0.0).toFloat()
                                     val iconRes = (pdoc.getLong("iconRes")?.toInt()) ?: R.drawable.ic_poi_default
+                                    val nome = pdoc.getString("nome") ?: ""
                                     val xPx = mapEditor.metersToPx(x)
                                     val yPx = mapEditor.metersToPx(y)
-                                    val poi = com.example.indoorar.ui.Action.Poi(id = pid, x = xPx, y = yPx, width = 48f, height = 48f, iconRes = iconRes)
+                                    val poi = com.example.indoorar.ui.Action.Poi(id = pid, x = xPx, y = yPx, width = 48f, height = 48f, iconRes = iconRes, nome = nome)
                                     loadedActions.add(poi)
                                 } catch (_: Exception) {}
                             }
@@ -774,9 +776,10 @@ class ActivityEditor : BaseActivity() {
                                     val x = (pdoc.getDouble("x") ?: 0.0).toFloat()
                                     val y = (pdoc.getDouble("y") ?: 0.0).toFloat()
                                     val iconRes = (pdoc.getLong("iconRes")?.toInt()) ?: R.drawable.ic_poi_default
+                                    val nome = pdoc.getString("nome") ?: ""
                                     val xPx = mapEditor.metersToPx(x)
                                     val yPx = mapEditor.metersToPx(y)
-                                    val poi = com.example.indoorar.ui.Action.Poi(id = pid, x = xPx, y = yPx, width = 48f, height = 48f, iconRes = iconRes)
+                                    val poi = com.example.indoorar.ui.Action.Poi(id = pid, x = xPx, y = yPx, width = 48f, height = 48f, iconRes = iconRes, nome = nome)
                                     loadedActions.add(poi)
                                 } catch (_: Exception) {}
                             }

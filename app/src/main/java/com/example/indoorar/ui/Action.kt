@@ -30,6 +30,7 @@ sealed class Action {
         var width: Float = 100f,
         var height: Float = 100f,
         var iconRes: Int,
+        var nome: String = "",
         var selected: Boolean = false,
         var isStartQR: Boolean = false,
         var rotation: Float = 0f

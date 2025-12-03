@@ -120,15 +120,13 @@ class MinimapView @JvmOverloads constructor(
         return try {
             val orig = AppCompatResources.getDrawable(context, iconRes) ?: return null
             val dr = try { orig.mutate() } catch (_: Exception) { orig }
-            // Wrap and clear any theme tint so the drawable's original colors show
             val wrapped = DrawableCompat.wrap(dr)
             try { DrawableCompat.setTintList(wrapped, null) } catch (_: Exception) {}
-            // Only apply explicit tint when requested
             if (tint != 0) {
                 try { DrawableCompat.setTint(wrapped, tint) } catch (_: Exception) {}
             }
             val bmp = createBitmap(size, size)
-            val c = Canvas(bmp)
+            val c = android.graphics.Canvas(bmp)
             wrapped.setBounds(0, 0, size, size)
             wrapped.draw(c)
             miniIconCache[key] = bmp
@@ -279,12 +277,13 @@ class MinimapView @JvmOverloads constructor(
         }
 
         // destino: sempre destacar o último ponto da rota, mesmo quando há apenas um
-        if (route.isNotEmpty()) {
+         if (route.isNotEmpty()) {
             paint.style = Paint.Style.FILL
-            paint.color = Color.RED
-            val (dx, dz) = route.last()
-            canvas.drawCircle((dx - minX) * scaleX, (dz - minZ) * scaleY, 5f, paint)
-        }
+            // use material red (matches editor's extinguisher red) for consistent appearance
+            paint.color = 0xFFF44336.toInt()
+             val (dx, dz) = route.last()
+             canvas.drawCircle((dx - minX) * scaleX, (dz - minZ) * scaleY, 5f, paint)
+         }
 
         // POIs (render as colored circles with centered icon)
         pois.forEach { p ->
@@ -293,44 +292,74 @@ class MinimapView @JvmOverloads constructor(
             // scale radius relative to world size for consistent look
             val r = (pinHeightBase * 0.5f).coerceAtLeast(6f)
 
-            // filled circle with POI color
-            paint.style = Paint.Style.FILL
-            paint.color = p.color
-            canvas.drawCircle(cx, cy, r, paint)
-
-            // thin white outline for contrast
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 1.5f
-            paint.color = Color.WHITE
-            canvas.drawCircle(cx, cy, r, paint)
-
-            // start POI highlight ring
-            if (p.isStart) {
-                paint.style = Paint.Style.STROKE
-                paint.strokeWidth = 2.6f
-                paint.color = 0xFFFFD54F.toInt() // amber
-                canvas.drawCircle(cx, cy, r + 2f, paint)
-            }
-
-            // icon centered inside, rendered like the editor: drawable tinted white over the colored circle
             if (p.iconRes != null) {
-                try {
-                    // try to load drawable and tint to white, fallback to default poi icon
-                    var dr = try { AppCompatResources.getDrawable(context, p.iconRes) } catch (_: Exception) { null }
-                        ?: AppCompatResources.getDrawable(context, com.example.indoorar.R.drawable.ic_poi_default)
-                    dr = try { dr?.mutate() } catch (_: Exception) { dr }
-                    dr?.let { d ->
-                        try { DrawableCompat.setTint(d, Color.WHITE) } catch (_: Exception) {}
-                        val iconSizeF = (r * 1.2f).coerceAtLeast(8f)
-                        val leftI = (cx - iconSizeF / 2f).toInt()
-                        val topI = (cy - iconSizeF / 2f).toInt()
-                        val rightI = (leftI + iconSizeF).toInt()
-                        val bottomI = (topI + iconSizeF).toInt()
-                        d.setBounds(leftI, topI, rightI, bottomI)
-                        d.draw(canvas)
-                    }
-                } catch (_: Exception) { /* ignore drawing icon */ }
-            }
+                 try {
+                     // Prefer a cached rasterized icon (preserve original drawable colors)
+                     val iconSizeF = (r * 1.8f).coerceAtLeast(18f)
+                     val iconSize = iconSizeF.toInt()
+                     val bmp = getMiniIcon(p.iconRes, iconSize, 0)
+                     // Draw background circle (use exact POI color like in editor)
+                     paint.style = Paint.Style.FILL
+                     paint.color = p.color
+                     canvas.drawCircle(cx, cy, r, paint)
+                     // thin white outline for contrast (matches editor)
+                     paint.style = Paint.Style.STROKE
+                     paint.strokeWidth = 1.5f
+                     paint.color = Color.WHITE
+                     canvas.drawCircle(cx, cy, r, paint)
+                     if (bmp != null) {
+                         val leftB = (cx - iconSize / 2f).toFloat()
+                         val topB = (cy - iconSize / 2f).toFloat()
+                        // Draw icon bitmap centered on top of the colored circle using filtered paint for scaling
+                        val bmpPaint = Paint(Paint.FILTER_BITMAP_FLAG)
+                        canvas.drawBitmap(bmp, leftB, topB, bmpPaint)
+                        // Optionally draw a subtle start ring if this POI is the start
+                        if (p.isStart) {
+                            paint.style = Paint.Style.STROKE
+                            paint.strokeWidth = 2.6f
+                            paint.color = 0xFFFFD54F.toInt() // amber
+                            canvas.drawCircle(cx, cy, iconSizeF / 2f + 2f, paint)
+                        }
+                     } else {
+                         // Fallback to drawing the drawable directly (no tint) if bitmap creation fails
+                         var dr = try { AppCompatResources.getDrawable(context, p.iconRes) } catch (_: Exception) { null }
+                             ?: AppCompatResources.getDrawable(context, com.example.indoorar.R.drawable.ic_poi_default)
+                         dr = try { dr?.mutate() } catch (_: Exception) { dr }
+                         dr?.let { d ->
+                             try { DrawableCompat.clearColorFilter(d) } catch (_: Exception) {}
+                             val leftI = (cx - iconSizeF / 2f).toInt()
+                             val topI = (cy - iconSizeF / 2f).toInt()
+                             val rightI = (leftI + iconSizeF).toInt()
+                             val bottomI = (topI + iconSizeF).toInt()
+                            d.setBounds(leftI, topI, rightI, bottomI)
+                            d.draw(canvas)
+                            if (p.isStart) {
+                                paint.style = Paint.Style.STROKE
+                                paint.strokeWidth = 2.6f
+                                paint.color = 0xFFFFD54F.toInt()
+                                canvas.drawCircle(cx, cy, iconSizeF / 2f + 2f, paint)
+                            }
+                         }
+                     }
+                  } catch (_: Exception) { /* ignore drawing icon */ }
+             } else {
+                // No icon: draw colored circle + white outline + optional start ring
+                paint.style = Paint.Style.FILL
+                paint.color = p.color
+                canvas.drawCircle(cx, cy, r, paint)
+
+                paint.style = Paint.Style.STROKE
+                paint.strokeWidth = 1.5f
+                paint.color = Color.WHITE
+                canvas.drawCircle(cx, cy, r, paint)
+
+                if (p.isStart) {
+                    paint.style = Paint.Style.STROKE
+                    paint.strokeWidth = 2.6f
+                    paint.color = 0xFFFFD54F.toInt() // amber
+                    canvas.drawCircle(cx, cy, r + 2f, paint)
+                }
+             }
         }
 
         if (rotateWithHeading) {

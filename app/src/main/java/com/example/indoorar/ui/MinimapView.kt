@@ -13,6 +13,7 @@ import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.sin
 import androidx.core.graphics.createBitmap
+import androidx.appcompat.content.res.AppCompatResources
 
 class MinimapView @JvmOverloads constructor(
     context: Context,
@@ -20,12 +21,23 @@ class MinimapView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    private data class Forma(val x: Float, val z: Float, val w: Float, val h: Float, val color: Int, val zOrder: Int = 0)
+    private data class Forma(
+        val x: Float,
+        val z: Float,
+        val w: Float,
+        val h: Float,
+        val color: Int,
+        val zOrder: Int = 0,
+        val tipo: String = "retangulo",
+        val rotation: Float = 0f
+    )
     private data class Poi(val x: Float, val z: Float, val color: Int, val iconRes: Int?, val isStart: Boolean)
 
     private val formas = mutableListOf<Forma>()
     private val pois = mutableListOf<Poi>()
     private val miniIconCache = mutableMapOf<Long, android.graphics.Bitmap>()
+    // Reusable path to avoid allocations inside onDraw
+    private val tmpPath = Path()
 
     private var route: MutableList<Pair<Float, Float>> = mutableListOf()
     private var userX: Float = 0f
@@ -75,6 +87,11 @@ class MinimapView @JvmOverloads constructor(
         val zIdx = if (isWalkable) 10 else 0
         formas += Forma(x, z, w, h, color, zIdx)
     }
+    // Full overload including tipo and rotation
+    fun addForma(x: Float, z: Float, w: Float, h: Float, color: Int, isWalkable: Boolean, tipo: String, rotation: Float) {
+        val zIdx = if (isWalkable) 10 else 0
+        formas += Forma(x, z, w, h, color, zIdx, tipo ?: "retangulo", rotation)
+    }
 
     fun addPoi(x: Float, z: Float) { pois += Poi(x, z, Color.YELLOW, null, false) }
     fun addPoi(x: Float, z: Float, color: Int) { pois += Poi(x, z, color, null, false) }
@@ -100,7 +117,7 @@ class MinimapView @JvmOverloads constructor(
         val key = (iconRes.toLong() shl 32) or (size.toLong() and 0xFFFFFFFFL) or ((tint.toLong() and 0xFFFFFFFFL) shl 16)
         miniIconCache[key]?.let { return it }
         return try {
-            val dr = context.getDrawable(iconRes) ?: return null
+            val dr = AppCompatResources.getDrawable(context, iconRes) ?: return null
             val bmp = createBitmap(size, size)
             val c = Canvas(bmp)
             try { dr.mutate(); dr.setTint(tint) } catch (_: Exception) {}
@@ -140,11 +157,67 @@ class MinimapView @JvmOverloads constructor(
         // formas: draw sorted by zOrder so non-walkable (lower zOrder) appear below walkable
         formas.sortedBy { it.zOrder }.forEach { f ->
             paint.color = f.color
-            val left = (f.x - minX) * scaleX
-            val top = (f.z - minZ) * scaleY
-            val right = left + f.w * scaleX
-            val bottom = top + f.h * scaleY
-            canvas.drawRect(left, top, right, bottom, paint)
+            // Compute world->view extents and normalize in case w/h are negative or zero
+            val rawLeft = (f.x - minX) * scaleX
+            val rawTop = (f.z - minZ) * scaleY
+            val rawRight = rawLeft + f.w * scaleX
+            val rawBottom = rawTop + f.h * scaleY
+            val left = minOf(rawLeft, rawRight)
+            val right = maxOf(rawLeft, rawRight)
+            val top = minOf(rawTop, rawBottom)
+            val bottom = maxOf(rawTop, rawBottom)
+            val cx = (left + right) / 2f
+            val cy = (top + bottom) / 2f
+            val wPx = (right - left).coerceAtLeast(1f)
+            val hPx = (bottom - top).coerceAtLeast(1f)
+
+            // Save paint state and set defaults
+            val prevStyle = paint.style
+            val prevStroke = paint.strokeWidth
+            paint.style = Paint.Style.FILL
+
+            when (f.tipo.lowercase()) {
+                "circulo", "circle" -> {
+                    val r = (minOf(wPx, hPx) / 2f).coerceAtLeast(1f)
+                    canvas.save()
+                    if (f.rotation != 0f) canvas.rotate(Math.toDegrees(f.rotation.toDouble()).toFloat(), cx, cy)
+                    canvas.drawCircle(cx, cy, r, paint)
+                    canvas.restore()
+                }
+                "triangulo" -> {
+                    tmpPath.rewind()
+                    tmpPath.moveTo(cx, top)
+                    tmpPath.lineTo(left, bottom)
+                    tmpPath.lineTo(right, bottom)
+                    tmpPath.close()
+                    canvas.save()
+                    if (f.rotation != 0f) canvas.rotate(Math.toDegrees(f.rotation.toDouble()).toFloat(), cx, cy)
+                    canvas.drawPath(tmpPath, paint)
+                    canvas.restore()
+                }
+                "linha" -> {
+                    val x1 = left
+                    val y1 = top
+                    val x2 = right
+                    val y2 = bottom
+                    canvas.save()
+                    paint.style = Paint.Style.STROKE
+                    paint.strokeWidth = 3f
+                    if (f.rotation != 0f) canvas.rotate(Math.toDegrees(f.rotation.toDouble()).toFloat(), cx, cy)
+                    canvas.drawLine(x1, y1, x2, y2, paint)
+                    canvas.restore()
+                }
+                else -> { // retangulo, quadrado e default
+                    canvas.save()
+                    if (f.rotation != 0f) canvas.rotate(Math.toDegrees(f.rotation.toDouble()).toFloat(), cx, cy)
+                    canvas.drawRect(left, top, right, bottom, paint)
+                    canvas.restore()
+                }
+            }
+
+            // restore paint state
+            paint.style = prevStyle
+            paint.strokeWidth = prevStroke
         }
 
         // linha base rota
@@ -297,11 +370,11 @@ class MinimapView @JvmOverloads constructor(
             verts[4] * cosA - verts[5] * sinA + cx,
             verts[4] * sinA + verts[5] * cosA + cy
         )
-        val path = Path()
-        path.moveTo(tx[0], tx[1])
-        path.lineTo(tx[2], tx[3])
-        path.lineTo(tx[4], tx[5])
-        path.close()
-        canvas.drawPath(path, arrowPaint)
+        tmpPath.rewind()
+        tmpPath.moveTo(tx[0], tx[1])
+        tmpPath.lineTo(tx[2], tx[3])
+        tmpPath.lineTo(tx[4], tx[5])
+        tmpPath.close()
+        canvas.drawPath(tmpPath, arrowPaint)
     }
 }

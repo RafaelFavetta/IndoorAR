@@ -958,29 +958,31 @@ class ActivityNavHud : BaseActivity() {
             }
             .addOnFailureListener { /* ignore */ }
 
-        // FORMAS: desenha retângulos básicos
+        // FORMAS: carregue todas as formas (retângulos, círculos, linhas, etc.) e passe tipo/rotação ao minimap
         mapaRef.collection("formas").get()
             .addOnSuccessListener { snap ->
                 snap.documents.forEach { d ->
                     val pos = (d.get("posicao") as? List<*>)?.mapNotNull { (it as? Number)?.toFloat() }
                     val tam = (d.get("tamanho") as? List<*>)?.mapNotNull { (it as? Number)?.toFloat() }
-                    val tipo = d.getString("tipo") ?: ""
+                    val tipo = d.getString("tipo") ?: "retangulo"
                     val corStr = d.getString("cor")
-                    val isRect = tipo == "retangulo" || tipo == "quadrado"
-                    if (pos != null && tam != null && pos.size >= 2 && tam.size >= 2 && isRect) {
+                    val rot = (d.getDouble("rotacao") ?: 0.0).toFloat()
+                    if (pos != null && tam != null && pos.size >= 2 && tam.size >= 2) {
                         val x = pos[0]; val y = pos[1]
                         val h = tam[0]; val w = tam[1] // salvo como [altura, largura]
                         val color: Int = try {
                             corStr?.toColorInt() ?: 0xFF888888.toInt()
                         } catch (_: Exception) { 0xFF888888.toInt() }
-                        // Read optional walkable flag (field name 'caminhavel' or 'walkable')
+                        // Read optional walkable flag (field name 'isWalkable', 'caminhavel' or 'walkable')
                         val walkable = when {
+                            d.contains("isWalkable") -> (d.getBoolean("isWalkable") ?: false)
                             d.contains("caminhavel") -> (d.getBoolean("caminhavel") ?: false)
                             d.contains("walkable") -> (d.getBoolean("walkable") ?: false)
                             else -> false
                         }
-                        // Add forma with walkable flag so minimap can z-order correctly
-                        minimap.addForma(x, y, w, h, color, walkable)
+                        // Add forma passing type and rotation so minimap can render correctly
+                        minimap.addForma(x, y, w, h, color, walkable, tipo, rot)
+                        // Accumulate bounds using the axis-aligned bounding box stored in DB
                         accumulateRect(x, y, w, h)
                     }
                 }

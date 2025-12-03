@@ -1026,7 +1026,7 @@ class ActivityNavHud : BaseActivity() {
                     startTracker()
                 }
                 // Enable debug overlay briefly to help diagnose shape rotation / edge generation issues
-                try { minimap.setDebugDrawEnabled(true) } catch (_: Exception) {}
+                try { minimap.setDebugDrawEnabled(false) } catch (_: Exception) {}
                 minimap.invalidate()
             }
             .addOnFailureListener { /* ignore */ }

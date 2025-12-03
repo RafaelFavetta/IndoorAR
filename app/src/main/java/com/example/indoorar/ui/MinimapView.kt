@@ -35,8 +35,7 @@ class MinimapView @JvmOverloads constructor(
 
     private val formas = mutableListOf<Forma>()
     private val pois = mutableListOf<Poi>()
-    private val miniIconCache = mutableMapOf<Long, android.graphics.Bitmap>()
-    // Reusable path to avoid allocations inside onDraw
+    private val miniIconCache = mutableMapOf<Triple<Int, Int, Int>, android.graphics.Bitmap>()
     private val tmpPath = Path()
 
     private var route: MutableList<Pair<Float, Float>> = mutableListOf()
@@ -114,13 +113,16 @@ class MinimapView @JvmOverloads constructor(
 
     private fun getMiniIcon(iconRes: Int, size: Int, tint: Int): android.graphics.Bitmap? {
         if (iconRes == 0) return null
-        val key = (iconRes.toLong() shl 32) or (size.toLong() and 0xFFFFFFFFL) or ((tint.toLong() and 0xFFFFFFFFL) shl 16)
+        val key = Triple(iconRes, size, tint)
         miniIconCache[key]?.let { return it }
         return try {
             val dr = AppCompatResources.getDrawable(context, iconRes) ?: return null
             val bmp = createBitmap(size, size)
             val c = Canvas(bmp)
-            try { dr.mutate(); dr.setTint(tint) } catch (_: Exception) {}
+            try {
+                dr.mutate()
+                if (tint != 0) dr.setTint(tint)
+            } catch (_: Exception) {}
             dr.setBounds(0, 0, size, size)
             dr.draw(c)
             miniIconCache[key] = bmp
@@ -304,7 +306,7 @@ class MinimapView @JvmOverloads constructor(
             // icon centered inside, tinted white to contrast the colored background
             if (p.iconRes != null) {
                 val iconSize = (r * 1.2f).toInt().coerceAtLeast(8)
-                getMiniIcon(p.iconRes, iconSize, Color.WHITE)?.let { bmp ->
+                getMiniIcon(p.iconRes, iconSize, 0)?.let { bmp ->
                     val left = (cx - bmp.width / 2f)
                     val top = (cy - bmp.height / 2f)
                     canvas.drawBitmap(bmp, left, top, null)

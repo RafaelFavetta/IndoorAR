@@ -174,9 +174,7 @@ class MinimapView @JvmOverloads constructor(
         val viewMaxZ: Float
 
         if (followUser) {
-            // choose a follow radius in world units (meters). If not provided, pick a fraction of the map size
-            val baseRadius = followRadiusMeters ?: (max(worldW, worldH) * 0.35f).coerceAtLeast(1f)
-            // maintain aspect ratio: height is 2*baseRadius, width scaled by view aspect
+            val baseRadius = followRadiusMeters ?: (max(worldW, worldH) * 0.15f).coerceAtLeast(0.5f)
             val aspect = wView / hView
             val halfH = baseRadius
             val halfW = baseRadius * aspect

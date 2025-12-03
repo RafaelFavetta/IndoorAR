@@ -69,6 +69,11 @@ class ActivityEditor : BaseActivity() {
         mapIdFromIntent = intent.getStringExtra("MAP_ID")
 
         bindViews()
+        // If opened with a MAP_ID, load existing map into the editor for editing
+        mapIdFromIntent?.let { mid ->
+            loadMapIntoEditor(mid)
+        }
+
         setupToolButtons()
         setupAttributePanel()
         setupPoiClicks()
@@ -204,84 +209,118 @@ class ActivityEditor : BaseActivity() {
         val db = FirebaseFirestore.getInstance()
         val mapaRef = db.collection("mapas").document(mapId)
 
-        val batch = db.batch()
-        // Atualiza somente pxPerMeter sem sobrescrever outros campos
-        batch.set(mapaRef, mapOf("pxPerMeter" to mapEditor.pxPerMeter), SetOptions.merge())
-
-        // FORMAS
-        mapEditor.actions.filterIsInstance<Action.Shape>().forEach { shape ->
-            val xPx = min(shape.start.x, shape.end.x)
-            val yPx = min(shape.start.y, shape.end.y)
-            val wPx = abs(shape.end.x - shape.start.x)
-            val hPx = abs(shape.end.y - shape.start.y)
-            val formaDoc = mapaRef.collection("formas").document()
-            val tipoStr = when (shape.type) {
-                Action.ShapeType.RECTANGLE -> "retangulo"
-                Action.ShapeType.SQUARE -> "quadrado"
-                Action.ShapeType.CIRCLE -> "circulo"
-                Action.ShapeType.TRIANGLE -> "triangulo"
-                Action.ShapeType.LINE -> "linha"
-            }
-            val dataForma = mapOf(
-                "cor" to String.format("#%06X", (0xFFFFFF and shape.fillColor)),
-                // remove descricao, mantém somente nome
-                "nome" to shape.nome,
-                "posicao" to listOf(mapEditor.pxToMeters(xPx), mapEditor.pxToMeters(yPx)),
-                "rotacao" to shape.rotation,
-                "tamanho" to listOf(mapEditor.pxToMeters(hPx), mapEditor.pxToMeters(wPx)),
-                "tipo" to tipoStr,
-                "isWalkable" to shape.isWalkable
-            )
-            batch.set(formaDoc, dataForma)
-        }
-
-        // POIs
-        val pois = mapEditor.actions.filterIsInstance<Action.Poi>()
-        pois.forEach { poi ->
-            val poiDoc = mapaRef.collection("pois").document(poi.id)
-            val dataPoi = mapOf(
-                "id" to poi.id,
-                "x" to mapEditor.pxToMeters(poi.x),
-                "y" to mapEditor.pxToMeters(poi.y),
-                "iconName" to iconResToName(poi.iconRes),
-                "iconRes" to poi.iconRes,
-                "isStartQR" to poi.isStartQR
-            )
-            batch.set(poiDoc, dataPoi)
-        }
-
-        // NODES (baseado em POIs)
-        pois.forEach { poi ->
-            val nodeDoc = mapaRef.collection("nodes").document(poi.id)
-            val dataNode = mapOf(
-                "id" to poi.id,
-                "tipo" to "POI",
-                "x" to mapEditor.pxToMeters(poi.x),
-                "y" to mapEditor.pxToMeters(poi.y),
-                "poiIds" to listOf(poi.id)
-            )
-            batch.set(nodeDoc, dataNode)
-        }
-
-        // EDGES (peso em metros)
-        gerarEdgesAuto().forEach { edge ->
-            val edgeId = edge["id"] as String
-            val edgeDoc = mapaRef.collection("edges").document(edgeId)
-            batch.set(edgeDoc, edge)
-        }
+        // Primeiro, buscamos os documentos existentes nas coleções para removê-los antes de regravar
+        val formasColl = mapaRef.collection("formas").get()
+        val poisColl = mapaRef.collection("pois").get()
+        val nodesColl = mapaRef.collection("nodes").get()
+        val edgesColl = mapaRef.collection("edges").get()
 
         Toast.makeText(this, "Salvando mapa...", Toast.LENGTH_SHORT).show()
-        batch.commit()
-            .addOnSuccessListener {
+
+        // Encadeia as leituras (ok para este caso). Depois constrói um batch que apaga antigos e escreve novos.
+        formasColl.addOnSuccessListener { formasSnap ->
+            poisColl.addOnSuccessListener { poisSnap ->
+                nodesColl.addOnSuccessListener { nodesSnap ->
+                    edgesColl.addOnSuccessListener { edgesSnap ->
+                        val batch = db.batch()
+                        // Remove documentos antigos
+                        formasSnap.documents.forEach { batch.delete(it.reference) }
+                        poisSnap.documents.forEach { batch.delete(it.reference) }
+                        nodesSnap.documents.forEach { batch.delete(it.reference) }
+                        edgesSnap.documents.forEach { batch.delete(it.reference) }
+
+                        // Atualiza pxPerMeter no documento principal
+                        batch.set(mapaRef, mapOf("pxPerMeter" to mapEditor.pxPerMeter), SetOptions.merge())
+
+                        // Recria FORMAS
+                        mapEditor.actions.filterIsInstance<Action.Shape>().forEach { shape ->
+                            val xPx = min(shape.start.x, shape.end.x)
+                            val yPx = min(shape.start.y, shape.end.y)
+                            val wPx = abs(shape.end.x - shape.start.x)
+                            val hPx = abs(shape.end.y - shape.start.y)
+                            val formaDoc = mapaRef.collection("formas").document()
+                            val tipoStr = when (shape.type) {
+                                Action.ShapeType.RECTANGLE -> "retangulo"
+                                Action.ShapeType.SQUARE -> "quadrado"
+                                Action.ShapeType.CIRCLE -> "circulo"
+                                Action.ShapeType.TRIANGLE -> "triangulo"
+                                Action.ShapeType.LINE -> "linha"
+                            }
+                            val dataForma = mapOf(
+                                "cor" to String.format("#%06X", (0xFFFFFF and shape.fillColor)),
+                                "nome" to shape.nome,
+                                "posicao" to listOf(mapEditor.pxToMeters(xPx), mapEditor.pxToMeters(yPx)),
+                                "rotacao" to shape.rotation,
+                                "tamanho" to listOf(mapEditor.pxToMeters(hPx), mapEditor.pxToMeters(wPx)),
+                                "tipo" to tipoStr,
+                                "isWalkable" to shape.isWalkable
+                            )
+                            batch.set(formaDoc, dataForma)
+                        }
+
+                        // Recria POIs
+                        val pois = mapEditor.actions.filterIsInstance<Action.Poi>()
+                        pois.forEach { poi ->
+                            val poiDoc = mapaRef.collection("pois").document(poi.id)
+                            val dataPoi = mapOf(
+                                "id" to poi.id,
+                                "x" to mapEditor.pxToMeters(poi.x),
+                                "y" to mapEditor.pxToMeters(poi.y),
+                                "iconName" to iconResToName(poi.iconRes),
+                                "iconRes" to poi.iconRes,
+                                "isStartQR" to poi.isStartQR
+                            )
+                            batch.set(poiDoc, dataPoi)
+                        }
+
+                        // Recria NODES com base nos POIs
+                        pois.forEach { poi ->
+                            val nodeDoc = mapaRef.collection("nodes").document(poi.id)
+                            val dataNode = mapOf(
+                                "id" to poi.id,
+                                "tipo" to "POI",
+                                "x" to mapEditor.pxToMeters(poi.x),
+                                "y" to mapEditor.pxToMeters(poi.y),
+                                "poiIds" to listOf(poi.id)
+                            )
+                            batch.set(nodeDoc, dataNode)
+                        }
+
+                        // Recria EDGES
+                        gerarEdgesAuto().forEach { edge ->
+                            val edgeId = edge["id"] as String
+                            val edgeDoc = mapaRef.collection("edges").document(edgeId)
+                            batch.set(edgeDoc, edge)
+                        }
+
+                        // Commit do batch
+                        batch.commit()
+                            .addOnSuccessListener {
+                                btnSalvarMapa.isEnabled = true
+                                Toast.makeText(this, "Mapa salvo com sucesso!", Toast.LENGTH_SHORT).show()
+                                startActivity(Intent(this, com.example.indoorar.ActivityMeusMapas::class.java))
+                                finish()
+                            }
+                            .addOnFailureListener { e ->
+                                btnSalvarMapa.isEnabled = true
+                                Toast.makeText(this, "Erro ao salvar: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                    }.addOnFailureListener { e ->
+                        btnSalvarMapa.isEnabled = true
+                        Toast.makeText(this, "Erro ao ler edges: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }.addOnFailureListener { e ->
+                    btnSalvarMapa.isEnabled = true
+                    Toast.makeText(this, "Erro ao ler nodes: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }.addOnFailureListener { e ->
                 btnSalvarMapa.isEnabled = true
-                Toast.makeText(this, "Mapa salvo com sucesso!", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this, com.example.indoorar.ActivityMeusMapas::class.java))
-                finish()
+                Toast.makeText(this, "Erro ao ler pois: ${e.message}", Toast.LENGTH_LONG).show()
             }
-            .addOnFailureListener { e ->
-                btnSalvarMapa.isEnabled = true
-                Toast.makeText(this, "Erro ao salvar: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+        }.addOnFailureListener { e ->
+            btnSalvarMapa.isEnabled = true
+            Toast.makeText(this, "Erro ao ler formas: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun gerarEdgesAuto(): List<Map<String, Any>> {
@@ -541,6 +580,104 @@ class ActivityEditor : BaseActivity() {
 
     private fun setupAttributePanel() {
         AttributePanelController(this, mapEditor)
+    }
+
+    // Load an existing map from Firestore into the editor for modification
+    private fun loadMapIntoEditor(mapId: String) {
+        val db = FirebaseFirestore.getInstance()
+        val mapaRef = db.collection("mapas").document(mapId)
+        mapaRef.get().addOnSuccessListener { doc ->
+            if (!doc.exists()) return@addOnSuccessListener
+            // Load pxPerMeter if available
+            val pxPerM = (doc.getDouble("pxPerMeter") ?: mapEditor.pxPerMeter.toDouble()).toFloat()
+            mapEditor.pxPerMeter = pxPerM
+
+            // Prepare container for actions
+            val loadedActions = mutableListOf<com.example.indoorar.ui.Action>()
+
+            // Load formas
+            mapaRef.collection("formas").get()
+                .addOnSuccessListener { snap ->
+                    snap.documents.forEach { fdoc ->
+                        try {
+                            val pos = (fdoc.get("posicao") as? List<*>)?.mapNotNull { (it as? Number)?.toFloat() }
+                            val tam = (fdoc.get("tamanho") as? List<*>)?.mapNotNull { (it as? Number)?.toFloat() }
+                            val tipo = fdoc.getString("tipo") ?: ""
+                            val corStr = fdoc.getString("cor")
+                            val rot = (fdoc.getDouble("rotacao") ?: 0.0).toFloat()
+                            val isWalk = (fdoc.getBoolean("isWalkable") ?: fdoc.getBoolean("caminhavel") ?: fdoc.getBoolean("walkable") ?: true)
+                            if (pos != null && tam != null && pos.size >= 2 && tam.size >= 2) {
+                                val xMeters = pos[0]; val yMeters = pos[1]
+                                val hMeters = tam[0]; val wMeters = tam[1]
+                                val xPx = mapEditor.metersToPx(xMeters)
+                                val yPx = mapEditor.metersToPx(yMeters)
+                                val wPx = mapEditor.metersToPx(wMeters)
+                                val hPx = mapEditor.metersToPx(hMeters)
+                                val start = android.graphics.PointF(xPx, yPx)
+                                val end = android.graphics.PointF(xPx + wPx, yPx + hPx)
+                                val fill = try { (corStr ?: "#D9D9D9").toColorInt() } catch (_: Exception) { "#D9D9D9".toColorInt() }
+                                val shapeType = when (tipo) {
+                                    "retangulo" -> com.example.indoorar.ui.Action.ShapeType.RECTANGLE
+                                    "quadrado" -> com.example.indoorar.ui.Action.ShapeType.SQUARE
+                                    "circulo" -> com.example.indoorar.ui.Action.ShapeType.CIRCLE
+                                    "triangulo" -> com.example.indoorar.ui.Action.ShapeType.TRIANGLE
+                                    "linha" -> com.example.indoorar.ui.Action.ShapeType.LINE
+                                    else -> com.example.indoorar.ui.Action.ShapeType.RECTANGLE
+                                }
+                                val shape = com.example.indoorar.ui.Action.Shape(start = start, end = end, selected = false, fillColor = fill, rotation = rot, isWalkable = isWalk, nome = fdoc.getString("nome") ?: "", type = shapeType)
+                                loadedActions.add(shape)
+                            }
+                        } catch (_: Exception) {}
+                    }
+                    // After formas loaded, load pois
+                    mapaRef.collection("pois").get()
+                        .addOnSuccessListener { psnap ->
+                            psnap.documents.forEach { pdoc ->
+                                try {
+                                    val pid = pdoc.getString("id") ?: pdoc.id
+                                    val x = (pdoc.getDouble("x") ?: 0.0).toFloat()
+                                    val y = (pdoc.getDouble("y") ?: 0.0).toFloat()
+                                    val iconRes = (pdoc.getLong("iconRes")?.toInt()) ?: R.drawable.ic_poi_default
+                                    val xPx = mapEditor.metersToPx(x)
+                                    val yPx = mapEditor.metersToPx(y)
+                                    val poi = com.example.indoorar.ui.Action.Poi(id = pid, x = xPx, y = yPx, width = 48f, height = 48f, iconRes = iconRes)
+                                    loadedActions.add(poi)
+                                } catch (_: Exception) {}
+                            }
+                            // Replace editor actions on UI thread
+                            mapEditor.post {
+                                mapEditor.replaceActions(loadedActions)
+                                Toast.makeText(this, "Mapa carregado para edição", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        .addOnFailureListener { _ ->
+                            mapEditor.post { mapEditor.replaceActions(loadedActions) }
+                        }
+                }
+                .addOnFailureListener { _ ->
+                    // If formas fail, still attempt pois
+                    mapaRef.collection("pois").get()
+                        .addOnSuccessListener { psnap ->
+                            psnap.documents.forEach { pdoc ->
+                                try {
+                                    val pid = pdoc.getString("id") ?: pdoc.id
+                                    val x = (pdoc.getDouble("x") ?: 0.0).toFloat()
+                                    val y = (pdoc.getDouble("y") ?: 0.0).toFloat()
+                                    val iconRes = (pdoc.getLong("iconRes")?.toInt()) ?: R.drawable.ic_poi_default
+                                    val xPx = mapEditor.metersToPx(x)
+                                    val yPx = mapEditor.metersToPx(y)
+                                    val poi = com.example.indoorar.ui.Action.Poi(id = pid, x = xPx, y = yPx, width = 48f, height = 48f, iconRes = iconRes)
+                                    loadedActions.add(poi)
+                                } catch (_: Exception) {}
+                            }
+                            mapEditor.post { mapEditor.replaceActions(loadedActions) }
+                        }
+                        .addOnFailureListener { _ -> mapEditor.post { mapEditor.replaceActions(loadedActions) } }
+                }
+        }
+        .addOnFailureListener { e ->
+            Toast.makeText(this, "Falha ao carregar mapa: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun alignCardAbove(cardId: Int, anchorContainerId: Int) {

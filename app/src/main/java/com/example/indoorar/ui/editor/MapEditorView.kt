@@ -35,7 +35,7 @@ class MapEditorView @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     // ===== ESCALA PARA CONVERSÃO =====
-    val pxPerMeter = 40f // 40 pixels = 1 metro
+    var pxPerMeter = 40f // 40 pixels = 1 metro (agora mutável para permitir carregamento de mapas existentes)
 
     // Funções auxiliares
     fun pxToMeters(px: Float) = px / pxPerMeter
@@ -1702,5 +1702,12 @@ class MapEditorView @JvmOverloads constructor(
                 }
             }
         }
+    }
+
+    // API para carregar/limpar ações externas (formas/pois) quando um mapa é aberto
+    fun replaceActions(newActions: List<com.example.indoorar.ui.Action>) {
+        actions.clear()
+        actions.addAll(newActions)
+        invalidate()
     }
 }

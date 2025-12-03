@@ -62,6 +62,20 @@
         app:backgroundTint="#32357A"
         app:cornerRadius="30dp" />
 
+    <!-- Novo botão para abrir o editor e editar o mapa -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnEditarMapa"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="12dp"
+        android:text="EDITAR MAPA"
+        android:textAllCaps="true"
+        android:textStyle="normal"
+        android:textColor="#FDFDFD"
+        android:visibility="gone"
+        app:backgroundTint="#FF8A65"
+        app:cornerRadius="30dp" />
+
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardDownloadQRCode"
         android:layout_width="match_parent"

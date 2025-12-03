@@ -82,6 +82,8 @@ class ActivityMeusMapas : BaseActivity() {
         val ivPreview = dialog.findViewById<ImageView>(R.id.ivPreview)
         val btnIniciar = dialog.findViewById<Button>(R.id.btnIniciarNavegacao)
         val btnBaixar = dialog.findViewById<Button>(R.id.btnBaixarQRCode)
+        val editBtnId = resources.getIdentifier("btnEditarMapa", "id", packageName)
+        val btnEditar = if (editBtnId != 0) dialog.findViewById<Button>(editBtnId) else null
         val cardDownload = dialog.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardDownloadQRCode)
         val btnPDF = dialog.findViewById<Button>(R.id.btnDownloadPDF)
         val btnPNG = dialog.findViewById<Button>(R.id.btnDownloadPNG)
@@ -146,6 +148,35 @@ class ActivityMeusMapas : BaseActivity() {
             startActivity(Intent(this, ActivityNavHud::class.java).apply {
                 putExtra("MAP_ID", m.id)
             })
+        }
+
+        // Mostrar botão de edição apenas para o criador (maker)
+        btnEditar?.let { b ->
+            // Por padrão escondido no layout; checamos se o usuário atual é o autor e se é maker
+            val currentUid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+            if (!currentUid.isNullOrBlank() && currentUid == m.autorUid) {
+                // Valida tipo da conta (maker)
+                com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("usuarios").document(currentUid)
+                    .get()
+                    .addOnSuccessListener { doc ->
+                        val tipo = doc.getString("tipoConta")
+                        if (tipo == "maker") {
+                            b.visibility = View.VISIBLE
+                            b.setOnClickListener {
+                                dialog.dismiss()
+                                // Abre o editor passando MAP_ID
+                                val intent = Intent(this, com.example.indoorar.ui.ActivityEditor::class.java)
+                                intent.putExtra("MAP_ID", m.id)
+                                startActivity(intent)
+                            }
+                        } else {
+                            b.visibility = View.GONE
+                        }
+                    }
+                    .addOnFailureListener { _ -> b.visibility = View.GONE }
+            } else {
+                b.visibility = View.GONE
+            }
         }
 
         btnBaixar?.setOnClickListener {

@@ -973,7 +973,14 @@ class ActivityNavHud : BaseActivity() {
                         val color: Int = try {
                             corStr?.toColorInt() ?: 0xFF888888.toInt()
                         } catch (_: Exception) { 0xFF888888.toInt() }
-                        minimap.addForma(x, y, w, h, color)
+                        // Read optional walkable flag (field name 'caminhavel' or 'walkable')
+                        val walkable = when {
+                            d.contains("caminhavel") -> (d.getBoolean("caminhavel") ?: false)
+                            d.contains("walkable") -> (d.getBoolean("walkable") ?: false)
+                            else -> false
+                        }
+                        // Add forma with walkable flag so minimap can z-order correctly
+                        minimap.addForma(x, y, w, h, color, walkable)
                         accumulateRect(x, y, w, h)
                     }
                 }

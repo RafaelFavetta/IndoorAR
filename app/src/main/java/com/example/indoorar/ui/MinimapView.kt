@@ -20,7 +20,7 @@ class MinimapView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    private data class Forma(val x: Float, val z: Float, val w: Float, val h: Float, val color: Int)
+    private data class Forma(val x: Float, val z: Float, val w: Float, val h: Float, val color: Int, val zOrder: Int = 0)
     private data class Poi(val x: Float, val z: Float, val color: Int, val iconRes: Int?, val isStart: Boolean)
 
     private val formas = mutableListOf<Forma>()
@@ -66,7 +66,16 @@ class MinimapView @JvmOverloads constructor(
         invalidate()
     }
 
-    fun addForma(x: Float, z: Float, w: Float, h: Float, color: Int) { formas += Forma(x, z, w, h, color) }
+    // Backwards-compatible addForma: default zOrder = 0
+    fun addForma(x: Float, z: Float, w: Float, h: Float, color: Int) { formas += Forma(x, z, w, h, color, 0) }
+    // New overload that accepts explicit zOrder (higher zOrder draws on top)
+    fun addForma(x: Float, z: Float, w: Float, h: Float, color: Int, zOrder: Int) { formas += Forma(x, z, w, h, color, zOrder) }
+    // Convenience: mark walkable shapes to draw above non-walkable (walkable -> zOrder 10)
+    fun addForma(x: Float, z: Float, w: Float, h: Float, color: Int, isWalkable: Boolean) {
+        val zIdx = if (isWalkable) 10 else 0
+        formas += Forma(x, z, w, h, color, zIdx)
+    }
+
     fun addPoi(x: Float, z: Float) { pois += Poi(x, z, Color.YELLOW, null, false) }
     fun addPoi(x: Float, z: Float, color: Int) { pois += Poi(x, z, color, null, false) }
     fun addPoi(x: Float, z: Float, color: Int, iconRes: Int?, isStart: Boolean) { pois += Poi(x, z, color, iconRes, isStart) }
@@ -128,8 +137,8 @@ class MinimapView @JvmOverloads constructor(
             canvas.rotate(-Math.toDegrees(userHeadingRad.toDouble()).toFloat(), ux, uz)
         }
 
-        // formas
-        formas.forEach { f ->
+        // formas: draw sorted by zOrder so non-walkable (lower zOrder) appear below walkable
+        formas.sortedBy { it.zOrder }.forEach { f ->
             paint.color = f.color
             val left = (f.x - minX) * scaleX
             val top = (f.z - minZ) * scaleY

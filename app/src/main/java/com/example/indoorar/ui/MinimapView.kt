@@ -12,6 +12,9 @@ import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.sin
+import kotlin.math.max
+import kotlin.math.min
+
 import androidx.core.graphics.createBitmap
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.graphics.drawable.DrawableCompat
@@ -61,6 +64,11 @@ class MinimapView @JvmOverloads constructor(
 
     private var userHeadingRad: Float = 0f
     private var rotateWithHeading: Boolean = false
+    // Follow user viewport: when enabled the minimap zooms to a region around the user and follows it
+    private var followUser: Boolean = true
+    private var followRadiusMeters: Float? = null // if null, computed dynamically from world size
+    // reuse a bitmap paint to avoid allocating inside onDraw
+    private val bmpPaint = Paint(Paint.FILTER_BITMAP_FLAG)
 
     init {
         userPaint.style = Paint.Style.FILL
@@ -105,6 +113,12 @@ class MinimapView @JvmOverloads constructor(
 
     fun setRotateWithHeading(enabled: Boolean) { rotateWithHeading = enabled; invalidate() }
 
+    /** Enable or disable follow-user mode. When enabled the minimap zooms to a region centered on the user. */
+    fun setFollowUser(enabled: Boolean) { followUser = enabled; invalidate() }
+
+    /** Set explicit follow radius in world units (meters). Null means automatic radius based on map size. */
+    fun setFollowRadiusMeters(radius: Float?) { followRadiusMeters = radius; invalidate() }
+
     fun updateUserPose(x: Float, z: Float, headingRad: Float) {
         userX = x; userZ = z; userHeadingRad = headingRad; invalidate()
     }
@@ -141,9 +155,67 @@ class MinimapView @JvmOverloads constructor(
         super.onDraw(canvas)
         val wView = width.toFloat(); val hView = height.toFloat()
         if (wView <= 0 || hView <= 0) return
+        // Clip the whole minimap to a circle centered in the view so the minimap appears circular
+        val centerX = wView * 0.5f
+        val centerY = hView * 0.5f
+        val outerRadius = (min(wView, hView) * 0.5f)
+        val borderPadding = 2f
+        val clipRadius = outerRadius - borderPadding
+        val circlePath = Path().apply { addCircle(centerX, centerY, clipRadius, Path.Direction.CW) }
+        canvas.save()
+        canvas.clipPath(circlePath)
         val worldW = maxX - minX; val worldH = maxZ - minZ
         if (worldW <= 0f || worldH <= 0f) return
-        val scaleX = wView / worldW; val scaleY = hView / worldH
+        // Determine viewport in world coordinates. By default we show the whole world,
+        // but if followUser is enabled we zoom to a region centered on the user and follow them.
+        val viewMinX: Float
+        val viewMinZ: Float
+        val viewMaxX: Float
+        val viewMaxZ: Float
+
+        if (followUser) {
+            // choose a follow radius in world units (meters). If not provided, pick a fraction of the map size
+            val baseRadius = followRadiusMeters ?: (max(worldW, worldH) * 0.35f).coerceAtLeast(1f)
+            // maintain aspect ratio: height is 2*baseRadius, width scaled by view aspect
+            val aspect = wView / hView
+            val halfH = baseRadius
+            val halfW = baseRadius * aspect
+
+            var minXv = userX - halfW
+            var maxXv = userX + halfW
+            var minZv = userZ - halfH
+            var maxZv = userZ + halfH
+
+            // Clamp viewport to world bounds so we don't show beyond edges
+            val worldMinX = minX; val worldMaxX = maxX
+            val worldMinZ = minZ; val worldMaxZ = maxZ
+
+            // If the world is smaller than desired viewport, fall back to world extents
+            if (worldMaxX - worldMinX <= 2f * halfW) {
+                minXv = worldMinX; maxXv = worldMaxX
+            } else {
+                if (minXv < worldMinX) { val shift = worldMinX - minXv; minXv += shift; maxXv += shift }
+                if (maxXv > worldMaxX) { val shift = maxXv - worldMaxX; minXv -= shift; maxXv -= shift }
+            }
+            if (worldMaxZ - worldMinZ <= 2f * halfH) {
+                minZv = worldMinZ; maxZv = worldMaxZ
+            } else {
+                if (minZv < worldMinZ) { val shift = worldMinZ - minZv; minZv += shift; maxZv += shift }
+                if (maxZv > worldMaxZ) { val shift = maxZv - worldMaxZ; minZv -= shift; maxZv -= shift }
+            }
+
+            viewMinX = minXv
+            viewMaxX = maxXv
+            viewMinZ = minZv
+            viewMaxZ = maxZv
+        } else {
+            // full world
+            viewMinX = minX; viewMaxX = maxX; viewMinZ = minZ; viewMaxZ = maxZ
+        }
+
+        val viewWorldW = (viewMaxX - viewMinX).coerceAtLeast(0.0001f)
+        val viewWorldH = (viewMaxZ - viewMinZ).coerceAtLeast(0.0001f)
+        val scaleX = wView / viewWorldW; val scaleY = hView / viewWorldH
         val worldDiag = kotlin.math.sqrt(worldW * worldW + worldH * worldH)
         val basePin = 14f
         val referenceDiag = 50f
@@ -154,8 +226,8 @@ class MinimapView @JvmOverloads constructor(
         paint.style = Paint.Style.FILL; paint.color = Color.argb(80, 0, 0, 0)
         canvas.drawRect(0f, 0f, wView, hView, paint)
 
-        val ux = (userX - minX) * scaleX
-        val uz = (userZ - minZ) * scaleY
+        val ux = (userX - viewMinX) * scaleX
+        val uz = (userZ - viewMinZ) * scaleY
 
         // Rotaciona mapa em torno do usuário, mantendo heading do usuário apontando para cima
         if (rotateWithHeading) {
@@ -167,8 +239,8 @@ class MinimapView @JvmOverloads constructor(
         formas.sortedBy { it.zOrder }.forEach { f ->
             paint.color = f.color
             // Compute world->view extents and normalize in case w/h are negative or zero
-            val rawLeft = (f.x - minX) * scaleX
-            val rawTop = (f.z - minZ) * scaleY
+            val rawLeft = (f.x - viewMinX) * scaleX
+            val rawTop = (f.z - viewMinZ) * scaleY
             val rawRight = rawLeft + f.w * scaleX
             val rawBottom = rawTop + f.h * scaleY
             val left = minOf(rawLeft, rawRight)
@@ -237,10 +309,10 @@ class MinimapView @JvmOverloads constructor(
             var prev = route.first()
             for (i in 1 until route.size) {
                 val cur = route[i]
-                val x1 = (prev.first - minX) * scaleX
-                val y1 = (prev.second - minZ) * scaleY
-                val x2 = (cur.first - minX) * scaleX
-                val y2 = (cur.second - minZ) * scaleY
+                val x1 = (prev.first - viewMinX) * scaleX
+                val y1 = (prev.second - viewMinZ) * scaleY
+                val x2 = (cur.first - viewMinX) * scaleX
+                val y2 = (cur.second - viewMinZ) * scaleY
                 canvas.drawLine(x1, y1, x2, y2, paint)
                 prev = cur
             }
@@ -252,10 +324,10 @@ class MinimapView @JvmOverloads constructor(
             for (i in 0 until route.size - 1) {
                 val (ax, az) = route[i]
                 val (bx, bz) = route[i + 1]
-                val x1 = (ax - minX) * scaleX
-                val y1 = (az - minZ) * scaleY
-                val x2 = (bx - minX) * scaleX
-                val y2 = (bz - minZ) * scaleY
+                val x1 = (ax - viewMinX) * scaleX
+                val y1 = (az - viewMinZ) * scaleY
+                val x2 = (bx - viewMinX) * scaleX
+                val y2 = (bz - viewMinZ) * scaleY
                 val dx = x2 - x1
                 val dy = y2 - y1
                 val segLen = hypot(dx.toDouble(), dy.toDouble()).toFloat()
@@ -282,17 +354,17 @@ class MinimapView @JvmOverloads constructor(
             // use material red (matches editor's extinguisher red) for consistent appearance
             paint.color = 0xFFF44336.toInt()
              val (dx, dz) = route.last()
-             canvas.drawCircle((dx - minX) * scaleX, (dz - minZ) * scaleY, 5f, paint)
-         }
+             canvas.drawCircle((dx - viewMinX) * scaleX, (dz - viewMinZ) * scaleY, 5f, paint)
+          }
 
-        // POIs (render as colored circles with centered icon)
+         // POIs (render as colored circles with centered icon)
         pois.forEach { p ->
-            val cx = (p.x - minX) * scaleX
-            val cy = (p.z - minZ) * scaleY
-            // scale radius relative to world size for consistent look
-            val r = (pinHeightBase * 0.5f).coerceAtLeast(6f)
+            val cx = (p.x - viewMinX) * scaleX
+            val cy = (p.z - viewMinZ) * scaleY
+             // scale radius relative to world size for consistent look
+             val r = (pinHeightBase * 0.5f).coerceAtLeast(6f)
 
-            if (p.iconRes != null) {
+             if (p.iconRes != null) {
                  try {
                      // Prefer a cached rasterized icon (preserve original drawable colors)
                      val iconSizeF = (r * 1.8f).coerceAtLeast(18f)
@@ -311,7 +383,6 @@ class MinimapView @JvmOverloads constructor(
                          val leftB = (cx - iconSize / 2f).toFloat()
                          val topB = (cy - iconSize / 2f).toFloat()
                         // Draw icon bitmap centered on top of the colored circle using filtered paint for scaling
-                        val bmpPaint = Paint(Paint.FILTER_BITMAP_FLAG)
                         canvas.drawBitmap(bmp, leftB, topB, bmpPaint)
                         // Optionally draw a subtle start ring if this POI is the start
                         if (p.isStart) {
@@ -366,6 +437,73 @@ class MinimapView @JvmOverloads constructor(
             canvas.restore()
         }
 
+        // Debug overlay: show shapes polygon outlines and route points (if enabled)
+        if (debugDraw) {
+            // shapes outlines (respect current viewMin/viewMax)
+            val dbgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 2f }
+            formas.sortedBy { it.zOrder }.forEach { f ->
+                if (f.tipo.lowercase() == "circulo" || f.tipo.lowercase() == "circle") {
+                    dbgPaint.color = if (f.zOrder >= 10) Color.GREEN else Color.RED
+                    val rawLeft = (f.x - viewMinX) * scaleX
+                    val rawTop = (f.z - viewMinZ) * scaleY
+                    val rawRight = rawLeft + f.w * scaleX
+                    val rawBottom = rawTop + f.h * scaleY
+                    val left = minOf(rawLeft, rawRight)
+                    val right = maxOf(rawLeft, rawRight)
+                    val top = minOf(rawTop, rawBottom)
+                    val bottom = maxOf(rawTop, rawBottom)
+                    val cx2 = (left + right) / 2f
+                    val cy2 = (top + bottom) / 2f
+                    val r2 = (minOf(right - left, bottom - top) / 2f)
+                    canvas.drawCircle(cx2, cy2, r2, dbgPaint)
+                } else {
+                    val rawLeft = (f.x - viewMinX) * scaleX
+                    val rawTop = (f.z - viewMinZ) * scaleY
+                    val rawRight = rawLeft + f.w * scaleX
+                    val rawBottom = rawTop + f.h * scaleY
+                    val left = minOf(rawLeft, rawRight)
+                    val right = maxOf(rawLeft, rawRight)
+                    val top = minOf(rawTop, rawBottom)
+                    val bottom = maxOf(rawTop, rawBottom)
+                    val cx2 = (left + right) / 2f
+                    val cy2 = (top + bottom) / 2f
+                    val halfW2 = (right - left) / 2f
+                    val halfH2 = (bottom - top) / 2f
+                    val corners = when (f.tipo.lowercase()) {
+                        "triangulo" -> listOf(Pair(cx2, top), Pair(left, bottom), Pair(right, bottom))
+                        "linha" -> listOf(Pair(left, top), Pair(right, bottom))
+                        else -> listOf(Pair(cx2 - halfW2, cy2 - halfH2), Pair(cx2 + halfW2, cy2 - halfH2), Pair(cx2 + halfW2, cy2 + halfH2), Pair(cx2 - halfW2, cy2 + halfH2))
+                    }
+                    val rot = f.rotation
+                    val rotated = if (rot == 0f) corners else corners.map { (px, py) ->
+                        val a = Math.toRadians(rot.toDouble())
+                        val cosA = kotlin.math.cos(a).toFloat(); val sinA = kotlin.math.sin(a).toFloat()
+                        val tx = px - cx2; val ty = py - cy2
+                        val rx = tx * cosA - ty * sinA
+                        val ry = tx * sinA + ty * cosA
+                        Pair(rx + cx2, ry + cy2)
+                    }
+                    dbgPaint.color = if (f.zOrder >= 10) Color.GREEN else Color.RED
+                    tmpPath.rewind()
+                    if (rotated.isNotEmpty()) {
+                        tmpPath.moveTo(rotated[0].first, rotated[0].second)
+                        for (k in 1 until rotated.size) tmpPath.lineTo(rotated[k].first, rotated[k].second)
+                        if (rotated.size > 2) tmpPath.close()
+                        canvas.drawPath(tmpPath, dbgPaint)
+                    }
+                }
+            }
+
+            // route points as small squares
+            val rpPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = Color.MAGENTA }
+            route.forEach { pt ->
+                val rx = (pt.first - viewMinX) * scaleX
+                val ry = (pt.second - viewMinZ) * scaleY
+                val s = 4f
+                canvas.drawRect(rx - s, ry - s, rx + s, ry + s, rpPaint)
+            }
+        }
+
         // usuário (ponto + seta de heading opcional)
         val now = SystemClock.uptimeMillis()
         val phase = (now % 1000L).toFloat() / 1000f
@@ -398,77 +536,14 @@ class MinimapView @JvmOverloads constructor(
             arrowPaint.alpha = 220
             canvas.drawPath(path, arrowPaint)
         }
+        // restore clip so we can draw the circular border outside the clipped area if needed
+        canvas.restore()
 
-        // Debug overlay: show shapes polygon outlines and route points
-        if (debugDraw) {
-            val dbgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 2f }
-            // shapes outlines
-            formas.sortedBy { it.zOrder }.forEach { f ->
-                if (f.tipo.lowercase() == "circulo" || f.tipo.lowercase() == "circle") {
-                    dbgPaint.color = if (f.zOrder >= 10) Color.GREEN else Color.RED
-                    val rawLeft = (f.x - minX) * scaleX
-                    val rawTop = (f.z - minZ) * scaleY
-                    val rawRight = rawLeft + f.w * scaleX
-                    val rawBottom = rawTop + f.h * scaleY
-                    val left = minOf(rawLeft, rawRight)
-                    val right = maxOf(rawLeft, rawRight)
-                    val top = minOf(rawTop, rawBottom)
-                    val bottom = maxOf(rawTop, rawBottom)
-                    val cx2 = (left + right) / 2f
-                    val cy2 = (top + bottom) / 2f
-                    val r2 = (minOf(right - left, bottom - top) / 2f)
-                    canvas.drawCircle(cx2, cy2, r2, dbgPaint)
-                } else {
-                    // polygon for rect/triangle/line
-                    val rawLeft = (f.x - minX) * scaleX
-                    val rawTop = (f.z - minZ) * scaleY
-                    val rawRight = rawLeft + f.w * scaleX
-                    val rawBottom = rawTop + f.h * scaleY
-                    val left = minOf(rawLeft, rawRight)
-                    val right = maxOf(rawLeft, rawRight)
-                    val top = minOf(rawTop, rawBottom)
-                    val bottom = maxOf(rawTop, rawBottom)
-                    val cx2 = (left + right) / 2f
-                    val cy2 = (top + bottom) / 2f
-                    val halfW2 = (right - left) / 2f
-                    val halfH2 = (bottom - top) / 2f
-                    val corners = when (f.tipo.lowercase()) {
-                        "triangulo" -> listOf(Pair(cx2, top), Pair(left, bottom), Pair(right, bottom))
-                        "linha" -> listOf(Pair(left, top), Pair(right, bottom))
-                        else -> listOf(Pair(cx2 - halfW2, cy2 - halfH2), Pair(cx2 + halfW2, cy2 - halfH2), Pair(cx2 + halfW2, cy2 + halfH2), Pair(cx2 - halfW2, cy2 + halfH2))
-                    }
-                    // rotate corners around center by rotation deg
-                    val rot = f.rotation
-                    val rotated = if (rot == 0f) corners else corners.map { (px, py) ->
-                        val a = Math.toRadians(rot.toDouble())
-                        val cosA = kotlin.math.cos(a).toFloat(); val sinA = kotlin.math.sin(a).toFloat()
-                        val tx = px - cx2; val ty = py - cy2
-                        val rx = tx * cosA - ty * sinA
-                        val ry = tx * sinA + ty * cosA
-                        Pair(rx + cx2, ry + cy2)
-                    }
-                    dbgPaint.color = if (f.zOrder >= 10) Color.GREEN else Color.RED
-                    tmpPath.rewind()
-                    if (rotated.isNotEmpty()) {
-                        tmpPath.moveTo(rotated[0].first, rotated[0].second)
-                        for (k in 1 until rotated.size) tmpPath.lineTo(rotated[k].first, rotated[k].second)
-                        if (rotated.size > 2) tmpPath.close()
-                        canvas.drawPath(tmpPath, dbgPaint)
-                    }
-                }
-            }
-
-            // route points as small squares
-            val rpPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = Color.MAGENTA }
-            route.forEach { pt ->
-                val rx = (pt.first - minX) * scaleX
-                val ry = (pt.second - minZ) * scaleY
-                val s = 4f
-                canvas.drawRect(rx - s, ry - s, rx + s, ry + s, rpPaint)
-            }
-        }
-
-        postInvalidateOnAnimation()
+        // Draw circular border to emphasize the minimap shape
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 3f
+        paint.color = Color.WHITE
+        canvas.drawCircle(centerX, centerY, clipRadius, paint)
     }
 
     private fun drawArrow(canvas: Canvas, cx: Float, cy: Float, angleRad: Float) {

@@ -570,7 +570,6 @@ class ActivityNavHud : BaseActivity() {
     @Keep
     @Suppress("unused")
     fun setRoute(points: List<Pair<Float, Float>>) {
-        // Reinicia estado de chegada quando definimos uma nova rota
         hasArrived = false
         routePoints.clear()
         routePoints.addAll(points)

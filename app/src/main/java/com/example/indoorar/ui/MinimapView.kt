@@ -33,7 +33,8 @@ class MinimapView @JvmOverloads constructor(
         val color: Int,
         val zOrder: Int = 0,
         val tipo: String = "retangulo",
-        val rotation: Float = 0f
+        val rotation: Float = 0f,
+        val isWalkable: Boolean = false
     )
     private data class Poi(val x: Float, val z: Float, val color: Int, val iconRes: Int?, val isStart: Boolean)
 
@@ -88,18 +89,18 @@ class MinimapView @JvmOverloads constructor(
     }
 
     // Backwards-compatible addForma: default zOrder = 0
-    fun addForma(x: Float, z: Float, w: Float, h: Float, color: Int) { formas += Forma(x, z, w, h, color, 0) }
+    fun addForma(x: Float, z: Float, w: Float, h: Float, color: Int) { formas += Forma(x, z, w, h, color, 0, "retangulo", 0f, false) }
     // New overload that accepts explicit zOrder (higher zOrder draws on top)
-    fun addForma(x: Float, z: Float, w: Float, h: Float, color: Int, zOrder: Int) { formas += Forma(x, z, w, h, color, zOrder) }
+    fun addForma(x: Float, z: Float, w: Float, h: Float, color: Int, zOrder: Int) { formas += Forma(x, z, w, h, color, zOrder, "retangulo", 0f, zOrder >= 10) }
     // Convenience: mark walkable shapes to draw above non-walkable (walkable -> zOrder 10)
     fun addForma(x: Float, z: Float, w: Float, h: Float, color: Int, isWalkable: Boolean) {
         val zIdx = if (isWalkable) 10 else 0
-        formas += Forma(x, z, w, h, color, zIdx)
+        formas += Forma(x, z, w, h, color, zIdx, "retangulo", 0f, isWalkable)
     }
     // Full overload including tipo and rotation
     fun addForma(x: Float, z: Float, w: Float, h: Float, color: Int, isWalkable: Boolean, tipo: String, rotation: Float) {
         val zIdx = if (isWalkable) 10 else 0
-        formas += Forma(x, z, w, h, color, zIdx, tipo ?: "retangulo", rotation)
+        formas += Forma(x, z, w, h, color, zIdx, tipo ?: "retangulo", rotation, isWalkable)
     }
 
     fun addPoi(x: Float, z: Float) { pois += Poi(x, z, Color.YELLOW, null, false) }
@@ -110,6 +111,36 @@ class MinimapView @JvmOverloads constructor(
 
     fun setRoute(points: List<Pair<Float, Float>>) { route.clear(); route.addAll(points); invalidate() }
     fun clearRoute() { route.clear(); invalidate() }
+
+    /**
+     * Returns true if the given route lies entirely within walkable areas.
+     * If there are no shapes marked walkable, this returns true (backwards compat).
+     * Uses sampling along each segment with step `sampleStep` meters.
+     */
+    fun isRouteTraversable(points: List<Pair<Float, Float>>, sampleStep: Float = 0.25f): Boolean {
+        if (points.size < 2) return true
+        val anyWalkable = formas.any { it.isWalkable }
+        if (!anyWalkable) return true
+        for (i in 0 until points.size - 1) {
+            val a = points[i]; val b = points[i + 1]
+            val ax = a.first; val az = a.second
+            val bx = b.first; val bz = b.second
+            val dx = bx - ax; val dz = bz - az
+            val segLen = kotlin.math.sqrt(dx * dx + dz * dz)
+            if (segLen <= 1e-6f) continue
+            val steps = kotlin.math.max(1, kotlin.math.ceil(segLen / sampleStep).toInt())
+            for (s in 0..steps) {
+                val t = s.toFloat() / steps.toFloat()
+                val wx = ax + dx * t
+                val wz = az + dz * t
+                if (!isWorldPointInWalkable(wx, wz)) return false
+            }
+        }
+        return true
+    }
+
+    /** Returns whether any formas are marked as walkable (helper) */
+    fun hasWalkableShapes(): Boolean = formas.any { it.isWalkable }
 
     fun setRotateWithHeading(enabled: Boolean) { rotateWithHeading = enabled; invalidate() }
 
@@ -297,21 +328,55 @@ class MinimapView @JvmOverloads constructor(
         }
 
         // linha base rota
-        if (route.size >= 2) {
+         if (route.size >= 2) {
             paint.style = Paint.Style.STROKE
             paint.strokeWidth = 4f
             paint.color = Color.WHITE
-            var prev = route.first()
-            for (i in 1 until route.size) {
-                val cur = route[i]
-                val x1 = (prev.first - viewMinX) * scaleX
-                val y1 = (prev.second - viewMinZ) * scaleY
-                val x2 = (cur.first - viewMinX) * scaleX
-                val y2 = (cur.second - viewMinZ) * scaleY
-                canvas.drawLine(x1, y1, x2, y2, paint)
-                prev = cur
+            val anyWalkable = formas.any { it.isWalkable }
+            if (!anyWalkable) {
+                // No walkable shapes: draw the full route as before
+                var prev = route.first()
+                for (i in 1 until route.size) {
+                    val cur = route[i]
+                    val x1 = (prev.first - viewMinX) * scaleX
+                    val y1 = (prev.second - viewMinZ) * scaleY
+                    val x2 = (cur.first - viewMinX) * scaleX
+                    val y2 = (cur.second - viewMinZ) * scaleY
+                    canvas.drawLine(x1, y1, x2, y2, paint)
+                    prev = cur
+                }
+            } else {
+                // Draw route only inside walkable areas by sampling each segment in world coords
+                val sampleStep = 0.25f // meters
+                for (i in 0 until route.size - 1) {
+                    val a = route[i]
+                    val b = route[i + 1]
+                    val axw = a.first; val azw = a.second
+                    val bxw = b.first; val bzw = b.second
+                    val dxw = bxw - axw; val dzw = bzw - azw
+                    val segLen = kotlin.math.sqrt(dxw * dxw + dzw * dzw)
+                    if (segLen <= 1e-6f) continue
+                    val steps = kotlin.math.max(1, kotlin.math.ceil(segLen / sampleStep).toInt())
+                    var prevInside = false
+                    var prevXv = 0f; var prevYv = 0f
+                    for (s in 0..steps) {
+                        val t = s.toFloat() / steps.toFloat()
+                        val wx = axw + dxw * t
+                        val wz = azw + dzw * t
+                        val inside = isWorldPointInWalkable(wx, wz)
+                        val vx = (wx - viewMinX) * scaleX
+                        val vy = (wz - viewMinZ) * scaleY
+                        if (s > 0) {
+                            if (prevInside && inside) {
+                                canvas.drawLine(prevXv, prevYv, vx, vy, paint)
+                            }
+                        }
+                        prevInside = inside
+                        prevXv = vx; prevYv = vy
+                    }
+                }
             }
-        }
+         }
 
         // setas rota
         if (route.size >= 2) {
@@ -334,10 +399,22 @@ class MinimapView @JvmOverloads constructor(
                     dist += arrowSpacingPx
                     val px = x1 + (dx * (dist / segLen))
                     val py = y1 + (dy * (dist / segLen))
-                    drawArrow(canvas, px, py, angle)
+                    // compute world midpoint corresponding to this arrow and draw only if inside walkable
+                    val tMid = (dist / segLen)
+                    val worldMidX = ax + (bx - ax) * tMid
+                    val worldMidZ = az + (bz - az) * tMid
+                    if (isWorldPointInWalkable(worldMidX, worldMidZ)) drawArrow(canvas, px, py, angle)
                     placed = true
                 }
-                if (!placed) { drawArrow(canvas, (x1 + x2) * 0.5f, (y1 + y2) * 0.5f, angle) }
+                if (!placed) {
+                    // fallback midpoint: only draw if midpoint is inside walkable area
+                    val midT = 0.5f
+                    val worldMidX = ax + (bx - ax) * midT
+                    val worldMidZ = az + (bz - az) * midT
+                    if (isWorldPointInWalkable(worldMidX, worldMidZ)) {
+                        drawArrow(canvas, (x1 + x2) * 0.5f, (y1 + y2) * 0.5f, angle)
+                    }
+                }
                 leftover = (dist + arrowSpacingPx) - segLen
                 if (leftover < 0f) leftover = 0f
             }
@@ -537,6 +614,48 @@ class MinimapView @JvmOverloads constructor(
         paint.strokeWidth = 3f
         paint.color = Color.WHITE
         canvas.drawCircle(centerX, centerY, clipRadius, paint)
+    }
+
+    // Helper: test whether a world-coordinate point lies inside any walkable forma
+    private fun isWorldPointInWalkable(wx: Float, wz: Float): Boolean {
+        for (f in formas) {
+            if (!f.isWalkable) continue
+            // center
+            val cx = f.x + f.w * 0.5f
+            val cz = f.z + f.h * 0.5f
+            val localX = wx - cx
+            val localZ = wz - cz
+            val rot = f.rotation
+            val lx: Float
+            val lz: Float
+            if (rot != 0f) {
+                val a = Math.toRadians((-rot).toDouble()).toFloat() // inverse rotation
+                val cosA = kotlin.math.cos(a)
+                val sinA = kotlin.math.sin(a)
+                lx = localX * cosA - localZ * sinA
+                lz = localX * sinA + localZ * cosA
+            } else {
+                lx = localX; lz = localZ
+            }
+            // Now test based on tipo
+            when (f.tipo.lowercase()) {
+                "circulo", "circle" -> {
+                    val r = kotlin.math.min(f.w, f.h) * 0.5f
+                    if (lx * lx + lz * lz <= r * r) return true
+                }
+                "triangulo" -> {
+                    // approximate triangle as bounding box for walkability (conservative)
+                    if (kotlin.math.abs(lx) <= f.w * 0.5f && kotlin.math.abs(lz) <= f.h * 0.5f) return true
+                }
+                "linha" -> {
+                    // lines are thin; consider not walkable unless user explicitly marked large width; skip
+                }
+                else -> { // rectangle
+                    if (kotlin.math.abs(lx) <= f.w * 0.5f && kotlin.math.abs(lz) <= f.h * 0.5f) return true
+                }
+            }
+        }
+        return false
     }
 
     private fun drawArrow(canvas: Canvas, cx: Float, cy: Float, angleRad: Float) {

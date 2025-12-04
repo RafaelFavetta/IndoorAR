@@ -780,14 +780,12 @@ class ActivityNavHud : BaseActivity() {
             }
             return
         }
-        // Ensure arrow is visible when we have an active multi-point route
         if (arrowView.visibility != View.VISIBLE && !hasArrived) {
             arrowView.alpha = 0f
             arrowView.visibility = View.VISIBLE
             arrowView.animate().alpha(1f).setDuration(150).start()
         }
-        // Find a target point ahead along route
-        val target = findTargetPointAhead(x, z)
+        val target = findTargetPointAhead(x, z, headingRad)
         val (tx, tz) = target ?: return
         val dx = tx - x
         val dz = tz - z
@@ -819,11 +817,22 @@ class ActivityNavHud : BaseActivity() {
         }
     }
 
-    private fun findTargetPointAhead(x: Float, z: Float): Pair<Float, Float>? {
+    /**
+     * Choose a target point for guidance. Prefer projections that lie in front of the user
+     * relative to headingRad (i.e. forward dot-product > 0). If none are ahead, fall back
+     * to the nearest projection as before.
+     */
+    private fun findTargetPointAhead(x: Float, z: Float, headingRad: Float): Pair<Float, Float>? {
         if (routePoints.isEmpty()) return null
-        // Choose the nearest route segment projection ahead of the user
-        var best: Pair<Float, Float>? = null
-        var bestDist2 = Float.MAX_VALUE
+        val sinH = kotlin.math.sin(headingRad)
+        val cosH = kotlin.math.cos(headingRad)
+
+        var bestAhead: Pair<Float, Float>? = null
+        var bestAheadDist2 = Float.MAX_VALUE
+
+        var bestAny: Pair<Float, Float>? = null
+        var bestAnyDist2 = Float.MAX_VALUE
+
         for (i in 0 until routePoints.size - 1) {
             val a = routePoints[i]
             val b = routePoints[i + 1]
@@ -831,10 +840,15 @@ class ActivityNavHud : BaseActivity() {
             val px = proj.first; val pz = proj.second
             val dx = px - x; val dz = pz - z
             val d2 = dx * dx + dz * dz
-            if (d2 < bestDist2) { bestDist2 = d2; best = px to pz }
+            // forward component in user coordinates: forward = dx*sin + dz*cos (same as elsewhere)
+            val forward = dx * sinH + dz * cosH
+            if (forward > 0f) {
+                if (d2 < bestAheadDist2) { bestAheadDist2 = d2; bestAhead = px to pz }
+            }
+            if (d2 < bestAnyDist2) { bestAnyDist2 = d2; bestAny = px to pz }
         }
-        // If nothing, fallback to last point
-        return best ?: routePoints.last()
+
+        return bestAhead ?: bestAny ?: routePoints.last()
     }
 
     private fun projectPointOnSegment(px: Float, pz: Float, ax: Float, az: Float, bx: Float, bz: Float): Pair<Float, Float> {

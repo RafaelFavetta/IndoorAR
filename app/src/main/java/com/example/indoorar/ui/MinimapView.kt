@@ -155,7 +155,6 @@ class MinimapView @JvmOverloads constructor(
         super.onDraw(canvas)
         val wView = width.toFloat(); val hView = height.toFloat()
         if (wView <= 0 || hView <= 0) return
-        // Clip the whole minimap to a circle centered in the view so the minimap appears circular
         val centerX = wView * 0.5f
         val centerY = hView * 0.5f
         val outerRadius = (min(wView, hView) * 0.5f)
@@ -166,15 +165,13 @@ class MinimapView @JvmOverloads constructor(
         canvas.clipPath(circlePath)
         val worldW = maxX - minX; val worldH = maxZ - minZ
         if (worldW <= 0f || worldH <= 0f) return
-        // Determine viewport in world coordinates. By default we show the whole world,
-        // but if followUser is enabled we zoom to a region centered on the user and follow them.
         val viewMinX: Float
         val viewMinZ: Float
         val viewMaxX: Float
         val viewMaxZ: Float
 
         if (followUser) {
-            val baseRadius = followRadiusMeters ?: (max(worldW, worldH) * 0.15f).coerceAtLeast(0.5f)
+            val baseRadius = followRadiusMeters ?: (max(worldW, worldH) * 0.20f).coerceAtLeast(0.5f)
             val aspect = wView / hView
             val halfH = baseRadius
             val halfW = baseRadius * aspect

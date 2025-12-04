@@ -43,6 +43,8 @@ import android.view.animation.DecelerateInterpolator
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.graphics.drawable.DrawableCompat
 import android.graphics.drawable.Drawable
+import android.animation.ValueAnimator
+import android.view.animation.LinearInterpolator
 
 class ActivityNavHud : BaseActivity() {
 
@@ -620,12 +622,12 @@ class ActivityNavHud : BaseActivity() {
     @Keep
     @Suppress("unused")
     fun updateUserPose(x: Float, z: Float, headingRad: Float) {
+        // Store the raw/latest pose
         lastUserX = x; lastUserZ = z
-        minimap.updateUserPose(x, z, headingRad)
 
-        // Remove waypoints da rota conforme o usuário passa por eles
+        animateUserPoseTo(x, z, headingRad)
+
         prunePassedWaypoints(x, z)
-
         updateGuidanceFromPose(x, z, headingRad)
         updateDistanceLabel(x, z)
     }
@@ -884,8 +886,69 @@ class ActivityNavHud : BaseActivity() {
     private var initialZ: Float? = null
     private var lastUserX: Float? = null
     private var lastUserZ: Float? = null
-    // Controla se já marcamos o estado de chegada (para não reexibir setas)
+    private var smoothUserX: Float? = null
+    private var smoothUserZ: Float? = null
+    private var userPoseAnimator: ValueAnimator? = null
+    // Animator metadata so we can resume/cancel smoothly
+    private var userAnimStartX: Float = 0f
+    private var userAnimStartZ: Float = 0f
+    private var userAnimTargetX: Float = 0f
+    private var userAnimTargetZ: Float = 0f
     private var hasArrived: Boolean = false
+
+    private fun animateUserPoseTo(targetX: Float, targetZ: Float, headingRad: Float) {
+        val startX = smoothUserX ?: lastUserX ?: initialX ?: targetX
+        val startZ = smoothUserZ ?: lastUserZ ?: initialZ ?: targetZ
+
+        val dx = targetX - startX
+        val dz = targetZ - startZ
+        val dist = kotlin.math.hypot(dx.toDouble(), dz.toDouble()).toFloat()
+        if (dist <= 0.0001f) {
+            smoothUserX = targetX
+            smoothUserZ = targetZ
+            minimap.updateUserPose(targetX, targetZ, headingRad)
+            return
+        }
+
+        userPoseAnimator?.let { anim ->
+            if (anim.isRunning) {
+                val frac = try { anim.animatedFraction } catch (_: Exception) { 1f }
+                val oldStartX = userAnimStartX
+                val oldStartZ = userAnimStartZ
+                val oldTargetX = userAnimTargetX
+                val oldTargetZ = userAnimTargetZ
+                val curX = oldStartX + frac * (oldTargetX - oldStartX)
+                val curZ = oldStartZ + frac * (oldTargetZ - oldStartZ)
+                 smoothUserX = curX
+                 smoothUserZ = curZ
+                 anim.cancel()
+             }
+         }
+
+         val animStartX = smoothUserX ?: startX
+         val animStartZ = smoothUserZ ?: startZ
+
+         val duration = ( (dist * 300).toInt()).coerceIn(120, 600)
+
+         val animator = ValueAnimator.ofFloat(0f, 1f).apply {
+             setDuration(duration.toLong())
+             interpolator = LinearInterpolator()
+             userAnimStartX = animStartX
+             userAnimStartZ = animStartZ
+             userAnimTargetX = targetX
+             userAnimTargetZ = targetZ
+             addUpdateListener { v ->
+                 val t = v.animatedValue as Float
+                 val curX = animStartX + t * (targetX - animStartX)
+                 val curZ = animStartZ + t * (targetZ - animStartZ)
+                 smoothUserX = curX
+                 smoothUserZ = curZ
+                 try { minimap.updateUserPose(curX, curZ, headingRad) } catch (_: Exception) {}
+             }
+             start()
+         }
+         userPoseAnimator = animator
+     }
 
     @Suppress("unused")
     private fun showDiagDialog(title: String, message: String) {
@@ -900,15 +963,12 @@ class ActivityNavHud : BaseActivity() {
         }
     }
 
-    // Pequena animação de "chegada" para dar feedback visual
     private fun showArrivalAnimation() {
-        // Garante o texto visível e com mensagem
         if (instructionText.visibility != View.VISIBLE) {
             instructionText.alpha = 0f
             instructionText.visibility = View.VISIBLE
         }
         instructionText.animate().alpha(1f).setDuration(200).start()
-        // Efeito de "pulso" no texto
         instructionText.scaleX = 0.9f
         instructionText.scaleY = 0.9f
         instructionText.animate()
@@ -923,7 +983,6 @@ class ActivityNavHud : BaseActivity() {
                     .start()
             }
             .start()
-        // Some com a seta suavemente, caso ainda visível
         if (arrowView.isVisible) {
             arrowView.animate()
                 .alpha(0f)
@@ -935,7 +994,7 @@ class ActivityNavHud : BaseActivity() {
         }
     }
 
-    // --------- Minimap content loading ---------
+    // --------- Minimapa ---------
     private fun loadMinimapContent(mapId: String) {
         // limpa
         minimap.clearFormas()

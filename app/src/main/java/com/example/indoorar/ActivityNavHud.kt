@@ -570,6 +570,7 @@ class ActivityNavHud : BaseActivity() {
     @Keep
     @Suppress("unused")
     fun setRoute(points: List<Pair<Float, Float>>) {
+        // Reinicia estado de chegada quando definimos uma nova rota
         hasArrived = false
         routePoints.clear()
         routePoints.addAll(points)
@@ -624,8 +625,12 @@ class ActivityNavHud : BaseActivity() {
         // Store the raw/latest pose
         lastUserX = x; lastUserZ = z
 
+        // Smoothly animate the minimap user icon towards the reported pose. This prevents
+        // the icon from jumping when many updates arrive quickly (ex: clicks or step bursts).
         animateUserPoseTo(x, z, headingRad)
 
+        // Still use the raw pose for guidance/route computations (distance/projection), so
+        // these calculations remain responsive; the visual icon lags slightly but smoothly.
         prunePassedWaypoints(x, z)
         updateGuidanceFromPose(x, z, headingRad)
         updateDistanceLabel(x, z)
@@ -779,12 +784,14 @@ class ActivityNavHud : BaseActivity() {
             }
             return
         }
+        // Ensure arrow is visible when we have an active multi-point route
         if (arrowView.visibility != View.VISIBLE && !hasArrived) {
             arrowView.alpha = 0f
             arrowView.visibility = View.VISIBLE
             arrowView.animate().alpha(1f).setDuration(150).start()
         }
-        val target = findTargetPointAhead(x, z, headingRad)
+        // Find a target point ahead along route
+        val target = findTargetPointAhead(x, z)
         val (tx, tz) = target ?: return
         val dx = tx - x
         val dz = tz - z
@@ -816,22 +823,11 @@ class ActivityNavHud : BaseActivity() {
         }
     }
 
-    /**
-     * Choose a target point for guidance. Prefer projections that lie in front of the user
-     * relative to headingRad (i.e. forward dot-product > 0). If none are ahead, fall back
-     * to the nearest projection as before.
-     */
-    private fun findTargetPointAhead(x: Float, z: Float, headingRad: Float): Pair<Float, Float>? {
+    private fun findTargetPointAhead(x: Float, z: Float): Pair<Float, Float>? {
         if (routePoints.isEmpty()) return null
-        val sinH = kotlin.math.sin(headingRad)
-        val cosH = kotlin.math.cos(headingRad)
-
-        var bestAhead: Pair<Float, Float>? = null
-        var bestAheadDist2 = Float.MAX_VALUE
-
-        var bestAny: Pair<Float, Float>? = null
-        var bestAnyDist2 = Float.MAX_VALUE
-
+        // Choose the nearest route segment projection ahead of the user
+        var best: Pair<Float, Float>? = null
+        var bestDist2 = Float.MAX_VALUE
         for (i in 0 until routePoints.size - 1) {
             val a = routePoints[i]
             val b = routePoints[i + 1]
@@ -839,15 +835,10 @@ class ActivityNavHud : BaseActivity() {
             val px = proj.first; val pz = proj.second
             val dx = px - x; val dz = pz - z
             val d2 = dx * dx + dz * dz
-            // forward component in user coordinates: forward = dx*sin + dz*cos (same as elsewhere)
-            val forward = dx * sinH + dz * cosH
-            if (forward > 0f) {
-                if (d2 < bestAheadDist2) { bestAheadDist2 = d2; bestAhead = px to pz }
-            }
-            if (d2 < bestAnyDist2) { bestAnyDist2 = d2; bestAny = px to pz }
+            if (d2 < bestDist2) { bestDist2 = d2; best = px to pz }
         }
-
-        return bestAhead ?: bestAny ?: routePoints.last()
+        // If nothing, fallback to last point
+        return best ?: routePoints.last()
     }
 
     private fun projectPointOnSegment(px: Float, pz: Float, ax: Float, az: Float, bx: Float, bz: Float): Pair<Float, Float> {
@@ -899,6 +890,7 @@ class ActivityNavHud : BaseActivity() {
     private var initialZ: Float? = null
     private var lastUserX: Float? = null
     private var lastUserZ: Float? = null
+    // Smoothed position used to update the minimap icon more fluidly
     private var smoothUserX: Float? = null
     private var smoothUserZ: Float? = null
     private var userPoseAnimator: ValueAnimator? = null
@@ -907,31 +899,43 @@ class ActivityNavHud : BaseActivity() {
     private var userAnimStartZ: Float = 0f
     private var userAnimTargetX: Float = 0f
     private var userAnimTargetZ: Float = 0f
+    // Controla se já marcamos o estado de chegada (para não reexibir setas)
     private var hasArrived: Boolean = false
 
+    /**
+     * Smoothly animate the minimap user icon from the current smoothed position to the target.
+     * If a previous animation is running it will be cancelled and a new one will continue from
+     * the current animated position, preventing jumps when many updates arrive quickly.
+     */
     private fun animateUserPoseTo(targetX: Float, targetZ: Float, headingRad: Float) {
+        // Start from the latest smoothed position, or fallback to last known/raw positions
         val startX = smoothUserX ?: lastUserX ?: initialX ?: targetX
         val startZ = smoothUserZ ?: lastUserZ ?: initialZ ?: targetZ
 
+        // If already very close, just set directly
         val dx = targetX - startX
         val dz = targetZ - startZ
         val dist = kotlin.math.hypot(dx.toDouble(), dz.toDouble()).toFloat()
         if (dist <= 0.0001f) {
             smoothUserX = targetX
             smoothUserZ = targetZ
+            // update minimap once
             minimap.updateUserPose(targetX, targetZ, headingRad)
             return
         }
 
+        // Cancel any running animator but compute current animated position to be start of new anim
         userPoseAnimator?.let { anim ->
             if (anim.isRunning) {
                 val frac = try { anim.animatedFraction } catch (_: Exception) { 1f }
+                // derive current animated position from stored metadata
                 val oldStartX = userAnimStartX
                 val oldStartZ = userAnimStartZ
                 val oldTargetX = userAnimTargetX
                 val oldTargetZ = userAnimTargetZ
                 val curX = oldStartX + frac * (oldTargetX - oldStartX)
                 val curZ = oldStartZ + frac * (oldTargetZ - oldStartZ)
+                 // use that as new start
                  smoothUserX = curX
                  smoothUserZ = curZ
                  anim.cancel()
@@ -941,11 +945,13 @@ class ActivityNavHud : BaseActivity() {
          val animStartX = smoothUserX ?: startX
          val animStartZ = smoothUserZ ?: startZ
 
+         // Duration depends on distance but clamped so very large jumps don't take too long
          val duration = ( (dist * 300).toInt()).coerceIn(120, 600)
 
          val animator = ValueAnimator.ofFloat(0f, 1f).apply {
              setDuration(duration.toLong())
              interpolator = LinearInterpolator()
+             // store metadata in fields so interrupted anim can compute current position
              userAnimStartX = animStartX
              userAnimStartZ = animStartZ
              userAnimTargetX = targetX
@@ -956,6 +962,7 @@ class ActivityNavHud : BaseActivity() {
                  val curZ = animStartZ + t * (targetZ - animStartZ)
                  smoothUserX = curX
                  smoothUserZ = curZ
+                 // Update the minimap with the interpolated position and the latest heading
                  try { minimap.updateUserPose(curX, curZ, headingRad) } catch (_: Exception) {}
              }
              start()
@@ -976,12 +983,15 @@ class ActivityNavHud : BaseActivity() {
         }
     }
 
+    // Pequena animação de "chegada" para dar feedback visual
     private fun showArrivalAnimation() {
+        // Garante o texto visível e com mensagem
         if (instructionText.visibility != View.VISIBLE) {
             instructionText.alpha = 0f
             instructionText.visibility = View.VISIBLE
         }
         instructionText.animate().alpha(1f).setDuration(200).start()
+        // Efeito de "pulso" no texto
         instructionText.scaleX = 0.9f
         instructionText.scaleY = 0.9f
         instructionText.animate()
@@ -996,6 +1006,7 @@ class ActivityNavHud : BaseActivity() {
                     .start()
             }
             .start()
+        // Some com a seta suavemente, caso ainda visível
         if (arrowView.isVisible) {
             arrowView.animate()
                 .alpha(0f)
@@ -1007,7 +1018,7 @@ class ActivityNavHud : BaseActivity() {
         }
     }
 
-    // --------- Minimapa ---------
+    // --------- Minimap content loading ---------
     private fun loadMinimapContent(mapId: String) {
         // limpa
         minimap.clearFormas()

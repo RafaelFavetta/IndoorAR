@@ -470,11 +470,12 @@ class ActivityNavHud : BaseActivity() {
             context = this,
             mapNorthDegrees = 0f,
             stepLengthMeters = 0.7f,
-            onPosition = { x, z, headingRad -> updateUserPose(x, z, headingRad) }
-        ).also {
-            it.start(initX, initZ)
-        }
-        trackerStarted = true
+            onPosition = { x, z, headingRad -> updateUserPose(x, z, headingRad) },
+            useAccelFallbackSteps = true // enable accel-based fallback step detection when step sensors aren't delivering
+         ).also {
+             it.start(initX, initZ)
+         }
+         trackerStarted = true
     }
 
     private fun stopTracker() {

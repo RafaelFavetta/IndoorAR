@@ -48,9 +48,11 @@ class SensorFusionTracker(
     // Tunables for accelerometer/linear-accel detector
     private val alphaMean = 0.15f
     private val alphaVar = 0.15f
-    private val kStd = 0.85f
-    private val hysteresisFactor = 0.35f
-    private val minStepIntervalNs = 200_000_000L // 240 ms
+    // Make the accel-based step detector more conservative to avoid phantom steps
+    private val kStd = 1.15f
+    private val hysteresisFactor = 0.45f
+    // Increase minimum interval between detected steps when using accel fallback (reduces false burst detections)
+    private val minStepIntervalNs = 400_000_000L // 400 ms
     // Sub-step aggregation: move in fixed chunks (default 1.0 m)
     private val subStepMeters = 0.25f
     private var distanceBufferMeters = 0f
@@ -209,8 +211,10 @@ class SensorFusionTracker(
         val downThresh = accMean + hysteresisFactor * std
 
         val now = event.timestamp
+        // Require both a spike above the adaptive threshold AND a minimum motion energy
+        // to accept an accel-based step. This reduces phantom step bursts on noisy devices.
         if (mag > upThresh && !wasAbove) {
-            if (now - lastStepTimestampNs >= minStepIntervalNs) {
+            if (now - lastStepTimestampNs >= minStepIntervalNs && motionScore > motionThreshold) {
                 onStepDetected()
                 lastStepTimestampNs = now
             }

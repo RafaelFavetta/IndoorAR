@@ -189,7 +189,7 @@ class ActivityNavHud : BaseActivity() {
                         return@addOnSuccessListener
                     }
                     val baseNames = pois.map { p ->
-                        mapIconNameToDisplay(p.iconName) ?: p.iconName ?: p.name ?: p.id
+                        p.name?.takeIf { it.isNotBlank() } ?: mapIconNameToDisplay(p.iconName) ?: p.iconName ?: p.id
                     }
                      val counts = baseNames.groupingBy { it }.eachCount()
                      val seen = mutableMapOf<String, Int>()
